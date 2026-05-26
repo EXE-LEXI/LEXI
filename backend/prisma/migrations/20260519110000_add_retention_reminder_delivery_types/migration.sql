@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "NotificationDeliveryType" ADD VALUE IF NOT EXISTS 'STREAK_REMINDER';
+ALTER TYPE "NotificationDeliveryType" ADD VALUE IF NOT EXISTS 'REVIEW_REMINDER';
