@@ -35,3 +35,33 @@ export type ProgressSummary = {
     finishedAt: string | null;
   }[];
 };
+
+export type CurrentLesson = {
+  currentLesson: {
+    id: string;
+    slug: string;
+    title: string;
+    module: { id: string; title: string };
+    category: { id: string; title: string };
+  } | null;
+  progress: {
+    status: string;
+    lastScore: number | null;
+    completedAt: string | null;
+  } | null;
+  isCourseCompleted: boolean;
+};
+
+export type LearningHistoryItem = {
+  id: string;
+  lessonId: string;
+  lessonTitle: string;
+  module: { id: string; title: string };
+  category: { id: string; title: string };
+  score: number;
+  correctAnswers: number;
+  wrongAnswers: number;
+  totalQuestions: number;
+  startedAt: string;
+  finishedAt: string | null;
+};

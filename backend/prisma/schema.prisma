@@ -1,6 +1,6 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "mongodb"
+  url      = env("MONGODB_URI")
 }
 
 generator client {
@@ -117,7 +117,7 @@ enum MediaAssetStatus {
 // ==========================================
 
 model User {
-  id           String     @id @default(uuid())
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
   email        String     @unique
   passwordHash String
   role         UserRole   @default(LEARNER)
@@ -139,8 +139,8 @@ model User {
 }
 
 model RefreshToken {
-  id     String @id @default(uuid())
-  userId String
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   jti       String    @unique
@@ -157,8 +157,8 @@ model RefreshToken {
 }
 
 model UserProfile {
-  id     String @id @default(uuid())
-  userId String @unique
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @unique @db.ObjectId
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   fullName  String
@@ -177,7 +177,7 @@ model UserProfile {
 // ==========================================
 
 model Category {
-  id          String   @id @default(uuid())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   slug        String   @unique
   title       String
   description String?
@@ -193,8 +193,8 @@ model Category {
 }
 
 model LearningModule {
-  id         String   @id @default(uuid())
-  categoryId String
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  categoryId String   @db.ObjectId
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   slug        String   @unique
@@ -214,46 +214,46 @@ model LearningModule {
 }
 
 model Lesson {
-  id       String         @id @default(uuid())
-  moduleId String
+  id       String         @id @default(auto()) @map("_id") @db.ObjectId
+  moduleId String         @db.ObjectId
   module   LearningModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   slug            String             @unique
   title           String
-  content         String?            @db.Text
+  content         String?
   videoUrl        String?
   sourceTitle     String?
   sourceUrl       String?
   legalDocumentNo String?
   effectiveDate   DateTime?
   reviewedAt      DateTime?
-  reviewerNote    String?            @db.Text
+  reviewerNote    String?
   sortOrder       Int                @default(0)
   isActive        Boolean            @default(true)
   reviewStatus    LessonReviewStatus @default(DRAFT)
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
-  questions   QuizQuestion[]
-  attempts    LessonAttempt[]
-  progress    UserProgress[]
-  sourceDraft LessonDraft?
-  mediaAssets MediaAsset[]
+  questions    QuizQuestion[]
+  attempts     LessonAttempt[]
+  progress     UserProgress[]
+  sourceDrafts LessonDraft[]
+  mediaAssets  MediaAsset[]
 
   @@index([moduleId])
   @@map("lessons")
 }
 
 model LegalSourceDocument {
-  id String @id @default(uuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
   title           String
   sourceUrl       String?   @unique
   legalDocumentNo String?
   effectiveDate   DateTime?
 
-  rawText        String                 @db.Text
-  normalizedText String?                @db.Text
+  rawText        String
+  normalizedText String?
   contentHash    String?
   crawlStatus    LegalSourceCrawlStatus @default(CRAWLED)
   crawledAt      DateTime?
@@ -271,12 +271,12 @@ model LegalSourceDocument {
 }
 
 model AiGenerationJob {
-  id String @id @default(uuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  sourceDocumentId String
+  sourceDocumentId String              @db.ObjectId
   sourceDocument   LegalSourceDocument @relation(fields: [sourceDocumentId], references: [id], onDelete: Cascade)
 
-  targetModuleId String?
+  targetModuleId String?         @db.ObjectId
   targetModule   LearningModule? @relation(fields: [targetModuleId], references: [id], onDelete: SetNull)
 
   type          AiGenerationType   @default(FULL_LESSON_PACKAGE)
@@ -285,7 +285,7 @@ model AiGenerationJob {
   model         String             @default("local-structured-generator")
   inputSnapshot Json?
   output        Json?
-  errorMessage  String?            @db.Text
+  errorMessage  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -300,25 +300,25 @@ model AiGenerationJob {
 }
 
 model LessonDraft {
-  id String @id @default(uuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  generationJobId String?
+  generationJobId String?          @db.ObjectId
   generationJob   AiGenerationJob? @relation(fields: [generationJobId], references: [id], onDelete: SetNull)
 
-  sourceDocumentId String
+  sourceDocumentId String              @db.ObjectId
   sourceDocument   LegalSourceDocument @relation(fields: [sourceDocumentId], references: [id], onDelete: Cascade)
 
-  moduleId String?
+  moduleId String?         @db.ObjectId
   module   LearningModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
 
-  createdLessonId String? @unique
+  createdLessonId String? @db.ObjectId
   createdLesson   Lesson? @relation(fields: [createdLessonId], references: [id], onDelete: SetNull)
 
   title        String
-  content      String            @db.Text
-  videoScript  String?           @db.Text
-  videoPrompt  String?           @db.Text
-  reviewerNote String?           @db.Text
+  content      String
+  videoScript  String?
+  videoPrompt  String?
+  reviewerNote String?
   status       LessonDraftStatus @default(DRAFT)
 
   createdAt DateTime @default(now())
@@ -330,18 +330,17 @@ model LessonDraft {
   @@index([generationJobId])
   @@index([sourceDocumentId])
   @@index([moduleId])
-  @@index([createdLessonId])
   @@index([status])
   @@map("lesson_drafts")
 }
 
 model LessonDraftQuestion {
-  id      String      @id @default(uuid())
-  draftId String
+  id      String      @id @default(auto()) @map("_id") @db.ObjectId
+  draftId String      @db.ObjectId
   draft   LessonDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
 
   questionText String
-  explanation  String? @db.Text
+  explanation  String?
   sortOrder    Int     @default(0)
 
   createdAt DateTime @default(now())
@@ -354,8 +353,8 @@ model LessonDraftQuestion {
 }
 
 model LessonDraftOption {
-  id         String              @id @default(uuid())
-  questionId String
+  id         String              @id @default(auto()) @map("_id") @db.ObjectId
+  questionId String              @db.ObjectId
   question   LessonDraftQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   optionText String
@@ -370,12 +369,12 @@ model LessonDraftOption {
 }
 
 model MediaAsset {
-  id String @id @default(uuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  lessonId String?
+  lessonId String? @db.ObjectId
   lesson   Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
 
-  draftId String?
+  draftId String?      @db.ObjectId
   draft   LessonDraft? @relation(fields: [draftId], references: [id], onDelete: SetNull)
 
   title        String?
@@ -385,7 +384,7 @@ model MediaAsset {
   url          String?
   mimeType     String?
   provider     String?
-  renderPrompt String?              @db.Text
+  renderPrompt String?
   metadata     Json?
 
   createdAt DateTime @default(now())
@@ -404,8 +403,8 @@ model MediaAsset {
 // ==========================================
 
 model QuizQuestion {
-  id       String @id @default(uuid())
-  lessonId String
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  lessonId String @db.ObjectId
   lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   questionText String
@@ -422,8 +421,8 @@ model QuizQuestion {
 }
 
 model QuizOption {
-  id         String       @id @default(uuid())
-  questionId String
+  id         String       @id @default(auto()) @map("_id") @db.ObjectId
+  questionId String       @db.ObjectId
   question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   optionText String
@@ -443,10 +442,10 @@ model QuizOption {
 // ==========================================
 
 model LessonAttempt {
-  id       String @id @default(uuid())
-  userId   String
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String @db.ObjectId
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lessonId String
+  lessonId String @db.ObjectId
   lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   score          Int       @default(0)
@@ -466,12 +465,12 @@ model LessonAttempt {
 }
 
 model UserAnswer {
-  id               String        @id @default(uuid())
-  attemptId        String
+  id               String        @id @default(auto()) @map("_id") @db.ObjectId
+  attemptId        String        @db.ObjectId
   attempt          LessonAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  questionId       String
+  questionId       String        @db.ObjectId
   question         QuizQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  selectedOptionId String
+  selectedOptionId String        @db.ObjectId
   selectedOption   QuizOption    @relation(fields: [selectedOptionId], references: [id], onDelete: Cascade)
 
   isCorrect Boolean
@@ -484,10 +483,10 @@ model UserAnswer {
 }
 
 model UserProgress {
-  id       String @id @default(uuid())
-  userId   String
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String @db.ObjectId
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lessonId String
+  lessonId String @db.ObjectId
   lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   status      ProgressStatus @default(NOT_STARTED)
@@ -504,7 +503,7 @@ model UserProgress {
 }
 
 model Badge {
-  id           String            @id @default(uuid())
+  id           String            @id @default(auto()) @map("_id") @db.ObjectId
   code         String            @unique
   title        String
   description  String
@@ -521,10 +520,10 @@ model Badge {
 }
 
 model UserBadge {
-  id         String   @id @default(uuid())
-  userId     String
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  badgeId    String
+  badgeId    String   @db.ObjectId
   badge      Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
   unlockedAt DateTime @default(now())
 
@@ -535,7 +534,7 @@ model UserBadge {
 }
 
 model DailyChallenge {
-  id          String             @id @default(uuid())
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
   code        String             @unique
   title       String
   description String
@@ -553,10 +552,10 @@ model DailyChallenge {
 }
 
 model UserChallenge {
-  id               String         @id @default(uuid())
-  userId           String
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String         @db.ObjectId
   user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dailyChallengeId String
+  dailyChallengeId String         @db.ObjectId
   dailyChallenge   DailyChallenge @relation(fields: [dailyChallengeId], references: [id], onDelete: Cascade)
   challengeDate    DateTime
   progress         Int            @default(0)
@@ -574,8 +573,8 @@ model UserChallenge {
 }
 
 model DeviceToken {
-  id         String              @id @default(uuid())
-  userId     String
+  id         String              @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String              @db.ObjectId
   user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   token      String              @unique
   platform   DeviceTokenPlatform
@@ -593,8 +592,8 @@ model DeviceToken {
 }
 
 model NotificationPreference {
-  id                    String   @id @default(uuid())
-  userId                String   @unique
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId                String   @unique @db.ObjectId
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   dailyReminderEnabled  Boolean  @default(true)
   streakReminderEnabled Boolean  @default(true)
@@ -611,8 +610,8 @@ model NotificationPreference {
 }
 
 model NotificationDeliveryLog {
-  id     String @id @default(uuid())
-  userId String
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   type        NotificationDeliveryType

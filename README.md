@@ -7,7 +7,7 @@ progress tracking, and review flows.
 
 ## Project Structure
 
-- `backend` - NestJS API, Prisma, PostgreSQL.
+- `backend` - NestJS API, Prisma, MongoDB.
 - `frontend` - React web app.
 
 The repository is now focused on backend + frontend for deployment. Legacy
@@ -18,7 +18,7 @@ mobile/docs/tasks folders are ignored by Git.
 ```bash
 cd backend
 npm install
-npx prisma migrate deploy
+npx prisma db push
 npx prisma db seed
 npm run start:dev
 ```
