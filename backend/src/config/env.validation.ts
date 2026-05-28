@@ -7,7 +7,7 @@ export function validateEnv(config: EnvConfig) {
   const nodeEnv = config.NODE_ENV ?? "development";
   const port = Number.parseInt(config.PORT ?? `${DEFAULT_PORT}`, 10);
 
-  const requiredKeys = ["DATABASE_URL", "JWT_SECRET", "JWT_REFRESH_SECRET"];
+  const requiredKeys = ["MONGODB_URI", "JWT_SECRET", "JWT_REFRESH_SECRET"];
   const missingKeys = requiredKeys.filter((key) => !config[key]);
 
   if (missingKeys.length > 0) {

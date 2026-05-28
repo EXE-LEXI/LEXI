@@ -1,12 +1,12 @@
 # LEXI Backend
 
-Backend API cho LEXI, ung dung hoc phap luat theo huong gamification. Backend hien dung NestJS, Prisma, PostgreSQL va JWT authentication.
+Backend API cho LEXI, ung dung hoc phap luat theo huong gamification. Backend hien dung NestJS, Prisma, MongoDB va JWT authentication.
 
 ## 1. Tech Stack
 
 - Framework: NestJS
 - Language: TypeScript
-- Database: PostgreSQL
+- Database: MongoDB
 - ORM: Prisma
 - Auth: JWT access token + refresh token
 - Validation: class-validator, class-transformer
@@ -23,7 +23,7 @@ npm install
 Tao file `.env` tu `.env.example`, sau do cap nhat cac bien chinh:
 
 ```env
-DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/lexi_db?schema=public"
+MONGODB_URI="mongodb+srv://USER:PASSWORD@HOST/Lexi"
 PORT=3000
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 JWT_SECRET=change_me
@@ -47,7 +47,7 @@ Neu khong co env nao, local dev se fallback sang `backend/firebase-service-accou
 Chay migration va generate Prisma Client:
 
 ```bash
-npx prisma migrate dev
+npx prisma db push
 npx prisma generate
 ```
 
@@ -175,7 +175,7 @@ src/modules/learning/progress/
 
 ## 6. Backend Hardening
 
-- `ConfigModule` dung `validateEnv` de bat buoc cac bien `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET` va validate `PORT`.
+- `ConfigModule` dung `validateEnv` de bat buoc cac bien `MONGODB_URI`, `JWT_SECRET`, `JWT_REFRESH_SECRET` va validate `PORT`.
 - Production yeu cau `JWT_SECRET` va `JWT_REFRESH_SECRET` toi thieu 32 ky tu.
 - `main.ts` cau hinh CORS tu `CORS_ORIGINS`; neu production khong khai bao origin thi CORS se bi tat.
 - Swagger chi bat khi `NODE_ENV` khac `production`.

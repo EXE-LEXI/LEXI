@@ -88,10 +88,20 @@ export class BadgesRepository {
       return [];
     }
 
-    await tx.userBadge.createMany({
-      data: userBadges,
-      skipDuplicates: true,
-    });
+    await Promise.all(
+      userBadges.map((userBadge) =>
+        tx.userBadge.upsert({
+          where: {
+            userId_badgeId: {
+              userId: userBadge.userId,
+              badgeId: userBadge.badgeId,
+            },
+          },
+          create: userBadge,
+          update: {},
+        })
+      )
+    );
 
     return newBadges.map((badge) => ({
       ...badge,

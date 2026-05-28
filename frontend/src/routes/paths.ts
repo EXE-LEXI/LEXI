@@ -4,6 +4,10 @@ export const ROUTES = {
   register: "/register",
   dashboard: "/dashboard",
   modules: "/modules",
+  review: "/review",
+  leaderboard: "/leaderboard",
+  settings: "/settings",
+  admin: "/admin",
   lesson: "/lessons/:lessonId",
   profile: "/profile",
 } as const;
