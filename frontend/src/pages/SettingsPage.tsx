@@ -43,21 +43,21 @@ export function SettingsPage({
 
   return (
     <main className="page">
-      <p className="eyebrow">Comms Console</p>
-      <h1>Nhac hoc va thiet bi</h1>
-      {isLoading ? <p className="notice">Loading settings...</p> : null}
+      <p className="eyebrow">Bảng Điều Khiển Liên Lạc</p>
+      <h1>Nhắc học và thiết bị</h1>
+      {isLoading ? <p className="notice">Đang tải cấu hình cài đặt...</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
 
       <section className="wide-grid">
         <form className="panel form settings-form" onSubmit={handleSubmit}>
-          <h2>Notification Preferences</h2>
+          <h2>Cấu hình nhận thông báo</h2>
           <label className="toggle-row">
             <input
               name="dailyReminderEnabled"
               type="checkbox"
               defaultChecked={preferences?.dailyReminderEnabled}
             />
-            Daily reminder
+            Nhắc nhở học tập hàng ngày
           </label>
           <label className="toggle-row">
             <input
@@ -65,7 +65,7 @@ export function SettingsPage({
               type="checkbox"
               defaultChecked={preferences?.streakReminderEnabled}
             />
-            Streak reminder
+            Nhắc nhở duy trì chuỗi học (Streak)
           </label>
           <label className="toggle-row">
             <input
@@ -73,10 +73,10 @@ export function SettingsPage({
               type="checkbox"
               defaultChecked={preferences?.reviewReminderEnabled}
             />
-            Review reminder
+            Nhắc nhở ôn luyện bài cũ
           </label>
           <label>
-            Reminder hour
+            Giờ nhắc nhở học
             <input
               name="reminderHour"
               type="number"
@@ -86,7 +86,7 @@ export function SettingsPage({
             />
           </label>
           <label>
-            Timezone
+            Múi giờ hoạt động
             <input
               name="timezone"
               defaultValue={preferences?.timezone ?? "Asia/Ho_Chi_Minh"}
@@ -94,7 +94,7 @@ export function SettingsPage({
           </label>
           <div className="two-fields">
             <label>
-              Quiet start
+              Bắt đầu giờ yên tĩnh (Không thông báo)
               <input
                 name="quietHoursStart"
                 type="number"
@@ -104,7 +104,7 @@ export function SettingsPage({
               />
             </label>
             <label>
-              Quiet end
+              Kết thúc giờ yên tĩnh
               <input
                 name="quietHoursEnd"
                 type="number"
@@ -115,18 +115,17 @@ export function SettingsPage({
             </label>
           </div>
           <button className="button button-primary" type="submit">
-            Save comms
+            Lưu cấu hình thông báo
           </button>
         </form>
 
         <article className="panel">
-          <h2>Device Token</h2>
+          <h2>Mã định danh thiết bị (Device Token)</h2>
           <p className="muted">
-            Paste a Firebase registration token to exercise the backend device
-            token endpoints.
+            Dán mã Firebase registration token để kiểm thử hệ thống gửi nhận thông báo đẩy trực tiếp từ máy chủ backend.
           </p>
           <label className="form">
-            Web token
+            Mã định danh Web token
             <input
               value={deviceToken}
               onChange={(event) => onDeviceTokenChange(event.target.value)}
@@ -139,7 +138,7 @@ export function SettingsPage({
               disabled={!deviceToken}
               onClick={onRegisterDeviceToken}
             >
-              Register
+              Đăng ký thiết bị
             </button>
             <button
               className="button button-secondary"
@@ -147,7 +146,7 @@ export function SettingsPage({
               disabled={!deviceToken}
               onClick={onRevokeDeviceToken}
             >
-              Revoke
+              Hủy liên kết
             </button>
           </div>
         </article>
@@ -155,3 +154,4 @@ export function SettingsPage({
     </main>
   );
 }
+export default SettingsPage;

@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "../components/layout/AppLayout";
 import { AdminPage } from "../pages/AdminPage";
-import { DashboardPage } from "../pages/DashboardPage";
 import { LessonPage } from "../pages/LessonPage";
 import { LoginPage } from "../pages/LoginPage";
+import { LandingPage } from "../pages/LandingPage";
 import { ModulesPage } from "../pages/ModulesPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
+import { ProfilePage } from "../pages/ProfilePage";
+import { ResourcesPage } from "../pages/ResourcesPage";
 import { ReviewPage } from "../pages/ReviewPage";
 import { SettingsPage } from "../pages/SettingsPage";
+import { ShortsPage } from "../pages/ShortsPage";
+import { GamePage } from "../pages/GamePage";
 import {
   getAdminLessonDrafts,
   getAdminLessons,
@@ -115,7 +119,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!session && page.path !== ROUTES.login && page.path !== ROUTES.register) {
+    if (!session && page.path !== ROUTES.home && page.path !== ROUTES.login && page.path !== ROUTES.register) {
       navigate(ROUTES.login, true);
     }
   }, [session, page.path]);
@@ -440,32 +444,29 @@ function App() {
 
   const mode = page.path === ROUTES.register ? "register" : "login";
 
+  if (!session) {
+    if (page.path === ROUTES.home) {
+      return <LandingPage onNavigate={navigate} />;
+    }
+    return (
+      <LoginPage
+        mode={mode}
+        isSubmitting={isAuthSubmitting}
+        error={authError}
+        onSubmit={handleAuthSubmit}
+        onModeChange={(nextMode) =>
+          navigate(nextMode === "register" ? ROUTES.register : ROUTES.login)
+        }
+      />
+    );
+  }
+
   return (
     <AppLayout session={session} onNavigate={navigate} onLogout={handleLogout}>
-      {!session ? (
-        <LoginPage
-          mode={mode}
-          isSubmitting={isAuthSubmitting}
-          error={authError}
-          onSubmit={handleAuthSubmit}
-          onModeChange={(nextMode) =>
-            navigate(nextMode === "register" ? ROUTES.register : ROUTES.login)
-          }
-        />
-      ) : page.path === ROUTES.home || page.path === ROUTES.dashboard ? (
-        <DashboardPage
-          apiBaseUrl={API_BASE_URL}
-          summary={summary}
-          currentLesson={currentLesson}
-          challenges={challenges}
-          badges={badges}
-          leaderboard={leaderboard}
-          recommendations={recommendations}
-          isLoading={loading}
-          error={pageError}
-          onOpenModules={() => navigate(ROUTES.modules)}
-          onOpenLesson={(id) => navigate(`/lessons/${id}`)}
-          onClaimChallenge={handleClaimChallenge}
+      {page.path === ROUTES.home || page.path === ROUTES.dashboard ? (
+        <LandingPage
+          onNavigate={navigate}
+          session={session}
         />
       ) : page.path === ROUTES.modules ? (
         <ModulesPage
@@ -476,6 +477,8 @@ function App() {
           error={pageError}
           onSelectCategory={setSelectedCategoryId}
           onOpenLesson={(id) => navigate(`/lessons/${id}`)}
+          session={session}
+          onNavigate={navigate}
         />
       ) : page.path === ROUTES.review ? (
         <ReviewPage
@@ -505,6 +508,23 @@ function App() {
           deliveryLogs={adminLogs}
           isLoading={loading}
           error={pageError}
+        />
+      ) : page.path === ROUTES.profile ? (
+        <ProfilePage
+          session={session}
+          onNavigate={navigate}
+        />
+      ) : page.path === ROUTES.resources ? (
+        <ResourcesPage />
+      ) : page.path === ROUTES.shorts ? (
+        <ShortsPage
+          session={session}
+          onNavigate={navigate}
+        />
+      ) : page.path === ROUTES.game ? (
+        <GamePage
+          session={session}
+          onNavigate={navigate}
         />
       ) : lessonId ? (
         <LessonPage
