@@ -45,6 +45,17 @@ export type AdminDeliveryLog = {
   createdAt?: string;
 };
 
+export type AdminCrawlError = {
+  url: string;
+  message: string;
+};
+
+export type AdminCrawlResponse = {
+  sources: AdminSource[];
+  drafts: AdminDraft[];
+  errors: AdminCrawlError[];
+};
+
 export function getAdminLessons(token: string) {
   return apiRequest<PaginatedResponse<AdminLesson>>("/admin/lessons", {
     token,
@@ -75,4 +86,35 @@ export function getAdminNotificationLogs(token: string) {
     "/admin/notifications/delivery-logs",
     { token }
   );
+}
+
+export function crawlAdminLegalSources(
+  token: string,
+  body: {
+    urls: string[];
+    moduleId?: string | null;
+    generateDrafts?: boolean;
+    questionCount?: number;
+  }
+) {
+  return apiRequest<AdminCrawlResponse>("/admin/sources/crawl", {
+    method: "POST",
+    token,
+    body,
+  });
+}
+
+export function processAdminLegalSources(
+  token: string,
+  body: {
+    moduleId?: string | null;
+    limit?: number;
+    questionCount?: number;
+  }
+) {
+  return apiRequest<AdminDraft[]>("/admin/ai/legal-sources/process", {
+    method: "POST",
+    token,
+    body,
+  });
 }

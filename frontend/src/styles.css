@@ -1040,6 +1040,109 @@ h1 {
   border-color: rgba(255, 255, 255, 0.08);
 }
 
+.admin-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 32px;
+}
+
+.admin-action-panel {
+  min-height: 100%;
+}
+
+.admin-action-description {
+  margin: -8px 0 16px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.admin-action-form {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-action-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.admin-action-form input,
+.admin-action-form textarea {
+  width: 100%;
+  border: 1px solid var(--color-glass-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  color: var(--color-text-white);
+  background: rgba(0, 0, 0, 0.32);
+  font-size: 14px;
+  resize: vertical;
+}
+
+.admin-action-form textarea:focus,
+.admin-action-form input:focus {
+  outline: none;
+  border-color: var(--color-glass-border-focus);
+  box-shadow: var(--shadow-neon-green);
+}
+
+.admin-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+}
+
+.admin-result-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.admin-result-strip div {
+  border: 1px solid var(--color-glass-border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  display: grid;
+  gap: 4px;
+}
+
+.admin-result-strip strong {
+  font-size: 28px;
+  color: var(--color-gold);
+  font-family: var(--font-title);
+}
+
+.admin-result-strip span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.admin-error-panel {
+  margin-top: 20px;
+}
+
 .quest-list li {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

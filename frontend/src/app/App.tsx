@@ -13,11 +13,14 @@ import { SettingsPage } from "../pages/SettingsPage";
 import { ShortsPage } from "../pages/ShortsPage";
 import { GamePage } from "../pages/GamePage";
 import {
+  crawlAdminLegalSources,
   getAdminLessonDrafts,
   getAdminLessons,
   getAdminMediaAssets,
   getAdminNotificationLogs,
   getAdminSources,
+  processAdminLegalSources,
+  type AdminCrawlResponse,
   type AdminDeliveryLog,
   type AdminDraft,
   type AdminLesson,
@@ -101,6 +104,7 @@ function App() {
   const [adminDrafts, setAdminDrafts] = useState<AdminDraft[]>([]);
   const [adminMedia, setAdminMedia] = useState<AdminMediaAsset[]>([]);
   const [adminLogs, setAdminLogs] = useState<AdminDeliveryLog[]>([]);
+  const [adminCrawlResult, setAdminCrawlResult] = useState<AdminCrawlResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
 
@@ -293,6 +297,10 @@ function App() {
     }
   }
 
+  async function refreshAdmin(token: string) {
+    await loadAdmin(token);
+  }
+
   async function handleAuthSubmit(payload: {
     email: string;
     password: string;
@@ -442,6 +450,50 @@ function App() {
     }
   }
 
+  async function handleCrawlLegalSources(payload: {
+    urls: string[];
+    moduleId?: string | null;
+    generateDrafts?: boolean;
+    questionCount?: number;
+  }) {
+    if (!session) {
+      return;
+    }
+
+    setLoading(true);
+    setPageError(null);
+    try {
+      const result = await crawlAdminLegalSources(session.accessToken, payload);
+      setAdminCrawlResult(result);
+      await refreshAdmin(session.accessToken);
+    } catch (error) {
+      setPageError(getErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleProcessLegalSources(payload: {
+    moduleId?: string | null;
+    limit?: number;
+    questionCount?: number;
+  }) {
+    if (!session) {
+      return;
+    }
+
+    setLoading(true);
+    setPageError(null);
+    try {
+      await processAdminLegalSources(session.accessToken, payload);
+      await refreshAdmin(session.accessToken);
+    } catch (error) {
+      setPageError(getErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const mode = page.path === ROUTES.register ? "register" : "login";
 
   if (!session) {
@@ -508,6 +560,9 @@ function App() {
           deliveryLogs={adminLogs}
           isLoading={loading}
           error={pageError}
+          crawlResult={adminCrawlResult}
+          onCrawlLegalSources={handleCrawlLegalSources}
+          onProcessLegalSources={handleProcessLegalSources}
         />
       ) : page.path === ROUTES.profile ? (
         <ProfilePage

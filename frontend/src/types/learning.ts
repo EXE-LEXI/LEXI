@@ -200,3 +200,99 @@ export type NotificationPreferences = {
   createdAt: string;
   updatedAt: string;
 };
+
+// AI Learning Features
+export type ContentRecommendation = {
+  lessonId: string;
+  title: string;
+  reason: string;
+  difficulty: "beginner" | "intermediate" | "advanced";
+  estimatedMinutes: number;
+  relevantScore: number;
+};
+
+export type UserLearningProfile = {
+  userId: string;
+  completedLessonsCount: number;
+  averageScore: number;
+  weakAreas: string[];
+  strongAreas: string[];
+  learningPace: "slow" | "medium" | "fast";
+  recommendedNextTopics: string[];
+};
+
+export type AdaptiveQuestionOption = {
+  id: string;
+  text: string;
+};
+
+export type AdaptiveQuestion = {
+  questionId: string;
+  questionText: string;
+  difficulty: "easy" | "medium" | "hard";
+  explanation: string;
+  options: AdaptiveQuestionOption[];
+  hintAvailable: boolean;
+};
+
+export type LearningMilestone = {
+  name: string;
+  completed: boolean;
+  progress: number;
+};
+
+export type LearningPath = {
+  userId: string;
+  currentPhase: string;
+  completedTopics: string[];
+  nextTopics: string[];
+  estimatedCompletionDays: number;
+  milestones: LearningMilestone[];
+};
+
+export type PerformanceFeedback = {
+  overallFeedback: string;
+  strengths: string[];
+  areasForImprovement: string[];
+  nextSteps: string[];
+  motivationalMessage: string;
+};
+
+export type QuizImprovement = {
+  suggestion: string;
+  focusAreas: string[];
+  recommendedReview: string[];
+};
+
+export type LearningConsistency = {
+  consistency: number;
+  streak: number;
+  recommendedSchedule: string;
+  motivationalMessage: string;
+};
+
+export type KnowledgeGap = {
+  gap: string;
+  relatedTopics: string[];
+  suggestedLessons: string[];
+};
+
+export type LearningPattern = {
+  bestTimeToStudy: string[];
+  suggestedSessionDuration: number;
+  suggestedFrequency: string;
+  learningStyle: string;
+};
+
+export type ReviewRecommendationItem = {
+  lessonId: string;
+  title: string;
+  reason: string;
+  lastReviewedAt: string | null;
+};
+
+export type QuestionHint = {
+  hint: string;
+  hintLevel: number;
+  remainingAttempts: number;
+};

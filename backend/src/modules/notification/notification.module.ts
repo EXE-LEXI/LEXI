@@ -17,4 +17,4 @@ import { DailyReminderWorker } from "./services/daily-reminder.worker";
     DailyReminderWorker,
   ],
 })
-export class NotificationModule { }
+export class NotificationModule {}

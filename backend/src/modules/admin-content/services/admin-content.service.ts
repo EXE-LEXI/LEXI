@@ -18,6 +18,7 @@ import {
   Prisma,
 } from "@prisma/client";
 import { AttachMediaAssetToLessonDto } from "../dto/request/attach-media-asset-to-lesson.dto";
+import { CrawlAdminLegalSourcesDto } from "../dto/request/crawl-admin-legal-sources.dto";
 import { CreateAdminMediaAssetDto } from "../dto/request/create-admin-media-asset.dto";
 import {
   DEFAULT_MODULES_LIMIT,
@@ -30,6 +31,7 @@ import { GetAdminLegalSourcesQueryDto } from "../dto/request/get-admin-legal-sou
 import { GetAdminLessonDraftsQueryDto } from "../dto/request/get-admin-lesson-drafts-query.dto";
 import { GetAdminMediaAssetsQueryDto } from "../dto/request/get-admin-media-assets-query.dto";
 import { GetAdminNotificationDeliveryLogsQueryDto } from "../dto/request/get-admin-notification-delivery-logs-query.dto";
+import { ProcessAdminLegalSourcesDto } from "../dto/request/process-admin-legal-sources.dto";
 import { CreateAdminQuestionDto } from "../dto/request/create-admin-question.dto";
 import { GetAdminLessonsQueryDto } from "../dto/request/get-admin-lessons-query.dto";
 import { UpdateAdminLegalSourceDto } from "../dto/request/update-admin-legal-source.dto";
@@ -41,6 +43,7 @@ import {
   AdminLegalSourceListResponseDto,
   AdminLegalSourceResponseDto,
 } from "../dto/response/admin-legal-source-response.dto";
+import { AdminLegalSourceCrawlResponseDto } from "../dto/response/admin-legal-source-crawl-response.dto";
 import {
   AdminLessonDraftListResponseDto,
   AdminLessonDraftResponseDto,
@@ -116,6 +119,84 @@ export class AdminContentService {
     const data = this.buildLegalSourceCreateData(createDto);
     const source = await this.adminContentRepository.createLegalSource(data);
     return AdminContentMapper.toLegalSource(source);
+  }
+
+  async crawlLegalSources(
+    dto: CrawlAdminLegalSourcesDto
+  ): Promise<AdminLegalSourceCrawlResponseDto> {
+    const sources: AdminLegalSourceResponseDto[] = [];
+    const drafts: AdminLessonDraftResponseDto[] = [];
+    const errors: { url: string; message: string }[] = [];
+
+    for (const url of dto.urls) {
+      try {
+        const existingSource =
+          await this.adminContentRepository.findLegalSourceByUrl(url);
+        const crawled = await this.fetchLegalDocumentFromUrl(url);
+        const data = this.buildLegalSourceCreateData({
+          title: crawled.title,
+          sourceUrl: url,
+          legalDocumentNo: crawled.legalDocumentNo,
+          effectiveDate: crawled.effectiveDate,
+          rawText: crawled.rawText,
+          normalizedText: crawled.normalizedText,
+          crawlStatus: LegalSourceCrawlStatus.CRAWLED,
+          crawledAt: new Date().toISOString(),
+        });
+        const source = await this.adminContentRepository.upsertLegalSourceByUrl(
+          {
+            sourceUrl: url,
+            create: data,
+            update: data,
+          }
+        );
+        const sourceDto = AdminContentMapper.toLegalSource(source);
+        sources.push(sourceDto);
+
+        if (
+          (dto.generateDrafts ?? true) &&
+          !existingSource?.lessonDrafts?.length
+        ) {
+          drafts.push(
+            await this.generateLessonDraft({
+              sourceDocumentId: source.id,
+              moduleId: dto.moduleId,
+              questionCount: dto.questionCount,
+            })
+          );
+        }
+      } catch (error) {
+        errors.push({
+          url,
+          message:
+            error instanceof Error ? error.message : "Unknown crawl failure",
+        });
+      }
+    }
+
+    return { sources, drafts, errors };
+  }
+
+  async processCrawledLegalSources(
+    dto: ProcessAdminLegalSourcesDto
+  ): Promise<AdminLessonDraftResponseDto[]> {
+    const sources =
+      await this.adminContentRepository.findCrawledLegalSourcesWithoutDrafts({
+        limit: dto.limit ?? 20,
+      });
+    const drafts: AdminLessonDraftResponseDto[] = [];
+
+    for (const source of sources) {
+      drafts.push(
+        await this.generateLessonDraft({
+          sourceDocumentId: source.id,
+          moduleId: dto.moduleId,
+          questionCount: dto.questionCount,
+        })
+      );
+    }
+
+    return drafts;
   }
 
   async updateLegalSource(
@@ -479,6 +560,154 @@ export class AdminContentService {
       };
     }
     return where;
+  }
+
+  private async fetchLegalDocumentFromUrl(url: string): Promise<{
+    title: string;
+    legalDocumentNo?: string | null;
+    effectiveDate?: string | null;
+    rawText: string;
+    normalizedText: string;
+  }> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+
+    try {
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          Accept: "text/html,text/plain,application/xhtml+xml",
+          "User-Agent": "LEXI legal-source-crawler/1.0",
+        },
+      });
+
+      if (!response.ok) {
+        throw new BadRequestException(
+          `Crawl failed with status ${response.status}`
+        );
+      }
+
+      const body = await response.text();
+      const contentType = response.headers.get("content-type") ?? "";
+      const rawText = contentType.includes("text/plain")
+        ? body
+        : this.htmlToText(body);
+      const normalizedText = this.normalizeLegalSourceText(
+        this.limitCrawledText(rawText)
+      );
+
+      if (normalizedText.length < 100) {
+        throw new BadRequestException(
+          "Crawled content is too short to be a legal document"
+        );
+      }
+
+      const htmlTitle = contentType.includes("text/plain")
+        ? null
+        : this.extractHtmlTitle(body);
+      const title =
+        htmlTitle ??
+        this.truncateText(normalizedText.split(/[.\n]/)[0] ?? "", 140) ??
+        url;
+
+      return {
+        title,
+        legalDocumentNo: this.extractLegalDocumentNo(normalizedText),
+        effectiveDate: this.extractEffectiveDate(normalizedText),
+        rawText: this.limitCrawledText(rawText),
+        normalizedText,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new BadRequestException("Crawl request timed out");
+      }
+      throw new BadRequestException(
+        error instanceof Error ? error.message : "Unable to crawl URL"
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private htmlToText(html: string): string {
+    return this.decodeHtmlEntities(
+      html
+        .replace(/<script[\s\S]*?<\/script>/gi, " ")
+        .replace(/<style[\s\S]*?<\/style>/gi, " ")
+        .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+        .replace(/<svg[\s\S]*?<\/svg>/gi, " ")
+        .replace(/<\/(p|div|section|article|tr|li|h[1-6])>/gi, "\n")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim()
+    );
+  }
+
+  private extractHtmlTitle(html: string): string | null {
+    const headingMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+    const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    const value = headingMatch?.[1] ?? titleMatch?.[1];
+    if (!value) {
+      return null;
+    }
+    return this.truncateText(this.htmlToText(value), 180);
+  }
+
+  private extractLegalDocumentNo(text: string): string | null {
+    const match = text.match(
+      /\b\d{1,4}\/\d{4}\/[A-Z0-9Đ]+(?:-[A-Z0-9Đ]+){0,4}\b/u
+    );
+    return match?.[0] ?? null;
+  }
+
+  private extractEffectiveDate(text: string): string | null {
+    const match = text.match(
+      /(?:có hiệu lực|hiệu lực thi hành)[^.\n]{0,120}?(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/iu
+    );
+    if (!match) {
+      return null;
+    }
+    const day = match[1].padStart(2, "0");
+    const month = match[2].padStart(2, "0");
+    return `${match[3]}-${month}-${day}T00:00:00.000Z`;
+  }
+
+  private decodeHtmlEntities(value: string): string {
+    const namedEntities: Record<string, string> = {
+      amp: "&",
+      gt: ">",
+      lt: "<",
+      nbsp: " ",
+      quot: '"',
+      apos: "'",
+    };
+
+    return value.replace(/&(#\d+|#x[\da-f]+|[a-z]+);/gi, (_, entity) => {
+      const key = String(entity).toLowerCase();
+      if (key.startsWith("#x")) {
+        return String.fromCodePoint(Number.parseInt(key.slice(2), 16));
+      }
+      if (key.startsWith("#")) {
+        return String.fromCodePoint(Number.parseInt(key.slice(1), 10));
+      }
+      return namedEntities[key] ?? `&${entity};`;
+    });
+  }
+
+  private limitCrawledText(value: string): string {
+    const maxLength = Number.parseInt(
+      this.getConfigValue("LEGAL_CRAWL_MAX_TEXT_LENGTH") ?? "250000",
+      10
+    );
+    if (!Number.isInteger(maxLength) || maxLength <= 0) {
+      return value;
+    }
+    return value.length > maxLength ? value.slice(0, maxLength) : value;
   }
 
   private buildLegalSourceWhere(

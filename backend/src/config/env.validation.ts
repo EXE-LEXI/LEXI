@@ -30,6 +30,12 @@ export function validateEnv(config: EnvConfig) {
     NODE_ENV: nodeEnv,
     PORT: port,
     CORS_ORIGINS: config.CORS_ORIGINS ?? "",
+    LEGAL_SOURCE_CRAWL_ENABLED: config.LEGAL_SOURCE_CRAWL_ENABLED ?? "false",
+    LEGAL_SOURCE_CRAWL_CRON: config.LEGAL_SOURCE_CRAWL_CRON ?? "0 2 * * *",
+    LEGAL_SOURCE_CRAWL_URLS: config.LEGAL_SOURCE_CRAWL_URLS ?? "",
+    LEGAL_SOURCE_CRAWL_MODULE_ID: config.LEGAL_SOURCE_CRAWL_MODULE_ID ?? "",
+    LEGAL_SOURCE_CRAWL_QUESTION_COUNT:
+      config.LEGAL_SOURCE_CRAWL_QUESTION_COUNT ?? "3",
   };
 }
 
