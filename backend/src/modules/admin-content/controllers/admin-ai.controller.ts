@@ -21,6 +21,7 @@ import { RolesGuard } from "../../auth/guards/roles.guard";
 import { CreateLessonFromDraftDto } from "../dto/request/create-lesson-from-draft.dto";
 import { GenerateAdminLessonDraftDto } from "../dto/request/generate-admin-lesson-draft.dto";
 import { GetAdminLessonDraftsQueryDto } from "../dto/request/get-admin-lesson-drafts-query.dto";
+import { ProcessAdminLegalSourcesDto } from "../dto/request/process-admin-legal-sources.dto";
 import { UpdateAdminLessonDraftDto } from "../dto/request/update-admin-lesson-draft.dto";
 import { AdminLessonDetailResponseDto } from "../dto/response/admin-lesson-response.dto";
 import {
@@ -44,6 +45,17 @@ export class AdminAiController {
     @Body() dto: GenerateAdminLessonDraftDto
   ): Promise<AdminLessonDraftResponseDto> {
     return this.adminContentService.generateLessonDraft(dto);
+  }
+
+  @Post("legal-sources/process")
+  @ApiOperation({
+    summary: "Generate AI lesson drafts from crawled legal sources",
+  })
+  @ApiOkResponse({ type: AdminLessonDraftResponseDto, isArray: true })
+  processLegalSources(
+    @Body() dto: ProcessAdminLegalSourcesDto
+  ): Promise<AdminLessonDraftResponseDto[]> {
+    return this.adminContentService.processCrawledLegalSources(dto);
   }
 
   @Get("lesson-drafts")

@@ -19,9 +19,11 @@ import { UserRole } from "@prisma/client";
 import { Roles } from "../../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../../auth/guards/roles.guard";
+import { CrawlAdminLegalSourcesDto } from "../dto/request/crawl-admin-legal-sources.dto";
 import { CreateAdminLegalSourceDto } from "../dto/request/create-admin-legal-source.dto";
 import { GetAdminLegalSourcesQueryDto } from "../dto/request/get-admin-legal-sources-query.dto";
 import { UpdateAdminLegalSourceDto } from "../dto/request/update-admin-legal-source.dto";
+import { AdminLegalSourceCrawlResponseDto } from "../dto/response/admin-legal-source-crawl-response.dto";
 import {
   AdminLegalSourceListResponseDto,
   AdminLegalSourceResponseDto,
@@ -52,6 +54,18 @@ export class AdminSourcesController {
     @Body() createDto: CreateAdminLegalSourceDto
   ): Promise<AdminLegalSourceResponseDto> {
     return this.adminContentService.createLegalSource(createDto);
+  }
+
+  @Post("crawl")
+  @ApiOperation({
+    summary:
+      "Crawl Vietnamese legal documents and optionally generate AI drafts",
+  })
+  @ApiOkResponse({ type: AdminLegalSourceCrawlResponseDto })
+  crawlLegalSources(
+    @Body() dto: CrawlAdminLegalSourcesDto
+  ): Promise<AdminLegalSourceCrawlResponseDto> {
+    return this.adminContentService.crawlLegalSources(dto);
   }
 
   @Get(":sourceId")

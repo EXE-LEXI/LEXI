@@ -176,6 +176,187 @@ test("admin can create and update legal source documents", async () => {
   assert.equal(updateData.contentHash.length, 64);
 });
 
+test("admin can crawl legal source URLs and generate AI drafts", async () => {
+  const originalFetch = global.fetch;
+  let upsertArgs;
+  let generatedArgs;
+
+  global.fetch = async () => ({
+    ok: true,
+    headers: {
+      get: () => "text/html; charset=utf-8",
+    },
+    text: async () => `
+      <html>
+        <head><title>Traffic Safety Law</title></head>
+        <body>
+          <h1>Traffic Safety Law</h1>
+          <p>Document 23/2008/QH12. Road users must obey traffic signals and road signs.</p>
+          <p>The document takes effect on 01/07/2009 and applies to all drivers on public roads.</p>
+          <p>This body is intentionally long enough to pass the crawler threshold and verify the full crawl pipeline.</p>
+        </body>
+      </html>
+    `,
+  });
+
+  try {
+    const service = new AdminContentService({
+      findLegalSourceByUrl: async () => null,
+      upsertLegalSourceByUrl: async (args) => {
+        upsertArgs = args;
+        return legalSourceFixture({
+          id: "source-crawled-1",
+          title: args.create.title,
+          sourceUrl: args.sourceUrl,
+          legalDocumentNo: args.create.legalDocumentNo,
+          effectiveDate: args.create.effectiveDate,
+          rawText: args.create.rawText,
+          normalizedText: args.create.normalizedText,
+        });
+      },
+      findLegalSourceById: async () =>
+        legalSourceFixture({
+          id: "source-crawled-1",
+          title: "Traffic Safety Law",
+          normalizedText: "Road users must obey traffic signals.",
+        }),
+      createGeneratedLessonDraft: async (args) => {
+        generatedArgs = args;
+        return lessonDraftFixture({
+          title: args.draftData.title,
+          questions: args.questions.map((question) =>
+            draftQuestionFixture({
+              questionText: question.questionText,
+              explanation: question.explanation,
+              sortOrder: question.sortOrder,
+              options: question.options.map((option) =>
+                draftOptionFixture(option)
+              ),
+            })
+          ),
+        });
+      },
+    });
+
+    const response = await service.crawlLegalSources({
+      urls: ["https://example.vn/van-ban/traffic"],
+      moduleId: "module-1",
+      questionCount: 2,
+    });
+
+    assert.equal(response.errors.length, 0);
+    assert.equal(response.sources.length, 1);
+    assert.equal(response.drafts.length, 1);
+    assert.equal(upsertArgs.sourceUrl, "https://example.vn/van-ban/traffic");
+    assert.equal(upsertArgs.create.legalDocumentNo, "23/2008/QH12");
+    assert.ok(upsertArgs.create.effectiveDate instanceof Date);
+    assert.equal(generatedArgs.sourceDocumentId, "source-crawled-1");
+    assert.equal(generatedArgs.moduleId, "module-1");
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test("admin crawl skips draft generation when source already has drafts", async () => {
+  const originalFetch = global.fetch;
+  let generatedDraftCount = 0;
+
+  global.fetch = async () => ({
+    ok: true,
+    headers: {
+      get: () => "text/html; charset=utf-8",
+    },
+    text: async () => `
+      <html>
+        <head><title>Existing Draft Law</title></head>
+        <body>
+          <h1>Existing Draft Law</h1>
+          <p>Document 99/2024/QH15. This content is long enough for the crawler threshold.</p>
+          <p>The record already has a draft, so the scheduled run must not create a duplicate draft for the same source.</p>
+        </body>
+      </html>
+    `,
+  });
+
+  try {
+    const service = new AdminContentService({
+      findLegalSourceByUrl: async () =>
+        legalSourceFixture({
+          id: "source-existing-draft",
+          title: "Existing Draft Law",
+          lessonDrafts: [{ id: "draft-existing" }],
+        }),
+      upsertLegalSourceByUrl: async (args) =>
+        legalSourceFixture({
+          id: "source-existing-draft",
+          title: args.create.title,
+          sourceUrl: args.sourceUrl,
+          legalDocumentNo: args.create.legalDocumentNo,
+          rawText: args.create.rawText,
+          normalizedText: args.create.normalizedText,
+        }),
+      createGeneratedLessonDraft: async () => {
+        generatedDraftCount += 1;
+        return lessonDraftFixture();
+      },
+    });
+
+    const response = await service.crawlLegalSources({
+      urls: ["https://example.vn/van-ban/da-co-draft"],
+      generateDrafts: true,
+    });
+
+    assert.equal(response.sources.length, 1);
+    assert.equal(response.drafts.length, 0);
+    assert.equal(generatedDraftCount, 0);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+test("admin can process crawled legal sources without drafts", async () => {
+  let findArgs;
+  const service = new AdminContentService({
+    findCrawledLegalSourcesWithoutDrafts: async (args) => {
+      findArgs = args;
+      return [
+        legalSourceFixture({
+          id: "source-unprocessed-1",
+          normalizedText: "Nguoi hoc can nam quy dinh phap luat co ban.",
+        }),
+      ];
+    },
+    findLegalSourceById: async () =>
+      legalSourceFixture({
+        id: "source-unprocessed-1",
+        normalizedText: "Nguoi hoc can nam quy dinh phap luat co ban.",
+      }),
+    createGeneratedLessonDraft: async (args) =>
+      lessonDraftFixture({
+        title: args.draftData.title,
+        questions: args.questions.map((question) =>
+          draftQuestionFixture({
+            questionText: question.questionText,
+            explanation: question.explanation,
+            sortOrder: question.sortOrder,
+            options: question.options.map((option) =>
+              draftOptionFixture(option)
+            ),
+          })
+        ),
+      }),
+  });
+
+  const drafts = await service.processCrawledLegalSources({
+    moduleId: "module-1",
+    limit: 5,
+    questionCount: 1,
+  });
+
+  assert.equal(findArgs.limit, 5);
+  assert.equal(drafts.length, 1);
+  assert.equal(drafts[0].questions.length, 1);
+});
+
 test("admin can generate lesson draft from legal source", async () => {
   let generatedArgs;
   const service = new AdminContentService({

@@ -307,35 +307,40 @@ async function seedLearningContent() {
       categoryId: categories.traffic.id,
       slug: "giay-to-khi-di-duong",
       title: "Giay to khi di duong",
-      description: "GPLX, dang ky xe, bao hiem va cach ung xu khi duoc kiem tra.",
+      description:
+        "GPLX, dang ky xe, bao hiem va cach ung xu khi duoc kiem tra.",
       sortOrder: 2,
     }),
     antiScam: await upsertModule({
       categoryId: categories.digital.id,
       slug: "phishing-va-lua-dao",
       title: "Phishing va lua dao",
-      description: "Dau hieu canh bao khi nhan link, ma OTP hoac loi moi dau tu.",
+      description:
+        "Dau hieu canh bao khi nhan link, ma OTP hoac loi moi dau tu.",
       sortOrder: 1,
     }),
     accountSafety: await upsertModule({
       categoryId: categories.digital.id,
       slug: "bao-ve-tai-khoan",
       title: "Bao ve tai khoan",
-      description: "Mat khau, OTP, thiet bi dang nhap va cac buoc khoa tai khoan.",
+      description:
+        "Mat khau, OTP, thiet bi dang nhap va cac buoc khoa tai khoan.",
       sortOrder: 2,
     }),
     scamInvestment: await upsertModule({
       categoryId: categories.scam.id,
       slug: "lua-dao-dau-tu",
       title: "Lua dao dau tu",
-      description: "Nhan dien loi moi loi nhuan cao, app gia mao va nho nap tien.",
+      description:
+        "Nhan dien loi moi loi nhuan cao, app gia mao va nho nap tien.",
       sortOrder: 1,
     }),
     scamShopping: await upsertModule({
       categoryId: categories.scam.id,
       slug: "lua-dao-mua-ban",
       title: "Lua dao mua ban",
-      description: "Chuyen khoan coc, shop ao va cach giu bang chung giao dich.",
+      description:
+        "Chuyen khoan coc, shop ao va cach giu bang chung giao dich.",
       sortOrder: 2,
     }),
     shopping: await upsertModule({
@@ -349,7 +354,8 @@ async function seedLearningContent() {
       categoryId: categories.consumer.id,
       slug: "bao-hanh-va-doi-tra",
       title: "Bao hanh va doi tra",
-      description: "Khi nao duoc bao hanh, doi hang va cach gui yeu cau ro rang.",
+      description:
+        "Khi nao duoc bao hanh, doi hang va cach gui yeu cau ro rang.",
       sortOrder: 2,
     }),
   };
@@ -365,7 +371,8 @@ async function seedLearningContent() {
       sourceUrl: "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=137155",
       legalDocumentNo: "45/2019/QH14",
       effectiveDate: new Date("2021-01-01T00:00:00.000Z"),
-      reviewerNote: "Demo summary for learning only; check source law before applying.",
+      reviewerNote:
+        "Demo summary for learning only; check source law before applying.",
       sortOrder: 1,
       videoUrl,
       questions: [
@@ -390,7 +397,8 @@ async function seedLearningContent() {
       content:
         "Nguoi lao dong thuong phai bao truoc khi don phuong cham dut hop dong. Thoi han bao truoc phu thuoc loai hop dong va nhom cong viec. Mot so truong hop nhu khong duoc tra luong, bi nguoc dai, bi quay roi tai noi lam viec co the nghi ma khong can bao truoc.",
       sourceTitle: "Bo luat Lao dong 2019",
-      sourceUrl: "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=137155#dieu35",
+      sourceUrl:
+        "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=137155#dieu35",
       legalDocumentNo: "45/2019/QH14",
       effectiveDate: new Date("2021-01-01T00:00:00.000Z"),
       reviewerNote: "Use for demo of quiz, mistakes and recommendations.",
@@ -422,7 +430,8 @@ async function seedLearningContent() {
       content:
         "Nguoi lao dong lam du 12 thang cho mot nguoi su dung lao dong thuong co it nhat 12 ngay nghi hang nam huong nguyen luong. So ngay co the cao hon voi cong viec nang nhoc, doc hai, nguy hiem hoac nguoi lao dong chua thanh nien.",
       sourceTitle: "Bo luat Lao dong 2019",
-      sourceUrl: "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=137155#dieu113",
+      sourceUrl:
+        "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=137155#dieu113",
       legalDocumentNo: "45/2019/QH14",
       effectiveDate: new Date("2021-01-01T00:00:00.000Z"),
       reviewerNote: "Good for daily challenge demo.",
@@ -464,7 +473,12 @@ async function seedLearningContent() {
         quiz(
           "Khi co bien bao toc do khac voi muc chung, can lam gi?",
           "Bien bao tai hien truong la chi dan can tuan thu.",
-          ["Theo bien bao", "Theo y kien ban be", "Di toc do tuy thich", "Chi can bat den"],
+          [
+            "Theo bien bao",
+            "Theo y kien ban be",
+            "Di toc do tuy thich",
+            "Chi can bat den",
+          ],
           0
         ),
       ],
@@ -485,7 +499,12 @@ async function seedLearningContent() {
         quiz(
           "Giay to nao thuong can mang khi lai xe?",
           "Nguoi lai xe can mang GPLX phu hop va giay to xe bat buoc.",
-          ["Giay phep lai xe", "The thanh vien", "Hoa don ca phe", "Mat khau email"],
+          [
+            "Giay phep lai xe",
+            "The thanh vien",
+            "Hoa don ca phe",
+            "Mat khau email",
+          ],
           0
         ),
         quiz(
@@ -523,7 +542,12 @@ async function seedLearningContent() {
         quiz(
           "Khi nghi ngo link ngan hang gia mao, viec nen lam la gi?",
           "Nen tu mo app/trang chinh thuc hoac goi tong dai chinh thuc.",
-          ["Nhap OTP de kiem tra", "Chuyen tiep cho moi nguoi", "Lien he kenh chinh thuc", "Tat khoa man hinh"],
+          [
+            "Nhap OTP de kiem tra",
+            "Chuyen tiep cho moi nguoi",
+            "Lien he kenh chinh thuc",
+            "Tat khoa man hinh",
+          ],
           2
         ),
       ],
@@ -544,13 +568,23 @@ async function seedLearningContent() {
         quiz(
           "OTP co nen chia se cho nguoi tu xung la nhan vien ho tro khong?",
           "OTP la ma xac thuc ca nhan, khong nen chia se cho bat ky ai.",
-          ["Co", "Khong", "Chi chia se vao ban dem", "Chi khi duoc hua tang qua"],
+          [
+            "Co",
+            "Khong",
+            "Chi chia se vao ban dem",
+            "Chi khi duoc hua tang qua",
+          ],
           1
         ),
         quiz(
           "Khi nghi tai khoan bi lo mat khau, nen lam gi?",
           "Doi mat khau va dang xuat cac thiet bi la la buoc can lam som.",
-          ["Doi mat khau", "Dang them anh ca nhan", "Chuyen tien kiem tra", "Bo qua"],
+          [
+            "Doi mat khau",
+            "Dang them anh ca nhan",
+            "Chuyen tien kiem tra",
+            "Bo qua",
+          ],
           0
         ),
       ],
@@ -565,19 +599,30 @@ async function seedLearningContent() {
       sourceUrl: "https://lexi.local/sources/lua-dao-dau-tu",
       legalDocumentNo: "DEMO-SCAM-01",
       effectiveDate: new Date("2026-01-01T00:00:00.000Z"),
-      reviewerNote: "Scam investment lesson for legacy Lua dao online category.",
+      reviewerNote:
+        "Scam investment lesson for legacy Lua dao online category.",
       sortOrder: 1,
       questions: [
         quiz(
           "Dau hieu nao dang nghi trong loi moi dau tu?",
           "Cam ket loi nhuan cao va chac chan la dau hieu can canh giac.",
-          ["Cam ket loi nhuan chac chan", "Cong khai rui ro", "Hop dong ro rang", "Thong tin phap nhan minh bach"],
+          [
+            "Cam ket loi nhuan chac chan",
+            "Cong khai rui ro",
+            "Hop dong ro rang",
+            "Thong tin phap nhan minh bach",
+          ],
           0
         ),
         quiz(
           "Truoc khi nap tien vao app dau tu la, nen lam gi?",
           "Can kiem tra phap nhan, giay phep va dieu kien rut tien.",
-          ["Kiem tra phap nhan", "Nap thu toan bo tien", "Gui OTP cho tu van", "Muon tien ban be"],
+          [
+            "Kiem tra phap nhan",
+            "Nap thu toan bo tien",
+            "Gui OTP cho tu van",
+            "Muon tien ban be",
+          ],
           0
         ),
       ],
@@ -598,13 +643,23 @@ async function seedLearningContent() {
         quiz(
           "Khi nguoi ban yeu cau dat coc gap, nen lam gi?",
           "Nen kiem tra nguoi ban va luu bang chung truoc khi chuyen tien.",
-          ["Kiem tra va luu bang chung", "Chuyen ngay", "Gui OTP", "Xoa doan chat"],
+          [
+            "Kiem tra va luu bang chung",
+            "Chuyen ngay",
+            "Gui OTP",
+            "Xoa doan chat",
+          ],
           0
         ),
         quiz(
           "Bang chung nao huu ich khi bi lua mua hang?",
           "Tin nhan, bien lai chuyen khoan va thong tin bai dang la bang chung quan trong.",
-          ["Tin nhan va bien lai", "Mat khau app ngan hang", "Anh phong canh", "Lich su xem phim"],
+          [
+            "Tin nhan va bien lai",
+            "Mat khau app ngan hang",
+            "Anh phong canh",
+            "Lich su xem phim",
+          ],
           0
         ),
       ],
@@ -625,13 +680,23 @@ async function seedLearningContent() {
         quiz(
           "Bang chung nao nen luu khi mua hang online?",
           "Hoa don, tin nhan, anh san pham va chinh sach doi tra deu huu ich khi can khieu nai.",
-          ["Hoa don va tin nhan", "Mat khau tai khoan", "OTP ngan hang", "Khong can luu gi"],
+          [
+            "Hoa don va tin nhan",
+            "Mat khau tai khoan",
+            "OTP ngan hang",
+            "Khong can luu gi",
+          ],
           0
         ),
         quiz(
           "Neu hang khong dung mo ta, nguoi mua nen lam gi dau tien?",
           "Nen lien he nguoi ban/san thuong mai kem bang chung truoc khi leo thang khieu nai.",
-          ["Xoa lich su mua", "Gui yeu cau ho tro kem bang chung", "Bo qua", "Chuyen them tien"],
+          [
+            "Xoa lich su mua",
+            "Gui yeu cau ho tro kem bang chung",
+            "Bo qua",
+            "Chuyen them tien",
+          ],
           1
         ),
       ],
@@ -652,13 +717,23 @@ async function seedLearningContent() {
         quiz(
           "Khi yeu cau bao hanh, nen chuan bi gi?",
           "Hoa don, phieu bao hanh va bang chung loi san pham giup xu ly nhanh hon.",
-          ["Hoa don va bang chung loi", "OTP ngan hang", "Mat khau email", "Khong can gi"],
+          [
+            "Hoa don va bang chung loi",
+            "OTP ngan hang",
+            "Mat khau email",
+            "Khong can gi",
+          ],
           0
         ),
         quiz(
           "Yeu cau bao hanh nen ghi ro noi dung nao?",
           "Nen ghi ngay mua, loi gap phai va mong muon xu ly.",
-          ["Loi gap phai va cach xu ly mong muon", "So thich ca nhan", "Ten bai hat", "Mau xe yeu thich"],
+          [
+            "Loi gap phai va cach xu ly mong muon",
+            "So thich ca nhan",
+            "Ten bai hat",
+            "Mau xe yeu thich",
+          ],
           0
         ),
       ],
@@ -688,7 +763,10 @@ async function seedLearningContent() {
     },
   ];
 
-  const lessons: Record<string, Awaited<ReturnType<typeof prisma.lesson.upsert>>> = {};
+  const lessons: Record<
+    string,
+    Awaited<ReturnType<typeof prisma.lesson.upsert>>
+  > = {};
   for (const seed of lessonSeeds) {
     lessons[seed.slug] = await upsertLesson(seed);
     await replaceLessonQuestions(lessons[seed.slug].id, seed.questions);
@@ -796,7 +874,9 @@ async function replaceLessonQuestions(lessonId: string, questions: QuizSeed[]) {
   }
 }
 
-async function seedLegalSourcesAndDrafts(content: Awaited<ReturnType<typeof seedLearningContent>>) {
+async function seedLegalSourcesAndDrafts(
+  content: Awaited<ReturnType<typeof seedLearningContent>>
+) {
   const sources = {
     laborLeave: await upsertSource({
       title: "Trich dieu ve nghi hang nam",
@@ -866,13 +946,23 @@ async function seedLegalSourcesAndDrafts(content: Awaited<ReturnType<typeof seed
       quiz(
         "Khi tham gia giao thong, giay to nao thuong can mang?",
         "Nguoi lai can co giay phep lai xe phu hop va giay to xe lien quan.",
-        ["Giay phep lai xe", "The thanh vien sieu thi", "Hoa don an trua", "Mat khau email"],
+        [
+          "Giay phep lai xe",
+          "The thanh vien sieu thi",
+          "Hoa don an trua",
+          "Mat khau email",
+        ],
         0
       ),
       quiz(
         "Draft ACCEPTED trong admin co the lam gi tiep?",
         "Sprint 13 cho phep tao lesson IN_REVIEW tu draft ACCEPTED.",
-        ["Tao lesson", "Tu dong publish", "Xoa backend", "Khoa tai khoan learner"],
+        [
+          "Tao lesson",
+          "Tu dong publish",
+          "Xoa backend",
+          "Khoa tai khoan learner",
+        ],
         0
       ),
     ],
@@ -974,7 +1064,9 @@ async function upsertSource(params: {
       normalizedText: params.rawText,
       contentHash: `demo-${params.legalDocumentNo}`,
       crawledAt:
-        params.crawlStatus === LegalSourceCrawlStatus.CRAWLED ? new Date() : null,
+        params.crawlStatus === LegalSourceCrawlStatus.CRAWLED
+          ? new Date()
+          : null,
     },
     create: {
       title: params.title,
@@ -986,7 +1078,9 @@ async function upsertSource(params: {
       normalizedText: params.rawText,
       contentHash: `demo-${params.legalDocumentNo}`,
       crawledAt:
-        params.crawlStatus === LegalSourceCrawlStatus.CRAWLED ? new Date() : null,
+        params.crawlStatus === LegalSourceCrawlStatus.CRAWLED
+          ? new Date()
+          : null,
     },
   });
 }
@@ -1069,8 +1163,8 @@ async function upsertDraft(params: {
   const lessonLinkData = params.createdLessonId
     ? { createdLesson: { connect: { id: params.createdLessonId } } }
     : existing?.createdLessonId
-      ? { createdLesson: { disconnect: true } }
-      : {};
+    ? { createdLesson: { disconnect: true } }
+    : {};
 
   const updateData = {
     ...baseData,
@@ -1103,7 +1197,9 @@ async function upsertDraft(params: {
   });
 }
 
-async function seedMediaAssets(content: Awaited<ReturnType<typeof seedLearningContent>>) {
+async function seedMediaAssets(
+  content: Awaited<ReturnType<typeof seedLearningContent>>
+) {
   await upsertMediaAsset({
     title: "READY video - thoi gian thu viec",
     lessonId: content.lessons["thu-viec-toi-da-bao-lau"].id,
@@ -1163,13 +1259,13 @@ async function upsertMediaAsset(params: {
     lesson: params.lessonId
       ? { connect: { id: params.lessonId } }
       : existing?.lessonId
-        ? { disconnect: true }
-        : undefined,
+      ? { disconnect: true }
+      : undefined,
     draft: params.draftId
       ? { connect: { id: params.draftId } }
       : existing?.draftId
-        ? { disconnect: true }
-        : undefined,
+      ? { disconnect: true }
+      : undefined,
     title: params.title,
     assetType: MediaAssetType.VIDEO,
     sourceType: params.sourceType,
@@ -1200,7 +1296,9 @@ async function seedDemoLearningState(
 ) {
   const allSeedUsers = [users.demo, ...users.leaderboardUsers];
   for (const user of allSeedUsers) {
-    await prisma.notificationDeliveryLog.deleteMany({ where: { userId: user.id } });
+    await prisma.notificationDeliveryLog.deleteMany({
+      where: { userId: user.id },
+    });
     await prisma.deviceToken.deleteMany({ where: { userId: user.id } });
     await prisma.userChallenge.deleteMany({ where: { userId: user.id } });
     await prisma.userBadge.deleteMany({ where: { userId: user.id } });
@@ -1214,31 +1312,127 @@ async function seedDemoLearningState(
   const today11 = atHour(now, 11);
   const yesterday = daysAgo(now, 1, 20);
 
-  await recordAttempt(users.demo.id, content.lessons["thu-viec-toi-da-bao-lau"].id, [true, true], today9);
-  await recordAttempt(users.demo.id, content.lessons["don-phuong-cham-dut-hop-dong"].id, [false, true], today10);
-  await recordAttempt(users.demo.id, content.lessons["nghi-phep-nam"].id, [true, true], today11);
-  await recordAttempt(users.demo.id, content.lessons["toc-do-trong-khu-dan-cu"].id, [false, true], yesterday);
-  await recordAttempt(users.demo.id, content.lessons["nhan-dien-link-phishing"].id, [true, false], daysAgo(now, 2, 19));
-  await recordAttempt(users.demo.id, content.lessons["doi-tra-khi-mua-hang-online"].id, [true, true], daysAgo(now, 3, 19));
-  await recordAttempt(users.demo.id, content.lessons["thu-viec-toi-da-bao-lau"].id, [true, false], daysAgo(now, 4, 19));
-  await recordAttempt(users.demo.id, content.lessons["don-phuong-cham-dut-hop-dong"].id, [true, true], daysAgo(now, 5, 19));
-  await recordAttempt(users.demo.id, content.lessons["nghi-phep-nam"].id, [false, true], daysAgo(now, 6, 19));
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["thu-viec-toi-da-bao-lau"].id,
+    [true, true],
+    today9
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["don-phuong-cham-dut-hop-dong"].id,
+    [false, true],
+    today10
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["nghi-phep-nam"].id,
+    [true, true],
+    today11
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["toc-do-trong-khu-dan-cu"].id,
+    [false, true],
+    yesterday
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["nhan-dien-link-phishing"].id,
+    [true, false],
+    daysAgo(now, 2, 19)
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["doi-tra-khi-mua-hang-online"].id,
+    [true, true],
+    daysAgo(now, 3, 19)
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["thu-viec-toi-da-bao-lau"].id,
+    [true, false],
+    daysAgo(now, 4, 19)
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["don-phuong-cham-dut-hop-dong"].id,
+    [true, true],
+    daysAgo(now, 5, 19)
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["nghi-phep-nam"].id,
+    [false, true],
+    daysAgo(now, 6, 19)
+  );
 
-  await upsertProgress(users.demo.id, content.lessons["thu-viec-toi-da-bao-lau"].id, ProgressStatus.COMPLETED, 100, today9);
-  await upsertProgress(users.demo.id, content.lessons["don-phuong-cham-dut-hop-dong"].id, ProgressStatus.COMPLETED, 50, today10);
-  await upsertProgress(users.demo.id, content.lessons["nghi-phep-nam"].id, ProgressStatus.COMPLETED, 100, today11);
-  await upsertProgress(users.demo.id, content.lessons["toc-do-trong-khu-dan-cu"].id, ProgressStatus.IN_PROGRESS, 50, null);
+  await upsertProgress(
+    users.demo.id,
+    content.lessons["thu-viec-toi-da-bao-lau"].id,
+    ProgressStatus.COMPLETED,
+    100,
+    today9
+  );
+  await upsertProgress(
+    users.demo.id,
+    content.lessons["don-phuong-cham-dut-hop-dong"].id,
+    ProgressStatus.COMPLETED,
+    50,
+    today10
+  );
+  await upsertProgress(
+    users.demo.id,
+    content.lessons["nghi-phep-nam"].id,
+    ProgressStatus.COMPLETED,
+    100,
+    today11
+  );
+  await upsertProgress(
+    users.demo.id,
+    content.lessons["toc-do-trong-khu-dan-cu"].id,
+    ProgressStatus.IN_PROGRESS,
+    50,
+    null
+  );
 
   await seedBadgesForDemoUser(users.demo.id, now);
   await seedDailyChallengeReadyToClaim(users.demo.id, now);
 
-  await recordAttempt(users.leaderboardUsers[0].id, content.lessons["thu-viec-toi-da-bao-lau"].id, [true, true], today10);
-  await recordAttempt(users.leaderboardUsers[0].id, content.lessons["nhan-dien-link-phishing"].id, [true, true], today11);
-  await recordAttempt(users.leaderboardUsers[1].id, content.lessons["nghi-phep-nam"].id, [true, false], today10);
-  await recordAttempt(users.leaderboardUsers[1].id, content.lessons["doi-tra-khi-mua-hang-online"].id, [true, true], yesterday);
-  await recordAttempt(users.leaderboardUsers[2].id, content.lessons["toc-do-trong-khu-dan-cu"].id, [false, true], today9);
+  await recordAttempt(
+    users.leaderboardUsers[0].id,
+    content.lessons["thu-viec-toi-da-bao-lau"].id,
+    [true, true],
+    today10
+  );
+  await recordAttempt(
+    users.leaderboardUsers[0].id,
+    content.lessons["nhan-dien-link-phishing"].id,
+    [true, true],
+    today11
+  );
+  await recordAttempt(
+    users.leaderboardUsers[1].id,
+    content.lessons["nghi-phep-nam"].id,
+    [true, false],
+    today10
+  );
+  await recordAttempt(
+    users.leaderboardUsers[1].id,
+    content.lessons["doi-tra-khi-mua-hang-online"].id,
+    [true, true],
+    yesterday
+  );
+  await recordAttempt(
+    users.leaderboardUsers[2].id,
+    content.lessons["toc-do-trong-khu-dan-cu"].id,
+    [false, true],
+    today9
+  );
 
-  console.log("Demo learning progress, attempts, badges and leaderboard seeded.");
+  console.log(
+    "Demo learning progress, attempts, badges and leaderboard seeded."
+  );
 }
 
 function atHour(base: Date, hour: number) {
@@ -1528,7 +1722,9 @@ async function seedNotifications(users: Awaited<ReturnType<typeof seedUsers>>) {
     deliveredAt: null,
   });
 
-  console.log("Notification preferences, device token and delivery logs seeded.");
+  console.log(
+    "Notification preferences, device token and delivery logs seeded."
+  );
 }
 
 async function upsertDeliveryLog(params: {
