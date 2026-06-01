@@ -16,17 +16,29 @@ import {
   Check,
   X,
   Tv,
-  Gamepad2
+  Gamepad2,
+  TrendingUp,
+  AlertCircle,
 } from "lucide-react";
 import type { AuthResponse } from "../types/auth";
+import type { ContentRecommendation, UserLearningProfile, LearningConsistency } from "../types/learning";
 import { ROUTES } from "../routes/paths";
 
 type ProfilePageProps = {
   session: AuthResponse | null;
+  aiRecommendations?: ContentRecommendation[];
+  aiLearningProfile?: UserLearningProfile | null;
+  aiConsistency?: LearningConsistency | null;
   onNavigate: (path: string) => void;
 };
 
-export const ProfilePage: React.FC<ProfilePageProps> = ({ session, onNavigate }) => {
+export const ProfilePage: React.FC<ProfilePageProps> = ({ 
+  session, 
+  aiRecommendations = [],
+  aiLearningProfile,
+  aiConsistency,
+  onNavigate 
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(session?.user?.profile?.fullName || "Nguyễn Văn A");
   const [displayName, setDisplayName] = useState(session?.user?.profile?.fullName || "Nguyễn Văn A");
@@ -191,6 +203,134 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ session, onNavigate })
             </div>
 
           </div>
+
+          {/* AI Features Section: Learning Profile & Recommendations */}
+          {(aiLearningProfile || aiRecommendations.length > 0 || aiConsistency) && (
+            <div className="lexi-ai-features-section">
+              {/* Learning Profile & Consistency Stats */}
+              {(aiLearningProfile || aiConsistency) && (
+                <div className="lexi-ai-stats-grid">
+                  {aiLearningProfile && (
+                    <div className="lexi-ai-profile-card">
+                      <div className="lexi-ai-card-header">
+                        <h3>
+                          <TrendingUp size={18} />
+                          Hồ sơ học tập
+                        </h3>
+                      </div>
+                      <div className="lexi-ai-stats-list">
+                        <div className="lexi-stat-item">
+                          <span className="lexi-stat-label">Bài học hoàn thành</span>
+                          <span className="lexi-stat-value">{aiLearningProfile.completedLessonsCount}</span>
+                        </div>
+                        <div className="lexi-stat-item">
+                          <span className="lexi-stat-label">Điểm trung bình</span>
+                          <span className="lexi-stat-value">{(aiLearningProfile.averageScore * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="lexi-stat-item">
+                          <span className="lexi-stat-label">Tốc độ học</span>
+                          <span className="lexi-stat-value">{aiLearningProfile.learningPace}</span>
+                        </div>
+                        {aiLearningProfile.weakAreas.length > 0 && (
+                          <div className="lexi-areas-list">
+                            <span className="lexi-areas-label">Cần cải thiện:</span>
+                            <div className="lexi-areas-tags">
+                              {aiLearningProfile.weakAreas.slice(0, 3).map((area) => (
+                                <span key={area} className="lexi-area-tag weak">
+                                  <AlertCircle size={12} />
+                                  {area}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {aiLearningProfile.strongAreas.length > 0 && (
+                          <div className="lexi-areas-list">
+                            <span className="lexi-areas-label">Điểm mạnh:</span>
+                            <div className="lexi-areas-tags">
+                              {aiLearningProfile.strongAreas.slice(0, 3).map((area) => (
+                                <span key={area} className="lexi-area-tag strong">
+                                  <Check size={12} />
+                                  {area}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {aiConsistency && (
+                    <div className="lexi-ai-consistency-card">
+                      <div className="lexi-ai-card-header">
+                        <h3>
+                          <Flame size={18} />
+                          Liên tục học tập
+                        </h3>
+                      </div>
+                      <div className="lexi-ai-consistency-content">
+                        <div className="lexi-consistency-main">
+                          <span className="lexi-consistency-label">Độ liên tục</span>
+                          <span className="lexi-consistency-value">{(aiConsistency.consistency * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="lexi-consistency-streak">
+                          <span className="lexi-streak-label">Chuỗi hiện tại</span>
+                          <span className="lexi-streak-val">{aiConsistency.streak} ngày</span>
+                        </div>
+                        <p className="lexi-consistency-message">{aiConsistency.motivationalMessage}</p>
+                        {aiConsistency.recommendedSchedule && (
+                          <div className="lexi-schedule-recommendation">
+                            <span className="lexi-schedule-label">Thời gian học tối ưu:</span>
+                            <span className="lexi-schedule-value">{aiConsistency.recommendedSchedule}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* AI Recommendations */}
+              {aiRecommendations.length > 0 && (
+                <div className="lexi-ai-recommendations-section">
+                  <div className="lexi-ai-card-header">
+                    <h3>
+                      <Sparkles size={18} />
+                      Gợi ý được cá nhân hóa
+                    </h3>
+                    <span className="lexi-ai-badge">AI</span>
+                  </div>
+                  <div className="lexi-recommendations-list">
+                    {aiRecommendations.map((rec) => (
+                      <div key={rec.lessonId} className="lexi-recommendation-item">
+                        <div className="lexi-rec-content">
+                          <h4>{rec.title}</h4>
+                          <p className="lexi-rec-reason">{rec.reason}</p>
+                          <div className="lexi-rec-meta">
+                            <span className={`lexi-difficulty lexi-difficulty-${rec.difficulty}`}>
+                              {rec.difficulty === "easy" && "Dễ"}
+                              {rec.difficulty === "medium" && "Trung bình"}
+                              {rec.difficulty === "hard" && "Khó"}
+                            </span>
+                            <span className="lexi-rec-time">~{rec.estimatedMinutes} phút</span>
+                            <span className="lexi-rec-score">Phù hợp: {(rec.relevantScore * 100).toFixed(0)}%</span>
+                          </div>
+                        </div>
+                        <button 
+                          className="lexi-btn-start-lesson"
+                          onClick={() => onNavigate(`/lessons/${rec.lessonId}`)}
+                        >
+                          <BookOpen size={14} />
+                          Bắt đầu
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Middle Row: Badges Gallery & Study Time Chart */}
           <div className="lexi-profile-middle-grid">

@@ -56,14 +56,14 @@ export function AdminPage({
           title="Cao va tao draft"
           description="Nhap cac URL van ban phap luat, he thong se luu nguon vao MongoDB va tao lesson draft bang AI."
         >
-          <AdminCrawlForm onSubmit={onCrawlLegalSources} />
+          <AdminCrawlForm onSubmit={onCrawlLegalSources} isLoading={isLoading} />
         </ActionCard>
 
         <ActionCard
           title="Xu ly nguon da crawl"
           description="Lay tat ca legal source da crawl ma chua co draft va tao ban nhap AI moi."
         >
-          <AdminProcessForm onSubmit={onProcessLegalSources} />
+          <AdminProcessForm onSubmit={onProcessLegalSources} isLoading={isLoading} />
         </ActionCard>
       </section>
 
@@ -153,6 +153,7 @@ export function AdminPage({
 
 function AdminCrawlForm({
   onSubmit,
+  isLoading,
 }: {
   onSubmit: (payload: {
     urls: string[];
@@ -160,6 +161,7 @@ function AdminCrawlForm({
     generateDrafts?: boolean;
     questionCount?: number;
   }) => Promise<void>;
+  isLoading: boolean;
 }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -187,25 +189,47 @@ function AdminCrawlForm({
           rows={5}
           placeholder={"https://...\\nhttps://..."}
           required
+          disabled={isLoading}
         />
       </label>
       <div className="admin-form-row">
         <label>
           Module ID
-          <input name="moduleId" placeholder="module-1" />
+          <input name="moduleId" placeholder="module-1" disabled={isLoading} />
         </label>
         <label>
           Question count
-          <input name="questionCount" type="number" min={1} max={10} defaultValue={3} />
+          <input
+            name="questionCount"
+            type="number"
+            min={1}
+            max={10}
+            defaultValue={3}
+            disabled={isLoading}
+          />
         </label>
       </div>
       <label className="admin-check">
-        <input name="generateDrafts" type="checkbox" defaultChecked />
+        <input
+          name="generateDrafts"
+          type="checkbox"
+          defaultChecked
+          disabled={isLoading}
+        />
         Tao draft ngay
       </label>
-      <button className="button button-secondary" type="submit">
-        <DownloadCloud size={16} />
-        Cao noi dung
+      <button className="button button-secondary" type="submit" disabled={isLoading}>
+        {isLoading ? (
+          <>
+            <span className="spinner" />
+            Dang tien hanh...
+          </>
+        ) : (
+          <>
+            <DownloadCloud size={16} />
+            Cao noi dung
+          </>
+        )}
       </button>
     </form>
   );
@@ -213,12 +237,14 @@ function AdminCrawlForm({
 
 function AdminProcessForm({
   onSubmit,
+  isLoading,
 }: {
   onSubmit: (payload: {
     moduleId?: string | null;
     limit?: number;
     questionCount?: number;
   }) => Promise<void>;
+  isLoading: boolean;
 }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -236,20 +262,43 @@ function AdminProcessForm({
       <div className="admin-form-row">
         <label>
           Module ID
-          <input name="moduleId" placeholder="module-1" />
+          <input name="moduleId" placeholder="module-1" disabled={isLoading} />
         </label>
         <label>
           Limit
-          <input name="limit" type="number" min={1} max={50} defaultValue={20} />
+          <input
+            name="limit"
+            type="number"
+            min={1}
+            max={50}
+            defaultValue={20}
+            disabled={isLoading}
+          />
         </label>
       </div>
       <label>
         Question count
-        <input name="questionCount" type="number" min={1} max={10} defaultValue={3} />
+        <input
+          name="questionCount"
+          type="number"
+          min={1}
+          max={10}
+          defaultValue={3}
+          disabled={isLoading}
+        />
       </label>
-      <button className="button button-primary" type="submit">
-        <Sparkles size={16} />
-        Xu ly AI
+      <button className="button button-primary" type="submit" disabled={isLoading}>
+        {isLoading ? (
+          <>
+            <span className="spinner" />
+            Dang xu ly...
+          </>
+        ) : (
+          <>
+            <Sparkles size={16} />
+            Xu ly AI
+          </>
+        )}
       </button>
     </form>
   );
