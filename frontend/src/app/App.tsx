@@ -12,6 +12,8 @@ import { ReviewPage } from "../pages/ReviewPage";
 import { SettingsPage } from "../pages/SettingsPage";
 import { ShortsPage } from "../pages/ShortsPage";
 import { GamePage } from "../pages/GamePage";
+import { ToastContainer } from "../components/Toast/Toast";
+import { useToast } from "../hooks/useToast";
 import {
   crawlAdminLegalSources,
   getAdminLessonDrafts,
@@ -49,6 +51,11 @@ import {
   updateNotificationPreferences,
   upsertDeviceToken,
 } from "../api/learning";
+import {
+  getRecommendations,
+  getLearningProfile,
+  getLearningConsistency,
+} from "../api/learning";
 import { ApiError } from "../api/http";
 import { ROUTES } from "../routes/paths";
 import {
@@ -68,6 +75,9 @@ import type {
   ReviewMistake,
   ReviewRecommendation,
   WeeklyLeaderboard,
+  ContentRecommendation,
+  UserLearningProfile,
+  LearningConsistency,
 } from "../types/learning";
 import type { CurrentLesson, LearningHistoryItem, ProgressSummary } from "../types/progress";
 
@@ -82,6 +92,7 @@ function App() {
   const [session, setSession] = useState<AuthResponse | null>(() =>
     readAuthSession()
   );
+  const { toasts, removeToast, success, error, info, warning } = useToast();
   const [authError, setAuthError] = useState<string | null>(null);
   const [isAuthSubmitting, setIsAuthSubmitting] = useState(false);
   const [summary, setSummary] = useState<ProgressSummary | null>(null);
@@ -105,6 +116,9 @@ function App() {
   const [adminMedia, setAdminMedia] = useState<AdminMediaAsset[]>([]);
   const [adminLogs, setAdminLogs] = useState<AdminDeliveryLog[]>([]);
   const [adminCrawlResult, setAdminCrawlResult] = useState<AdminCrawlResponse | null>(null);
+  const [aiRecommendations, setAiRecommendations] = useState<ContentRecommendation[]>([]);
+  const [aiLearningProfile, setAiLearningProfile] = useState<UserLearningProfile | null>(null);
+  const [aiConsistency, setAiConsistency] = useState<LearningConsistency | null>(null);
   const [loading, setLoading] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
 
@@ -189,6 +203,9 @@ function App() {
         nextLeaderboard,
         nextRecommendations,
         nextHistory,
+        nextAiRecommendations,
+        nextAiProfile,
+        nextAiConsistency,
       ] = await Promise.all([
         getProgressSummary(token),
         getCurrentLesson(token),
@@ -197,6 +214,9 @@ function App() {
         getWeeklyLeaderboard(token),
         getReviewRecommendations(token),
         getLearningHistory(token, 1, 6),
+        getRecommendations(token, 5).catch(() => []),
+        getLearningProfile(token).catch(() => null),
+        getLearningConsistency(token).catch(() => null),
       ]);
       setSummary(nextSummary);
       setCurrentLesson(nextCurrentLesson);
@@ -205,6 +225,9 @@ function App() {
       setLeaderboard(nextLeaderboard);
       setRecommendations(nextRecommendations.items);
       setHistory(nextHistory.items);
+      setAiRecommendations(nextAiRecommendations);
+      setAiLearningProfile(nextAiProfile);
+      setAiConsistency(nextAiConsistency);
     } catch (error) {
       setPageError(getErrorMessage(error));
     } finally {
@@ -460,14 +483,44 @@ function App() {
       return;
     }
 
+    if (payload.urls.length === 0) {
+      warning("Vui lòng nhập ít nhất một URL");
+      return;
+    }
+
     setLoading(true);
     setPageError(null);
+    const toastId = info(`Đang cào ${payload.urls.length} URL...`, 0);
     try {
       const result = await crawlAdminLegalSources(session.accessToken, payload);
+      removeToast(toastId);
+
+      if (result.errors.length > 0) {
+        const errorCount = result.errors.length;
+        const successCount = result.sources.length;
+        warning(
+          `Hoàn tất: ${successCount} thành công, ${errorCount} lỗi. Xem chi tiết dưới đây.`
+        );
+        result.errors.forEach((err) => {
+          error(`${err.url}: ${err.message}`, 5000);
+        });
+      } else if (result.sources.length > 0) {
+        success(
+          `Cào thành công ${result.sources.length} nguồn${
+            result.drafts.length > 0 ? ` và tạo ${result.drafts.length} bản nháp` : ""
+          }`
+        );
+      } else {
+        info("Không tìm thấy nội dung để cào");
+      }
+
       setAdminCrawlResult(result);
       await refreshAdmin(session.accessToken);
-    } catch (error) {
-      setPageError(getErrorMessage(error));
+    } catch (err) {
+      removeToast(toastId);
+      const errorMsg = getErrorMessage(err);
+      error(errorMsg);
+      setPageError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -484,11 +537,17 @@ function App() {
 
     setLoading(true);
     setPageError(null);
+    const toastId = info("Đang xử lý nguồn đã cào...", 0);
     try {
-      await processAdminLegalSources(session.accessToken, payload);
+      const drafts = await processAdminLegalSources(session.accessToken, payload);
+      removeToast(toastId);
+      success(`Tạo thành công ${drafts.length} bản nháp mới`);
       await refreshAdmin(session.accessToken);
-    } catch (error) {
-      setPageError(getErrorMessage(error));
+    } catch (err) {
+      removeToast(toastId);
+      const errorMsg = getErrorMessage(err);
+      error(errorMsg);
+      setPageError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -567,6 +626,9 @@ function App() {
       ) : page.path === ROUTES.profile ? (
         <ProfilePage
           session={session}
+          aiRecommendations={aiRecommendations}
+          aiLearningProfile={aiLearningProfile}
+          aiConsistency={aiConsistency}
           onNavigate={navigate}
         />
       ) : page.path === ROUTES.resources ? (
@@ -594,6 +656,7 @@ function App() {
       ) : (
         <NotFoundPage />
       )}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </AppLayout>
   );
 }

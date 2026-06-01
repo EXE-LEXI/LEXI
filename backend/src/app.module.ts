@@ -15,6 +15,7 @@ import { NotificationModule } from "./modules/notification/notification.module";
 import { UsersModule } from "./modules/users/users.module";
 import { FirebaseModule } from "./firebase/firebase.module";
 import { ScheduleModule } from "@nestjs/schedule";
+import { AutomatedPipelineModule } from "./modules/automated-pipeline/automated-pipeline.module";
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ScheduleModule } from "@nestjs/schedule";
     NotificationModule,
     FirebaseModule,
     ScheduleModule.forRoot(),
+    AutomatedPipelineModule,
   ],
   controllers: [],
   providers: [

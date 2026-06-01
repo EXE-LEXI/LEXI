@@ -582,8 +582,9 @@ export class AdminContentService {
       });
 
       if (!response.ok) {
+        const statusText = response.statusText || `HTTP ${response.status}`;
         throw new BadRequestException(
-          `Crawl failed with status ${response.status}`
+          `URL không thể truy cập (${statusText}). Vui lòng kiểm tra URL và thử lại.`
         );
       }
 
@@ -598,7 +599,8 @@ export class AdminContentService {
 
       if (normalizedText.length < 100) {
         throw new BadRequestException(
-          "Crawled content is too short to be a legal document"
+          `URL không chứa nội dung văn bản pháp lý đủ (chỉ tìm được ${normalizedText.length} ký tự). ` +
+          `Hãy kiểm tra URL chỉ về tài liệu pháp lý cụ thể, không phải trang chủ.`
         );
       }
 
@@ -622,10 +624,17 @@ export class AdminContentService {
         throw error;
       }
       if (error instanceof Error && error.name === "AbortError") {
-        throw new BadRequestException("Crawl request timed out");
+        throw new BadRequestException(
+          "Yêu cầu cào quá lâu (hơn 20 giây). URL có thể không hỗ trợ hoặc quá chậm."
+        );
+      }
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        throw new BadRequestException(
+          `Lỗi kết nối: ${error.message}. Kiểm tra URL có hợp lệ không.`
+        );
       }
       throw new BadRequestException(
-        error instanceof Error ? error.message : "Unable to crawl URL"
+        `Lỗi cào URL: ${error instanceof Error ? error.message : "Không xác định"}`
       );
     } finally {
       clearTimeout(timeout);

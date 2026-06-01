@@ -740,6 +740,22 @@ h1 {
   opacity: 0.45;
 }
 
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .button-primary {
   color: var(--color-text-dark);
   background: linear-gradient(135deg, var(--color-gold) 0%, #dfad3c 100%);
@@ -3889,6 +3905,339 @@ h1 {
 .lexi-btn-load-more-cases:hover {
   background: #f1f5f9;
   border-color: #cbd5e1;
+}
+
+/* AI Features Section */
+.lexi-ai-features-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 24px 0;
+}
+
+.lexi-ai-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.lexi-ai-profile-card,
+.lexi-ai-consistency-card {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(65, 214, 159, 0.05) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.lexi-ai-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.lexi-ai-card-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-white);
+  margin: 0;
+}
+
+.lexi-ai-card-header h3 svg {
+  color: var(--color-primary);
+}
+
+.lexi-ai-badge {
+  position: absolute;
+  right: 0;
+  background: var(--color-violet);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lexi-ai-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lexi-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lexi-stat-label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.lexi-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.lexi-areas-list {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lexi-areas-label {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.lexi-areas-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lexi-area-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.lexi-area-tag.weak {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ff8888;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.lexi-area-tag.strong {
+  background: rgba(65, 214, 159, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(65, 214, 159, 0.3);
+}
+
+.lexi-ai-consistency-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lexi-consistency-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lexi-consistency-label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.lexi-consistency-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-gold);
+}
+
+.lexi-consistency-streak {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lexi-streak-label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.lexi-streak-val {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-gold);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lexi-consistency-message {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  font-style: italic;
+  margin: 0;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid var(--color-gold);
+}
+
+.lexi-schedule-recommendation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 8px;
+}
+
+.lexi-schedule-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.lexi-schedule-value {
+  font-size: 13px;
+  color: var(--color-violet);
+  font-weight: 700;
+}
+
+.lexi-ai-recommendations-section {
+  background: linear-gradient(135deg, rgba(65, 214, 159, 0.08) 0%, rgba(246, 200, 95, 0.05) 100%);
+  border: 1px solid rgba(65, 214, 159, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.lexi-recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lexi-recommendation-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(65, 214, 159, 0.2);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.lexi-recommendation-item:hover {
+  border-color: rgba(65, 214, 159, 0.5);
+  background: rgba(0, 0, 0, 0.3);
+  transform: translateX(4px);
+}
+
+.lexi-rec-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.lexi-rec-content h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-white);
+  margin: 0 0 6px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lexi-rec-reason {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.lexi-rec-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.lexi-difficulty {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.lexi-difficulty-easy {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.lexi-difficulty-medium {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.lexi-difficulty-hard {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ff8888;
+}
+
+.lexi-rec-time,
+.lexi-rec-score {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.lexi-btn-start-lesson {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--color-primary);
+  color: var(--color-text-dark);
+  border: 0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lexi-btn-start-lesson:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(65, 214, 159, 0.3);
+}
+
+@media (max-width: 768px) {
+  .lexi-ai-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lexi-recommendation-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .lexi-btn-start-lesson {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* Footer Section */
