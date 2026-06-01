@@ -192,7 +192,7 @@ test("admin can crawl legal source URLs and generate AI drafts", async () => {
         <body>
           <h1>Traffic Safety Law</h1>
           <p>Document 23/2008/QH12. Road users must obey traffic signals and road signs.</p>
-          <p>The document takes effect on 01/07/2009 and applies to all drivers on public roads.</p>
+          <p>Văn bản có hiệu lực thi hành từ ngày 01/07/2009 và áp dụng cho tất cả tài xế.</p>
           <p>This body is intentionally long enough to pass the crawler threshold and verify the full crawl pipeline.</p>
         </body>
       </html>
@@ -200,43 +200,51 @@ test("admin can crawl legal source URLs and generate AI drafts", async () => {
   });
 
   try {
-    const service = new AdminContentService({
-      findLegalSourceByUrl: async () => null,
-      upsertLegalSourceByUrl: async (args) => {
-        upsertArgs = args;
-        return legalSourceFixture({
-          id: "source-crawled-1",
-          title: args.create.title,
-          sourceUrl: args.sourceUrl,
-          legalDocumentNo: args.create.legalDocumentNo,
-          effectiveDate: args.create.effectiveDate,
-          rawText: args.create.rawText,
-          normalizedText: args.create.normalizedText,
-        });
+    const service = new AdminContentService(
+      {
+        findLegalSourceByUrl: async () => null,
+        upsertLegalSourceByUrl: async (args) => {
+          upsertArgs = args;
+          return legalSourceFixture({
+            id: "source-crawled-1",
+            title: args.create.title,
+            sourceUrl: args.sourceUrl,
+            legalDocumentNo: args.create.legalDocumentNo,
+            effectiveDate: args.create.effectiveDate,
+            rawText: args.create.rawText,
+            normalizedText: args.create.normalizedText,
+          });
+        },
+        findLegalSourceById: async () =>
+          legalSourceFixture({
+            id: "source-crawled-1",
+            title: "Traffic Safety Law",
+            normalizedText: "Road users must obey traffic signals.",
+          }),
+        createGeneratedLessonDraft: async (args) => {
+          generatedArgs = args;
+          return lessonDraftFixture({
+            title: args.draftData.title,
+            questions: args.questions.map((question) =>
+              draftQuestionFixture({
+                questionText: question.questionText,
+                explanation: question.explanation,
+                sortOrder: question.sortOrder,
+                options: question.options.map((option) =>
+                  draftOptionFixture(option)
+                ),
+              })
+            ),
+          });
+        },
       },
-      findLegalSourceById: async () =>
-        legalSourceFixture({
-          id: "source-crawled-1",
-          title: "Traffic Safety Law",
-          normalizedText: "Road users must obey traffic signals.",
-        }),
-      createGeneratedLessonDraft: async (args) => {
-        generatedArgs = args;
-        return lessonDraftFixture({
-          title: args.draftData.title,
-          questions: args.questions.map((question) =>
-            draftQuestionFixture({
-              questionText: question.questionText,
-              explanation: question.explanation,
-              sortOrder: question.sortOrder,
-              options: question.options.map((option) =>
-                draftOptionFixture(option)
-              ),
-            })
-          ),
-        });
-      },
-    });
+      {
+        get: (key) =>
+          ({
+            AI_DRAFT_PROVIDER: "local",
+          }[key]),
+      }
+    );
 
     const response = await service.crawlLegalSources({
       urls: ["https://example.vn/van-ban/traffic"],
@@ -279,27 +287,35 @@ test("admin crawl skips draft generation when source already has drafts", async 
   });
 
   try {
-    const service = new AdminContentService({
-      findLegalSourceByUrl: async () =>
-        legalSourceFixture({
-          id: "source-existing-draft",
-          title: "Existing Draft Law",
-          lessonDrafts: [{ id: "draft-existing" }],
-        }),
-      upsertLegalSourceByUrl: async (args) =>
-        legalSourceFixture({
-          id: "source-existing-draft",
-          title: args.create.title,
-          sourceUrl: args.sourceUrl,
-          legalDocumentNo: args.create.legalDocumentNo,
-          rawText: args.create.rawText,
-          normalizedText: args.create.normalizedText,
-        }),
-      createGeneratedLessonDraft: async () => {
-        generatedDraftCount += 1;
-        return lessonDraftFixture();
+    const service = new AdminContentService(
+      {
+        findLegalSourceByUrl: async () =>
+          legalSourceFixture({
+            id: "source-existing-draft",
+            title: "Existing Draft Law",
+            lessonDrafts: [{ id: "draft-existing" }],
+          }),
+        upsertLegalSourceByUrl: async (args) =>
+          legalSourceFixture({
+            id: "source-existing-draft",
+            title: args.create.title,
+            sourceUrl: args.sourceUrl,
+            legalDocumentNo: args.create.legalDocumentNo,
+            rawText: args.create.rawText,
+            normalizedText: args.create.normalizedText,
+          }),
+        createGeneratedLessonDraft: async () => {
+          generatedDraftCount += 1;
+          return lessonDraftFixture();
+        },
       },
-    });
+      {
+        get: (key) =>
+          ({
+            AI_DRAFT_PROVIDER: "local",
+          }[key]),
+      }
+    );
 
     const response = await service.crawlLegalSources({
       urls: ["https://example.vn/van-ban/da-co-draft"],
@@ -315,36 +331,44 @@ test("admin crawl skips draft generation when source already has drafts", async 
 });
 test("admin can process crawled legal sources without drafts", async () => {
   let findArgs;
-  const service = new AdminContentService({
-    findCrawledLegalSourcesWithoutDrafts: async (args) => {
-      findArgs = args;
-      return [
+  const service = new AdminContentService(
+    {
+      findCrawledLegalSourcesWithoutDrafts: async (args) => {
+        findArgs = args;
+        return [
+          legalSourceFixture({
+            id: "source-unprocessed-1",
+            normalizedText: "Nguoi hoc can nam quy dinh phap luat co ban.",
+          }),
+        ];
+      },
+      findLegalSourceById: async () =>
         legalSourceFixture({
           id: "source-unprocessed-1",
           normalizedText: "Nguoi hoc can nam quy dinh phap luat co ban.",
         }),
-      ];
+      createGeneratedLessonDraft: async (args) =>
+        lessonDraftFixture({
+          title: args.draftData.title,
+          questions: args.questions.map((question) =>
+            draftQuestionFixture({
+              questionText: question.questionText,
+              explanation: question.explanation,
+              sortOrder: question.sortOrder,
+              options: question.options.map((option) =>
+                draftOptionFixture(option)
+              ),
+            })
+          ),
+        }),
     },
-    findLegalSourceById: async () =>
-      legalSourceFixture({
-        id: "source-unprocessed-1",
-        normalizedText: "Nguoi hoc can nam quy dinh phap luat co ban.",
-      }),
-    createGeneratedLessonDraft: async (args) =>
-      lessonDraftFixture({
-        title: args.draftData.title,
-        questions: args.questions.map((question) =>
-          draftQuestionFixture({
-            questionText: question.questionText,
-            explanation: question.explanation,
-            sortOrder: question.sortOrder,
-            options: question.options.map((option) =>
-              draftOptionFixture(option)
-            ),
-          })
-        ),
-      }),
-  });
+    {
+      get: (key) =>
+        ({
+          AI_DRAFT_PROVIDER: "local",
+        }[key]),
+    }
+  );
 
   const drafts = await service.processCrawledLegalSources({
     moduleId: "module-1",
@@ -359,36 +383,44 @@ test("admin can process crawled legal sources without drafts", async () => {
 
 test("admin can generate lesson draft from legal source", async () => {
   let generatedArgs;
-  const service = new AdminContentService({
-    findLegalSourceById: async () =>
-      legalSourceFixture({
-        title: "Traffic safety source",
-        normalizedText: "Nguoi tham gia giao thong can tuan thu tin hieu.",
-      }),
-    createGeneratedLessonDraft: async (args) => {
-      generatedArgs = args;
-      return lessonDraftFixture({
-        title: args.draftData.title,
-        content: args.draftData.content,
-        questions: args.questions.map((question, index) =>
-          draftQuestionFixture({
-            id: `draft-question-${index + 1}`,
-            questionText: question.questionText,
-            explanation: question.explanation,
-            sortOrder: question.sortOrder,
-            options: question.options.map((option, optionIndex) =>
-              draftOptionFixture({
-                id: `draft-option-${index + 1}-${optionIndex + 1}`,
-                optionText: option.optionText,
-                isCorrect: option.isCorrect,
-                sortOrder: option.sortOrder,
-              })
-            ),
-          })
-        ),
-      });
+  const service = new AdminContentService(
+    {
+      findLegalSourceById: async () =>
+        legalSourceFixture({
+          title: "Traffic safety source",
+          normalizedText: "Nguoi tham gia giao thong can tuan thu tin hieu.",
+        }),
+      createGeneratedLessonDraft: async (args) => {
+        generatedArgs = args;
+        return lessonDraftFixture({
+          title: args.draftData.title,
+          content: args.draftData.content,
+          questions: args.questions.map((question, index) =>
+            draftQuestionFixture({
+              id: `draft-question-${index + 1}`,
+              questionText: question.questionText,
+              explanation: question.explanation,
+              sortOrder: question.sortOrder,
+              options: question.options.map((option, optionIndex) =>
+                draftOptionFixture({
+                  id: `draft-option-${index + 1}-${optionIndex + 1}`,
+                  optionText: option.optionText,
+                  isCorrect: option.isCorrect,
+                  sortOrder: option.sortOrder,
+                })
+              ),
+            })
+          ),
+        });
+      },
     },
-  });
+    {
+      get: (key) =>
+        ({
+          AI_DRAFT_PROVIDER: "local",
+        }[key]),
+    }
+  );
 
   const draft = await service.generateLessonDraft({
     sourceDocumentId: "source-1",
