@@ -4,6 +4,11 @@ export type ModuleLesson = {
   id: string;
   title: string;
   sortOrder: number;
+  progress: {
+    status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+    lastScore: number | null;
+    completedAt: string | null;
+  } | null;
 };
 
 export type LearningModule = {
@@ -71,10 +76,12 @@ export type LessonDetail = {
 
 export type QuizSubmissionAnswer = {
   questionId: string;
-  selectedOptionId: string;
+  optionId: string;
 };
 
-export type QuizSubmissionResult = QuizSubmissionAnswer & {
+export type QuizSubmissionResult = {
+  questionId: string;
+  selectedOptionId: string;
   isCorrect: boolean;
   correctOptionId: string | null;
   explanation: string | null;
@@ -87,6 +94,8 @@ export type QuizSubmission = {
   wrongCount: number;
   totalQuestions: number;
   xpAwarded: number;
+  coinsAwarded: number;
+  coinBalance: number;
   bestScore: number;
   completedAt: string;
   results: QuizSubmissionResult[];

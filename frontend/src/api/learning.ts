@@ -17,6 +17,7 @@ import type {
   CurrentLesson,
   LearningHistoryItem,
   ProgressSummary,
+  AttemptDetail,
 } from "../types/progress";
 import type { PaginatedResponse } from "../types/api";
 
@@ -142,4 +143,8 @@ export function revokeDeviceToken(token: string, deviceToken: string) {
     `/notifications/device-tokens/${encodeURIComponent(deviceToken)}`,
     { method: "DELETE", token }
   );
+}
+
+export function getLearningAttemptDetail(token: string, attemptId: string) {
+  return apiRequest<AttemptDetail>(`/progress/me/history/${attemptId}`, { token });
 }

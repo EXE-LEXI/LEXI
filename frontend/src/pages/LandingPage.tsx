@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Sparkles, ArrowRight, Gamepad2, Hourglass, Award, Flame } from "lucide-react";
+import { LegalDisclaimer } from "../components/layout/LegalDisclaimer";
 import type { AuthResponse } from "../types/auth";
 
 type LandingPageProps = {
@@ -58,6 +59,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, session })
           </div>
         </header>
       )}
+
+      {!session && <LegalDisclaimer />}
 
       {/* 2. Hero Section */}
       <section className="lexi-landing-hero">

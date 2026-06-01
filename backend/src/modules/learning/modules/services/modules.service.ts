@@ -12,6 +12,7 @@ export class ModulesService {
   constructor(private readonly modulesRepository: ModulesRepository) {}
 
   async getModules(params: {
+    userId: string;
     categoryId?: string;
     page?: number;
     limit?: number;
@@ -19,6 +20,7 @@ export class ModulesService {
     const page = params.page ?? DEFAULT_MODULES_PAGE;
     const limit = params.limit ?? DEFAULT_MODULES_LIMIT;
     const [total, modules] = await this.modulesRepository.findActiveModules({
+      userId: params.userId,
       categoryId: params.categoryId,
       page,
       limit,

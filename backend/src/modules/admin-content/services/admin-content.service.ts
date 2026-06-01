@@ -12,6 +12,7 @@ import {
   LegalSourceCrawlStatus,
   LessonDraftStatus,
   LessonReviewStatus,
+  MediaAssetPlacement,
   MediaAssetSourceType,
   MediaAssetStatus,
   MediaAssetType,
@@ -30,7 +31,10 @@ import { GetAdminLegalSourcesQueryDto } from "../dto/request/get-admin-legal-sou
 import { GetAdminLessonDraftsQueryDto } from "../dto/request/get-admin-lesson-drafts-query.dto";
 import { GetAdminMediaAssetsQueryDto } from "../dto/request/get-admin-media-assets-query.dto";
 import { GetAdminNotificationDeliveryLogsQueryDto } from "../dto/request/get-admin-notification-delivery-logs-query.dto";
-import { CreateAdminQuestionDto } from "../dto/request/create-admin-question.dto";
+import {
+  CreateAdminQuestionDto,
+  CreateAdminQuestionsBulkDto,
+} from "../dto/request/create-admin-question.dto";
 import { GetAdminLessonsQueryDto } from "../dto/request/get-admin-lessons-query.dto";
 import { UpdateAdminLegalSourceDto } from "../dto/request/update-admin-legal-source.dto";
 import { UpdateAdminLessonDraftDto } from "../dto/request/update-admin-lesson-draft.dto";
@@ -383,6 +387,35 @@ export class AdminContentService {
     return AdminContentMapper.toQuestion(question);
   }
 
+  async createQuestionsBulk(
+    lessonId: string,
+    createDto: CreateAdminQuestionsBulkDto
+  ): Promise<AdminQuestionResponseDto[]> {
+    await this.getLessonOrThrow(lessonId);
+
+    for (const question of createDto.questions) {
+      this.assertValidOptions(question.options);
+    }
+
+    const questions = await this.adminContentRepository.createQuestions({
+      lessonId,
+      questions: createDto.questions.map((question, index) => ({
+        questionText: question.text,
+        explanation: question.explanation,
+        sortOrder: question.sortOrder ?? index,
+        options: {
+          create: question.options.map((option, optionIndex) => ({
+            optionText: option.text,
+            isCorrect: option.isCorrect,
+            sortOrder: option.sortOrder ?? optionIndex,
+          })),
+        },
+      })),
+    });
+
+    return AdminContentMapper.toQuestions(questions);
+  }
+
   async updateQuestion(
     questionId: string,
     updateDto: UpdateAdminQuestionDto
@@ -549,6 +582,9 @@ export class AdminContentService {
     if (query.sourceType) {
       where.sourceType = query.sourceType;
     }
+    if (query.placement) {
+      where.placement = query.placement;
+    }
     if (query.status) {
       where.status = query.status;
     }
@@ -685,6 +721,7 @@ export class AdminContentService {
       title: dto.title,
       assetType: dto.assetType ?? MediaAssetType.VIDEO,
       sourceType,
+      placement: dto.placement ?? MediaAssetPlacement.LESSON_RESOURCE,
       status,
       url: dto.url,
       mimeType: dto.mimeType,
@@ -703,6 +740,7 @@ export class AdminContentService {
       title: dto.title,
       assetType: dto.assetType,
       sourceType: dto.sourceType,
+      placement: dto.placement,
       status: dto.status,
       url: dto.url,
       mimeType: dto.mimeType,

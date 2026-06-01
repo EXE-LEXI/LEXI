@@ -19,7 +19,10 @@ import { UserRole } from "@prisma/client";
 import { Roles } from "../../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../../auth/guards/roles.guard";
-import { CreateAdminQuestionDto } from "../dto/request/create-admin-question.dto";
+import {
+  CreateAdminQuestionDto,
+  CreateAdminQuestionsBulkDto,
+} from "../dto/request/create-admin-question.dto";
 import { GetAdminLessonsQueryDto } from "../dto/request/get-admin-lessons-query.dto";
 import { UpdateAdminLessonDto } from "../dto/request/update-admin-lesson.dto";
 import { UpdateAdminQuestionDto } from "../dto/request/update-admin-question.dto";
@@ -83,6 +86,16 @@ export class AdminLessonsController {
     @Body() createDto: CreateAdminQuestionDto
   ): Promise<AdminQuestionResponseDto> {
     return this.adminContentService.createQuestion(lessonId, createDto);
+  }
+
+  @Post("lessons/:lessonId/questions/bulk")
+  @ApiOperation({ summary: "Create multiple quiz questions for a lesson" })
+  @ApiOkResponse({ type: AdminQuestionResponseDto, isArray: true })
+  createQuestionsBulk(
+    @Param("lessonId") lessonId: string,
+    @Body() createDto: CreateAdminQuestionsBulkDto
+  ): Promise<AdminQuestionResponseDto[]> {
+    return this.adminContentService.createQuestionsBulk(lessonId, createDto);
   }
 
   @Patch("questions/:questionId")

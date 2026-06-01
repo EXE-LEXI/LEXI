@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import type { AuthResponse } from "../types/auth";
 import { ROUTES } from "../routes/paths";
+import { claimGameReward } from "../api/rewards";
 
 // Import new game modes
 import { FraudScannerGame } from "./games/FraudScannerGame";
@@ -90,6 +91,7 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
   const [userCoins, setUserCoins] = useState(session?.user?.profile?.xp ? Math.floor(session.user.profile.xp / 3) : 450);
   const [userXp, setUserXp] = useState(session?.user?.profile?.xp || 1200);
   const userStreak = session?.user?.profile?.streak || 12;
+  const [rewardNotice, setRewardNotice] = useState<string | null>(null);
 
   // State for Mode 1: Duel Arena
   const [playerHp, setPlayerHp] = useState(100);
@@ -218,8 +220,7 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
     if (courtSelectedDecision === null) return;
     
     setCourtStage("complete");
-    setUserCoins((prev) => prev + 20);
-    setUserXp((prev) => prev + 40);
+    void handleGameReward(20, 40, "court-simulator");
 
     if (courtSelectedDecision === 0) {
       setCourtLog("Gõ búa! Bạn tuyên bố bảo hộ quyền tác giả cho Họa sĩ vì đóng góp tinh chỉnh tay là sáng tạo thực tế. Quyết định được Bồi thẩm đoàn tán thưởng nhiệt liệt!");
@@ -230,9 +231,35 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
     }
   }
 
-  function handleGameReward(coins: number, xp: number) {
-    setUserCoins((prev) => prev + coins);
+  async function handleGameReward(coins: number, xp: number, gameCode = activeMode || "game") {
     setUserXp((prev) => prev + xp);
+    setRewardNotice(null);
+
+    if (!session?.accessToken) {
+      setUserCoins((prev) => prev + coins);
+      return;
+    }
+
+    try {
+      const reward = await claimGameReward(session.accessToken, {
+        gameCode,
+        score: Math.min(100, Math.max(1, coins * 10)),
+        idempotencyKey: `${gameCode}:${Date.now()}:${Math.random().toString(36).slice(2)}`,
+      });
+      setUserCoins(reward.coinBalance);
+      setRewardNotice(
+        reward.coinsAwarded > 0
+          ? `+${reward.coinsAwarded} LC da duoc ghi vao vi diem.`
+          : "Ban da cham gioi han diem game trong ngay."
+      );
+    } catch (err) {
+      setUserCoins((prev) => prev + coins);
+      setRewardNotice(
+        err instanceof Error
+          ? `Chua dong bo duoc diem game: ${err.message}`
+          : "Chua dong bo duoc diem game."
+      );
+    }
   }
 
   return (
@@ -260,7 +287,7 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
               <Award size={18} />
               <span>Thành tích</span>
             </a>
-            <a href="#history" onClick={(e) => e.preventDefault()}>
+            <a href="/history" onClick={(e) => { e.preventDefault(); onNavigate(ROUTES.history); }}>
               <History size={18} />
               <span>Lịch sử học</span>
             </a>
@@ -289,7 +316,7 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
 
             <button 
               className="lexi-sidebar-btn-premium"
-              onClick={() => alert("Tính năng Nâng cấp Premium sắp ra mắt!")}
+              onClick={() => onNavigate(ROUTES.subscription)}
             >
               Nâng cấp Premium
             </button>
@@ -322,6 +349,12 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
               </span>
             </div>
           </header>
+
+          {rewardNotice && (
+            <div className="lexi-inline-notice" style={{ marginBottom: "16px" }}>
+              {rewardNotice}
+            </div>
+          )}
 
           {/* 1. SELECTION STAGE (Mode select) */}
           {activeMode === null && (

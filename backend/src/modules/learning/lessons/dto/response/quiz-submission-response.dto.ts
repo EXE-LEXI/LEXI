@@ -37,6 +37,12 @@ export class QuizSubmissionResponseDto {
   xpAwarded: number;
 
   @ApiProperty()
+  coinsAwarded: number;
+
+  @ApiProperty()
+  coinBalance: number;
+
+  @ApiProperty()
   bestScore: number;
 
   @ApiProperty()

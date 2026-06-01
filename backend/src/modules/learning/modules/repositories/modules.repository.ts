@@ -7,6 +7,7 @@ export class ModulesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   findActiveModules(params: {
+    userId: string;
     categoryId?: string;
     page: number;
     limit: number;
@@ -39,6 +40,17 @@ export class ModulesRepository {
               id: true,
               title: true,
               sortOrder: true,
+              progress: {
+                where: {
+                  userId: params.userId,
+                },
+                select: {
+                  status: true,
+                  lastScore: true,
+                  completedAt: true,
+                },
+                take: 1,
+              },
             },
             orderBy: { sortOrder: "asc" },
           },

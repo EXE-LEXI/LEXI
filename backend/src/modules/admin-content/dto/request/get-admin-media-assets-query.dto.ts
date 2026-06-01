@@ -1,6 +1,7 @@
 import {
   MediaAssetSourceType,
   MediaAssetStatus,
+  MediaAssetPlacement,
   MediaAssetType,
 } from "@prisma/client";
 import { IsEnum, IsOptional, IsString } from "class-validator";
@@ -14,6 +15,10 @@ export class GetAdminMediaAssetsQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsEnum(MediaAssetSourceType)
   sourceType?: MediaAssetSourceType;
+
+  @IsOptional()
+  @IsEnum(MediaAssetPlacement)
+  placement?: MediaAssetPlacement;
 
   @IsOptional()
   @IsEnum(MediaAssetStatus)

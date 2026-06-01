@@ -6,7 +6,7 @@ import {
   IsString,
   ValidateNested,
 } from "class-validator";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 
 export class SubmitQuizAnswerDto {
   @ApiProperty()
@@ -15,6 +15,7 @@ export class SubmitQuizAnswerDto {
   questionId: string;
 
   @ApiProperty()
+  @Transform(({ obj, value }) => value ?? obj.selectedOptionId)
   @IsString()
   @IsNotEmpty()
   optionId: string;

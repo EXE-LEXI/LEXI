@@ -24,9 +24,10 @@ export class LessonsController {
   @ApiOperation({ summary: "Get active lesson detail and quiz questions" })
   @ApiOkResponse({ type: LessonDetailResponseDto })
   async getLessonDetail(
-    @Param("id") id: string
+    @Param("id") id: string,
+    @CurrentUser() user: AuthUserDto
   ): Promise<LessonDetailResponseDto> {
-    return this.lessonsService.getLessonDetail(id);
+    return this.lessonsService.getLessonDetail(id, user.id);
   }
 
   @Post(":id/submit")

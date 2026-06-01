@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
@@ -7,17 +8,24 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { UserStatus } from "@prisma/client";
 import * as bcrypt from "bcrypt";
-import { createHash, randomUUID } from "crypto";
+import { createHash, randomBytes, randomUUID } from "crypto";
 import {
   AUTH_REFRESH_TOKEN_TTL_MS,
   AUTH_TOKEN_EXPIRES_IN,
   PASSWORD_SALT_ROUNDS,
+  PASSWORD_RESET_TOKEN_TTL_MS,
 } from "../constants/auth.constants";
 import { LoginDto } from "../dto/request/login.dto";
 import { RegisterDto } from "../dto/request/register.dto";
+import { RequestPasswordResetDto } from "../dto/request/request-password-reset.dto";
+import { ResetPasswordDto } from "../dto/request/reset-password.dto";
 import { AuthResponseDto } from "../dto/response/auth-response.dto";
 import { AuthUserDto } from "../dto/response/auth-user.dto";
 import { LogoutResponseDto } from "../dto/response/logout-response.dto";
+import {
+  PasswordResetRequestResponseDto,
+  PasswordResetResponseDto,
+} from "../dto/response/password-reset-response.dto";
 import {
   JwtPayload,
   RefreshJwtPayload,
@@ -93,21 +101,74 @@ export class AuthService {
   }
 
   async logout(refreshToken: string): Promise<LogoutResponseDto> {
-    const payload = await this.verifyRefreshTokenPayload(refreshToken);
-    const tokenRecord = await this.getValidRefreshTokenRecord(
-      refreshToken,
-      payload
-    );
+    let payload: RefreshJwtPayload;
+    let tokenRecord: RefreshTokenRecord;
+
+    try {
+      payload = await this.verifyRefreshTokenPayload(refreshToken);
+      tokenRecord = await this.getValidRefreshTokenRecord(
+        refreshToken,
+        payload
+      );
+    } catch {
+      return { loggedOut: true };
+    }
 
     const revokeResult = await this.authRepository.revokeRefreshToken(
       tokenRecord.id
     );
 
     if (revokeResult.count !== 1) {
-      throw new UnauthorizedException("Invalid refresh token");
+      return { loggedOut: true };
     }
 
     return { loggedOut: true };
+  }
+
+  async requestPasswordReset(
+    dto: RequestPasswordResetDto
+  ): Promise<PasswordResetRequestResponseDto> {
+    const user = await this.authRepository.findActiveUserIdByEmail(dto.email);
+
+    if (!user) {
+      return { accepted: true, resetToken: null };
+    }
+
+    const resetToken = randomBytes(32).toString("base64url");
+
+    await this.authRepository.createPasswordResetToken({
+      userId: user.id,
+      tokenHash: this.hashToken(resetToken),
+      expiresAt: new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS),
+    });
+
+    return {
+      accepted: true,
+      resetToken:
+        this.configService.get<string>("NODE_ENV", "development") ===
+        "production"
+          ? null
+          : resetToken,
+    };
+  }
+
+  async resetPassword(
+    dto: ResetPasswordDto
+  ): Promise<PasswordResetResponseDto> {
+    const passwordHash = await bcrypt.hash(
+      dto.newPassword,
+      PASSWORD_SALT_ROUNDS
+    );
+    const result = await this.authRepository.consumePasswordResetToken(
+      this.hashToken(dto.token),
+      passwordHash
+    );
+
+    if (!result) {
+      throw new BadRequestException("Invalid or expired password reset token");
+    }
+
+    return { reset: true };
   }
 
   async validateUser(userId: string): Promise<AuthUserDto> {

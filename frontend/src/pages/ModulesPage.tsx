@@ -71,19 +71,15 @@ export const ModulesPage: React.FC<ModulesPageProps> = ({
   let globalLessonIndex = 0;
   let activeFound = false;
 
-  const resolvedModules = modules.map((module, mIdx) => {
+  const resolvedModules = modules.map((module) => {
     const resolvedLessons = module.lessons.map((lesson) => {
       let state: "completed" | "active" | "locked" = "locked";
-      
-      // Let's mock a few completed lessons if xp is high, or use isCompleted field
-      // Rule: first 3 global index are completed if user has xp > 500
-      const isMockCompleted = globalLessonIndex < 3 && userXp > 500;
-      
-      if (isMockCompleted) {
+
+      if (lesson.progress?.status === "COMPLETED") {
         state = "completed";
       } else if (!activeFound) {
         state = "active";
-        activeFound = true; // only one active node at a time!
+        activeFound = true;
       } else {
         state = "locked";
       }
@@ -168,7 +164,7 @@ export const ModulesPage: React.FC<ModulesPageProps> = ({
               <Award size={18} />
               <span>Thành tích</span>
             </a>
-            <a href="#history" onClick={(e) => e.preventDefault()}>
+            <a href="/history" onClick={(e) => { e.preventDefault(); onNavigate(ROUTES.history); }}>
               <History size={18} />
               <span>Lịch sử học</span>
             </a>
@@ -197,7 +193,7 @@ export const ModulesPage: React.FC<ModulesPageProps> = ({
 
             <button 
               className="lexi-sidebar-btn-premium"
-              onClick={() => alert("Tính năng Nâng cấp Premium sắp ra mắt!")}
+              onClick={() => onNavigate(ROUTES.subscription)}
             >
               Nâng cấp Premium
             </button>

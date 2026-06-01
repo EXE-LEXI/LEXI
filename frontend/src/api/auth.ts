@@ -12,6 +12,11 @@ export type RegisterPayload = {
   fullName: string;
 };
 
+export type PasswordResetRequestResponse = {
+  accepted: boolean;
+  resetToken?: string | null;
+};
+
 export function login(payload: LoginPayload) {
   return apiRequest<AuthResponse>("/auth/login", {
     method: "POST",
@@ -30,9 +35,36 @@ export function getCurrentUser(token: string) {
   return apiRequest<AuthUser>("/auth/me", { token });
 }
 
+export function refreshAuthSession(refreshToken: string) {
+  return apiRequest<AuthResponse>("/auth/refresh", {
+    method: "POST",
+    body: { refreshToken },
+  });
+}
+
 export function logout(refreshToken: string) {
   return apiRequest<{ message?: string }>("/auth/logout", {
     method: "POST",
     body: { refreshToken },
+  });
+}
+
+export function requestPasswordReset(email: string) {
+  return apiRequest<PasswordResetRequestResponse>(
+    "/auth/password-reset/request",
+    {
+      method: "POST",
+      body: { email },
+    }
+  );
+}
+
+export function resetPassword(payload: {
+  token: string;
+  newPassword: string;
+}) {
+  return apiRequest<{ reset: boolean }>("/auth/password-reset/confirm", {
+    method: "POST",
+    body: payload,
   });
 }

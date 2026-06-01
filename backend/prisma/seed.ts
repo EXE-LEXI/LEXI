@@ -78,13 +78,13 @@ async function seedUsers(passwordHash: string) {
       profile: {
         upsert: {
           create: {
-            fullName: "Nguoi dung Demo",
+            fullName: "Người dùng Demo",
             avatarUrl: "https://i.pravatar.cc/160?img=32",
             xp: 460,
             streak: 7,
           },
           update: {
-            fullName: "Nguoi dung Demo",
+            fullName: "Người dùng Demo",
             avatarUrl: "https://i.pravatar.cc/160?img=32",
             xp: 460,
             streak: 7,
@@ -99,7 +99,7 @@ async function seedUsers(passwordHash: string) {
       status: UserStatus.ACTIVE,
       profile: {
         create: {
-          fullName: "Nguoi dung Demo",
+          fullName: "Người dùng Demo",
           avatarUrl: "https://i.pravatar.cc/160?img=32",
           xp: 460,
           streak: 7,
@@ -143,9 +143,9 @@ async function seedUsers(passwordHash: string) {
 
   const leaderboardUsers = await Promise.all(
     [
-      ["minh@lexi.vn", "Minh Nguyen", 390, "https://i.pravatar.cc/160?img=5"],
-      ["linh@lexi.vn", "Linh Tran", 335, "https://i.pravatar.cc/160?img=47"],
-      ["an@lexi.vn", "An Pham", 280, "https://i.pravatar.cc/160?img=15"],
+      ["minh@lexi.vn", "Minh Nguyễn", 390, "https://i.pravatar.cc/160?img=5"],
+      ["linh@lexi.vn", "Linh Trần", 335, "https://i.pravatar.cc/160?img=47"],
+      ["an@lexi.vn", "An Phạm", 280, "https://i.pravatar.cc/160?img=15"],
     ].map(([email, fullName, xp, avatarUrl]) =>
       prisma.user.upsert({
         where: { email: String(email) },
@@ -197,16 +197,16 @@ async function seedLearningContent() {
     labor: await prisma.category.upsert({
       where: { slug: "luat-lao-dong" },
       update: {
-        title: "Luat lao dong",
-        description: "Quyen loi, hop dong, luong thu viec va nghi phep.",
+        title: "Luật lao động",
+        description: "Quyền lợi, hợp đồng, lương thử việc và nghỉ phép.",
         iconUrl: "https://cdn-icons-png.flaticon.com/512/1006/1006555.png",
         sortOrder: 1,
         isActive: true,
       },
       create: {
         slug: "luat-lao-dong",
-        title: "Luat lao dong",
-        description: "Quyen loi, hop dong, luong thu viec va nghi phep.",
+        title: "Luật lao động",
+        description: "Quyền lợi, hợp đồng, lương thử việc và nghỉ phép.",
         iconUrl: "https://cdn-icons-png.flaticon.com/512/1006/1006555.png",
         sortOrder: 1,
       },
@@ -214,16 +214,16 @@ async function seedLearningContent() {
     traffic: await prisma.category.upsert({
       where: { slug: "luat-giao-thong" },
       update: {
-        title: "Luat giao thong",
-        description: "Toc do, bien bao, giay to va xu phat thuong gap.",
+        title: "Luật giao thông",
+        description: "Tốc độ, biển báo, giấy tờ và xử phạt thường gặp.",
         iconUrl: "https://cdn-icons-png.flaticon.com/512/2933/2933924.png",
         sortOrder: 2,
         isActive: true,
       },
       create: {
         slug: "luat-giao-thong",
-        title: "Luat giao thong",
-        description: "Toc do, bien bao, giay to va xu phat thuong gap.",
+        title: "Luật giao thông",
+        description: "Tốc độ, biển báo, giấy tờ và xử phạt thường gặp.",
         iconUrl: "https://cdn-icons-png.flaticon.com/512/2933/2933924.png",
         sortOrder: 2,
       },
@@ -231,16 +231,16 @@ async function seedLearningContent() {
     digital: await prisma.category.upsert({
       where: { slug: "an-toan-so" },
       update: {
-        title: "An toan so",
-        description: "Nhan dien lua dao online va bao ve du lieu ca nhan.",
+        title: "An toàn số",
+        description: "Nhận diện lừa đảo online và bảo vệ dữ liệu cá nhân.",
         iconUrl: "https://cdn-icons-png.flaticon.com/512/6124/6124996.png",
         sortOrder: 3,
         isActive: true,
       },
       create: {
         slug: "an-toan-so",
-        title: "An toan so",
-        description: "Nhan dien lua dao online va bao ve du lieu ca nhan.",
+        title: "An toàn số",
+        description: "Nhận diện lừa đảo online và bảo vệ dữ liệu cá nhân.",
         iconUrl: "https://cdn-icons-png.flaticon.com/512/6124/6124996.png",
         sortOrder: 3,
       },
@@ -248,16 +248,16 @@ async function seedLearningContent() {
     scam: await prisma.category.upsert({
       where: { slug: "lua-dao-online" },
       update: {
-        title: "Lua dao online",
-        description: "Cac chien thuat lua dao qua mang va cach xu ly an toan.",
+        title: "Lừa đảo online",
+        description: "Các chiến thuật lừa đảo qua mạng và cách xử lý an toàn.",
         iconUrl: "https://cdn-icons-png.flaticon.com/512/6124/6124996.png",
         sortOrder: 4,
         isActive: true,
       },
       create: {
         slug: "lua-dao-online",
-        title: "Lua dao online",
-        description: "Cac chien thuat lua dao qua mang va cach xu ly an toan.",
+        title: "Lừa đảo online",
+        description: "Các chiến thuật lừa đảo qua mạng và cách xử lý an toàn.",
         iconUrl: "https://cdn-icons-png.flaticon.com/512/6124/6124996.png",
         sortOrder: 4,
       },
@@ -265,16 +265,16 @@ async function seedLearningContent() {
     consumer: await prisma.category.upsert({
       where: { slug: "bao-ve-nguoi-tieu-dung" },
       update: {
-        title: "Bao ve nguoi tieu dung",
-        description: "Doi tra, bao hanh va khieu nai khi mua hang.",
+        title: "Bảo vệ người tiêu dùng",
+        description: "Đổi trả, bảo hành và khiếu nại khi mua hàng.",
         iconUrl: "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
         sortOrder: 5,
         isActive: true,
       },
       create: {
         slug: "bao-ve-nguoi-tieu-dung",
-        title: "Bao ve nguoi tieu dung",
-        description: "Doi tra, bao hanh va khieu nai khi mua hang.",
+        title: "Bảo vệ người tiêu dùng",
+        description: "Đổi trả, bảo hành và khiếu nại khi mua hàng.",
         iconUrl: "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
         sortOrder: 5,
       },
@@ -285,71 +285,71 @@ async function seedLearningContent() {
     laborContract: await upsertModule({
       categoryId: categories.labor.id,
       slug: "hop-dong-lao-dong",
-      title: "Hop dong lao dong",
-      description: "Cac diem can nam truoc khi ky hoac cham dut hop dong.",
+      title: "Hợp đồng lao động",
+      description: "Các điểm cần nắm trước khi ký hoặc chấm dứt hợp đồng.",
       sortOrder: 1,
     }),
     laborLeave: await upsertModule({
       categoryId: categories.labor.id,
       slug: "nghi-phep-va-luong",
-      title: "Nghi phep va tien luong",
-      description: "Luong thu viec, nghi hang nam va nhung khoan can duoc tra.",
+      title: "Nghỉ phép và tiền lương",
+      description: "Lương thử việc, nghỉ hằng năm và những khoản cần được trả.",
       sortOrder: 2,
     }),
     trafficBasics: await upsertModule({
       categoryId: categories.traffic.id,
       slug: "quy-tac-di-duong",
-      title: "Quy tac di duong",
-      description: "Toc do, giay to va tinh huong bi xu phat.",
+      title: "Quy tắc đi đường",
+      description: "Tốc độ, giấy tờ và tình huống bị xử phạt.",
       sortOrder: 1,
     }),
     trafficPapers: await upsertModule({
       categoryId: categories.traffic.id,
       slug: "giay-to-khi-di-duong",
-      title: "Giay to khi di duong",
-      description: "GPLX, dang ky xe, bao hiem va cach ung xu khi duoc kiem tra.",
+      title: "Giấy tờ khi đi đường",
+      description: "GPLX, đăng ký xe, bảo hiểm và cách ứng xử khi được kiểm tra.",
       sortOrder: 2,
     }),
     antiScam: await upsertModule({
       categoryId: categories.digital.id,
       slug: "phishing-va-lua-dao",
-      title: "Phishing va lua dao",
-      description: "Dau hieu canh bao khi nhan link, ma OTP hoac loi moi dau tu.",
+      title: "Phishing và lừa đảo",
+      description: "Dấu hiệu cảnh báo khi nhận link, mã OTP hoặc lời mời đầu tư.",
       sortOrder: 1,
     }),
     accountSafety: await upsertModule({
       categoryId: categories.digital.id,
       slug: "bao-ve-tai-khoan",
-      title: "Bao ve tai khoan",
-      description: "Mat khau, OTP, thiet bi dang nhap va cac buoc khoa tai khoan.",
+      title: "Bảo vệ tài khoản",
+      description: "Mật khẩu, OTP, thiết bị đăng nhập và các bước khóa tài khoản.",
       sortOrder: 2,
     }),
     scamInvestment: await upsertModule({
       categoryId: categories.scam.id,
       slug: "lua-dao-dau-tu",
-      title: "Lua dao dau tu",
-      description: "Nhan dien loi moi loi nhuan cao, app gia mao va nho nap tien.",
+      title: "Lừa đảo đầu tư",
+      description: "Nhận diện lời mời lợi nhuận cao, app giả mạo và nhờ nạp tiền.",
       sortOrder: 1,
     }),
     scamShopping: await upsertModule({
       categoryId: categories.scam.id,
       slug: "lua-dao-mua-ban",
-      title: "Lua dao mua ban",
-      description: "Chuyen khoan coc, shop ao va cach giu bang chung giao dich.",
+      title: "Lừa đảo mua bán",
+      description: "Chuyển khoản cọc, shop ảo và cách giữ bằng chứng giao dịch.",
       sortOrder: 2,
     }),
     shopping: await upsertModule({
       categoryId: categories.consumer.id,
       slug: "mua-hang-online",
-      title: "Mua hang online",
-      description: "Quyen doi tra, thong tin san pham va bang chung giao dich.",
+      title: "Mua hàng online",
+      description: "Quyền đổi trả, thông tin sản phẩm và bằng chứng giao dịch.",
       sortOrder: 1,
     }),
     warranty: await upsertModule({
       categoryId: categories.consumer.id,
       slug: "bao-hanh-va-doi-tra",
-      title: "Bao hanh va doi tra",
-      description: "Khi nao duoc bao hanh, doi hang va cach gui yeu cau ro rang.",
+      title: "Bảo hành và đổi trả",
+      description: "Khi nào được bảo hành, đổi hàng và cách gửi yêu cầu rõ ràng.",
       sortOrder: 2,
     }),
   };
@@ -358,26 +358,26 @@ async function seedLearningContent() {
     {
       moduleId: modules.laborContract.id,
       slug: "thu-viec-toi-da-bao-lau",
-      title: "Thoi gian thu viec toi da bao lau?",
+      title: "Thời gian thử việc tối đa bao lâu?",
       content:
-        "Thoi gian thu viec phu thuoc vao tinh chat cong viec. Vi tri quan ly doanh nghiep co the thu viec toi da 180 ngay; cong viec can trinh do cao dang tro len toi da 60 ngay; trung cap, cong nhan ky thuat, nhan vien nghiep vu toi da 30 ngay; cac cong viec khac toi da 6 ngay lam viec.",
-      sourceTitle: "Bo luat Lao dong 2019",
+        "Thời gian thử việc phụ thuộc vào tính chất công việc. Vị trí quản lý doanh nghiệp có thể thử việc tối đa 180 ngày; công việc cần trình độ cao đẳng trở lên tối đa 60 ngày; trung cấp, công nhân kỹ thuật, nhân viên nghiệp vụ tối đa 30 ngày; các công việc khác tối đa 6 ngày làm việc.",
+      sourceTitle: "Bộ luật Lao động 2019",
       sourceUrl: "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=137155",
       legalDocumentNo: "45/2019/QH14",
       effectiveDate: new Date("2021-01-01T00:00:00.000Z"),
-      reviewerNote: "Demo summary for learning only; check source law before applying.",
+      reviewerNote: "Tóm tắt demo chỉ dùng cho học tập; cần kiểm tra nguồn luật trước khi áp dụng.",
       sortOrder: 1,
       videoUrl,
       questions: [
         quiz(
-          "Cong viec can trinh do dai hoc thu viec toi da bao lau?",
-          "Nhom can trinh do cao dang tro len duoc thu viec toi da 60 ngay.",
-          ["30 ngay", "60 ngay", "90 ngay", "180 ngay"],
+          "Công việc cần trình độ đại học thử việc tối đa bao lâu?",
+          "Nhóm cần trình độ cao đẳng trở lên được thử việc tối đa 60 ngày.",
+          ["30 ngày", "60 ngày", "90 ngày", "180 ngày"],
           1
         ),
         quiz(
-          "Luong thu viec toi thieu bang bao nhieu phan tram luong cua cong viec?",
-          "Luong thu viec do hai ben thoa thuan nhung it nhat bang 85%.",
+          "Lương thử việc tối thiểu bằng bao nhiêu phần trăm lương của công việc?",
+          "Lương thử việc do hai bên thỏa thuận nhưng ít nhất bằng 85%.",
           ["50%", "70%", "85%", "100%"],
           2
         ),
@@ -386,31 +386,31 @@ async function seedLearningContent() {
     {
       moduleId: modules.laborContract.id,
       slug: "don-phuong-cham-dut-hop-dong",
-      title: "Bao truoc khi nghi viec the nao?",
+      title: "Báo trước khi nghỉ việc thế nào?",
       content:
-        "Nguoi lao dong thuong phai bao truoc khi don phuong cham dut hop dong. Thoi han bao truoc phu thuoc loai hop dong va nhom cong viec. Mot so truong hop nhu khong duoc tra luong, bi nguoc dai, bi quay roi tai noi lam viec co the nghi ma khong can bao truoc.",
-      sourceTitle: "Bo luat Lao dong 2019",
+        "Người lao động thường phải báo trước khi đơn phương chấm dứt hợp đồng. Thời hạn báo trước phụ thuộc loại hợp đồng và nhóm công việc. Một số trường hợp như không được trả lương, bị ngược đãi, bị quấy rối tại nơi làm việc có thể nghỉ mà không cần báo trước.",
+      sourceTitle: "Bộ luật Lao động 2019",
       sourceUrl: "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=137155#dieu35",
       legalDocumentNo: "45/2019/QH14",
       effectiveDate: new Date("2021-01-01T00:00:00.000Z"),
-      reviewerNote: "Use for demo of quiz, mistakes and recommendations.",
+      reviewerNote: "Dùng để demo quiz, câu sai và gợi ý ôn tập.",
       sortOrder: 2,
       questions: [
         quiz(
-          "Neu bi cong ty khong tra luong dung han, nguoi lao dong co the lam gi?",
-          "Day la mot trong cac truong hop co the cham dut hop dong ma khong can bao truoc theo dieu kien luat dinh.",
+          "Nếu bị công ty không trả lương đúng hạn, người lao động có thể làm gì?",
+          "Đây là một trong các trường hợp có thể chấm dứt hợp đồng mà không cần báo trước theo điều kiện luật định.",
           [
-            "Bat buoc lam them 30 ngay",
-            "Co the don phuong cham dut khong can bao truoc",
-            "Khong co quyen gi",
-            "Chi duoc nghi khi cong ty dong y",
+            "Bắt buộc làm thêm 30 ngày",
+            "Có thể đơn phương chấm dứt không cần báo trước",
+            "Không có quyền gì",
+            "Chỉ được nghỉ khi công ty đồng ý",
           ],
           1
         ),
         quiz(
-          "Viec bao truoc khi nghi viec phu thuoc yeu to nao?",
-          "Thoi han bao truoc phu thuoc loai hop dong va tinh chat cong viec.",
-          ["Loai hop dong", "Mau ao dong phuc", "So dong nghiep", "Ngay sinh"],
+          "Việc báo trước khi nghỉ việc phụ thuộc yếu tố nào?",
+          "Thời hạn báo trước phụ thuộc loại hợp đồng và tính chất công việc.",
+          ["Loại hợp đồng", "Màu áo đồng phục", "Số đồng nghiệp", "Ngày sinh"],
           0
         ),
       ],
@@ -418,26 +418,26 @@ async function seedLearningContent() {
     {
       moduleId: modules.laborLeave.id,
       slug: "nghi-phep-nam",
-      title: "Nghi phep nam co luong",
+      title: "Nghỉ phép năm có lương",
       content:
-        "Nguoi lao dong lam du 12 thang cho mot nguoi su dung lao dong thuong co it nhat 12 ngay nghi hang nam huong nguyen luong. So ngay co the cao hon voi cong viec nang nhoc, doc hai, nguy hiem hoac nguoi lao dong chua thanh nien.",
-      sourceTitle: "Bo luat Lao dong 2019",
+        "Người lao động làm đủ 12 tháng cho một người sử dụng lao động thường có ít nhất 12 ngày nghỉ hằng năm hưởng nguyên lương. Số ngày có thể cao hơn với công việc nặng nhọc, độc hại, nguy hiểm hoặc người lao động chưa thành niên.",
+      sourceTitle: "Bộ luật Lao động 2019",
       sourceUrl: "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=137155#dieu113",
       legalDocumentNo: "45/2019/QH14",
       effectiveDate: new Date("2021-01-01T00:00:00.000Z"),
-      reviewerNote: "Good for daily challenge demo.",
+      reviewerNote: "Phù hợp để demo thử thách hằng ngày.",
       sortOrder: 1,
       questions: [
         quiz(
-          "Lam du 12 thang trong dieu kien binh thuong co it nhat bao nhieu ngay nghi hang nam?",
-          "Muc co ban thuong la 12 ngay nghi hang nam huong nguyen luong.",
-          ["6 ngay", "10 ngay", "12 ngay", "24 ngay"],
+          "Làm đủ 12 tháng trong điều kiện bình thường có ít nhất bao nhiêu ngày nghỉ hằng năm?",
+          "Mức cơ bản thường là 12 ngày nghỉ hằng năm hưởng nguyên lương.",
+          ["6 ngày", "10 ngày", "12 ngày", "24 ngày"],
           2
         ),
         quiz(
-          "Nghi phep nam thong thuong co duoc huong luong khong?",
-          "Nghi hang nam la ngay nghi huong nguyen luong theo quy dinh.",
-          ["Co", "Khong", "Chi 50%", "Tuy y quan ly"],
+          "Nghỉ phép năm thông thường có được hưởng lương không?",
+          "Nghỉ hằng năm là ngày nghỉ hưởng nguyên lương theo quy định.",
+          ["Có", "Không", "Chỉ 50%", "Tùy ý quản lý"],
           0
         ),
       ],
@@ -445,26 +445,26 @@ async function seedLearningContent() {
     {
       moduleId: modules.trafficBasics.id,
       slug: "toc-do-trong-khu-dan-cu",
-      title: "Toc do trong khu dong dan cu",
+      title: "Tốc độ trong khu đông dân cư",
       content:
-        "Khi di trong khu dong dan cu, nguoi lai xe can quan sat bien bao va loai duong. Voi duong doi co dai phan cach, toc do toi da thuong la 60 km/h; voi duong hai chieu khong co dai phan cach hoac duong mot chieu mot lan xe, thuong la 50 km/h.",
-      sourceTitle: "Thong tu ve toc do va khoang cach an toan",
+        "Khi đi trong khu đông dân cư, người lái xe cần quan sát biển báo và loại đường. Với đường đôi có dải phân cách, tốc độ tối đa thường là 60 km/h; với đường hai chiều không có dải phân cách hoặc đường một chiều một làn xe, thường là 50 km/h.",
+      sourceTitle: "Thông tư về tốc độ và khoảng cách an toàn",
       sourceUrl: "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx",
       legalDocumentNo: "31/2019/TT-BGTVT",
       effectiveDate: new Date("2019-10-15T00:00:00.000Z"),
-      reviewerNote: "Traffic lesson for module list and current lesson demo.",
+      reviewerNote: "Bài học giao thông dùng để demo danh sách module và bài học hiện tại.",
       sortOrder: 1,
       questions: [
         quiz(
-          "Trong khu dong dan cu, duong doi co dai phan cach thuong toi da bao nhieu?",
-          "Muc thuong gap la 60 km/h neu khong co bien bao khac.",
+          "Trong khu đông dân cư, đường đôi có dải phân cách thường tối đa bao nhiêu?",
+          "Mức thường gặp là 60 km/h nếu không có biển báo khác.",
           ["40 km/h", "50 km/h", "60 km/h", "80 km/h"],
           2
         ),
         quiz(
-          "Khi co bien bao toc do khac voi muc chung, can lam gi?",
-          "Bien bao tai hien truong la chi dan can tuan thu.",
-          ["Theo bien bao", "Theo y kien ban be", "Di toc do tuy thich", "Chi can bat den"],
+          "Khi có biển báo tốc độ khác với mức chung, cần làm gì?",
+          "Biển báo tại hiện trường là chỉ dẫn cần tuân thủ.",
+          ["Theo biển báo", "Theo ý kiến bạn bè", "Đi tốc độ tùy thích", "Chỉ cần bật đèn"],
           0
         ),
       ],
@@ -472,26 +472,26 @@ async function seedLearningContent() {
     {
       moduleId: modules.trafficPapers.id,
       slug: "giay-to-can-mang-khi-lai-xe",
-      title: "Giay to can mang khi lai xe",
+      title: "Giấy tờ cần mang khi lái xe",
       content:
-        "Khi dieu khien phuong tien, nguoi lai xe nen mang giay phep lai xe phu hop, dang ky xe, chung nhan bao hiem bat buoc va giay to lien quan. Neu bi kiem tra, hay binh tinh xuat trinh giay to va ghi nhan thong tin xu ly neu can.",
-      sourceTitle: "Quy dinh xu phat vi pham giao thong duong bo",
+        "Khi điều khiển phương tiện, người lái xe nên mang giấy phép lái xe phù hợp, đăng ký xe, chứng nhận bảo hiểm bắt buộc và giấy tờ liên quan. Nếu bị kiểm tra, hãy bình tĩnh xuất trình giấy tờ và ghi nhận thông tin xử lý nếu cần.",
+      sourceTitle: "Quy định xử phạt vi phạm giao thông đường bộ",
       sourceUrl: "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx",
       legalDocumentNo: "100/2019/ND-CP",
       effectiveDate: new Date("2020-01-01T00:00:00.000Z"),
-      reviewerNote: "Traffic paperwork lesson for module demo.",
+      reviewerNote: "Bài học giấy tờ giao thông dùng để demo module.",
       sortOrder: 1,
       questions: [
         quiz(
-          "Giay to nao thuong can mang khi lai xe?",
-          "Nguoi lai xe can mang GPLX phu hop va giay to xe bat buoc.",
-          ["Giay phep lai xe", "The thanh vien", "Hoa don ca phe", "Mat khau email"],
+          "Giấy tờ nào thường cần mang khi lái xe?",
+          "Người lái xe cần mang GPLX phù hợp và giấy tờ xe bắt buộc.",
+          ["Giấy phép lái xe", "Thẻ thành viên", "Hóa đơn cà phê", "Mật khẩu email"],
           0
         ),
         quiz(
-          "Khi duoc yeu cau kiem tra giay to, viec nen lam la gi?",
-          "Nen binh tinh xuat trinh giay to va ghi nhan thong tin neu can khieu nai.",
-          ["Binh tinh xuat trinh", "Bo chay", "Xoa tin nhan", "Dua OTP"],
+          "Khi được yêu cầu kiểm tra giấy tờ, việc nên làm là gì?",
+          "Nên bình tĩnh xuất trình giấy tờ và ghi nhận thông tin nếu cần khiếu nại.",
+          ["Bình tĩnh xuất trình", "Bỏ chạy", "Xóa tin nhắn", "Đưa OTP"],
           0
         ),
       ],
@@ -499,31 +499,31 @@ async function seedLearningContent() {
     {
       moduleId: modules.antiScam.id,
       slug: "nhan-dien-link-phishing",
-      title: "Nhan dien link phishing",
+      title: "Nhận diện link phishing",
       content:
-        "Link phishing thuong tao cam giac khan cap, yeu cau nhap mat khau, OTP hoac thong tin the. Hay kiem tra ten mien, khong bam link la, va lien he kenh chinh thuc neu thong bao lien quan tai khoan, ngan hang hoac don hang.",
-      sourceTitle: "Khuyen nghi an toan thong tin ca nhan",
+        "Link phishing thường tạo cảm giác khẩn cấp, yêu cầu nhập mật khẩu, OTP hoặc thông tin thẻ. Hãy kiểm tra tên miền, không bấm link lạ, và liên hệ kênh chính thức nếu thông báo liên quan tài khoản, ngân hàng hoặc đơn hàng.",
+      sourceTitle: "Khuyến nghị an toàn thông tin cá nhân",
       sourceUrl: "https://khonggianmang.vn",
       legalDocumentNo: "Demo-Cyber-01",
       effectiveDate: new Date("2024-01-01T00:00:00.000Z"),
-      reviewerNote: "Demo digital safety lesson.",
+      reviewerNote: "Bài học demo về an toàn số.",
       sortOrder: 1,
       questions: [
         quiz(
-          "Dau hieu nao thuong gap o link phishing?",
-          "Phishing thuong dung su khan cap de ep nguoi dung nhap thong tin nhay cam.",
+          "Dấu hiệu nào thường gặp ở link phishing?",
+          "Phishing thường dùng sự khẩn cấp để ép người dùng nhập thông tin nhạy cảm.",
           [
-            "Yeu cau OTP gap",
-            "Co dieu khoan ro rang",
-            "Ten mien dung chinh thuc",
-            "Khong can thong tin ca nhan",
+            "Yêu cầu OTP gấp",
+            "Có điều khoản rõ ràng",
+            "Tên miền đúng chính thức",
+            "Không cần thông tin cá nhân",
           ],
           0
         ),
         quiz(
-          "Khi nghi ngo link ngan hang gia mao, viec nen lam la gi?",
-          "Nen tu mo app/trang chinh thuc hoac goi tong dai chinh thuc.",
-          ["Nhap OTP de kiem tra", "Chuyen tiep cho moi nguoi", "Lien he kenh chinh thuc", "Tat khoa man hinh"],
+          "Khi nghi ngờ link ngân hàng giả mạo, việc nên làm là gì?",
+          "Nên tự mở app/trang chính thức hoặc gọi tổng đài chính thức.",
+          ["Nhập OTP để kiểm tra", "Chuyển tiếp cho mọi người", "Liên hệ kênh chính thức", "Tắt khóa màn hình"],
           2
         ),
       ],
@@ -531,26 +531,26 @@ async function seedLearningContent() {
     {
       moduleId: modules.accountSafety.id,
       slug: "bao-ve-otp-va-mat-khau",
-      title: "Bao ve OTP va mat khau",
+      title: "Bảo vệ OTP và mật khẩu",
       content:
-        "OTP va mat khau la thong tin bao mat ca nhan, khong chia se qua dien thoai, tin nhan hay form la. Khi nghi ngo bi lo thong tin, hay doi mat khau, dang xuat thiet bi la va lien he kenh ho tro chinh thuc.",
-      sourceTitle: "Khuyen nghi bao ve du lieu ca nhan",
+        "OTP và mật khẩu là thông tin bảo mật cá nhân, không chia sẻ qua điện thoại, tin nhắn hay form lạ. Khi nghi ngờ bị lộ thông tin, hãy đổi mật khẩu, đăng xuất thiết bị lạ và liên hệ kênh hỗ trợ chính thức.",
+      sourceTitle: "Khuyến nghị bảo vệ dữ liệu cá nhân",
       sourceUrl: "https://khonggianmang.vn",
       legalDocumentNo: "Demo-Cyber-02",
       effectiveDate: new Date("2024-01-01T00:00:00.000Z"),
-      reviewerNote: "Account safety lesson for An toan so category.",
+      reviewerNote: "Bài học bảo vệ tài khoản cho danh mục An toàn số.",
       sortOrder: 1,
       questions: [
         quiz(
-          "OTP co nen chia se cho nguoi tu xung la nhan vien ho tro khong?",
-          "OTP la ma xac thuc ca nhan, khong nen chia se cho bat ky ai.",
-          ["Co", "Khong", "Chi chia se vao ban dem", "Chi khi duoc hua tang qua"],
+          "OTP có nên chia sẻ cho người tự xưng là nhân viên hỗ trợ không?",
+          "OTP là mã xác thực cá nhân, không nên chia sẻ cho bất kỳ ai.",
+          ["Có", "Không", "Chỉ chia sẻ vào ban đêm", "Chỉ khi được hứa tặng quà"],
           1
         ),
         quiz(
-          "Khi nghi tai khoan bi lo mat khau, nen lam gi?",
-          "Doi mat khau va dang xuat cac thiet bi la la buoc can lam som.",
-          ["Doi mat khau", "Dang them anh ca nhan", "Chuyen tien kiem tra", "Bo qua"],
+          "Khi nghi tài khoản bị lộ mật khẩu, nên làm gì?",
+          "Đổi mật khẩu và đăng xuất các thiết bị lạ là bước cần làm sớm.",
+          ["Đổi mật khẩu", "Đăng thêm ảnh cá nhân", "Chuyển tiền kiểm tra", "Bỏ qua"],
           0
         ),
       ],
@@ -558,26 +558,26 @@ async function seedLearningContent() {
     {
       moduleId: modules.scamInvestment.id,
       slug: "nhan-dien-app-dau-tu-gia-mao",
-      title: "Nhan dien app dau tu gia mao",
+      title: "Nhận diện app đầu tư giả mạo",
       content:
-        "Lua dao dau tu thuong hua loi nhuan cao, yeu cau nap tien lien tuc va tao ap luc moi them nguoi tham gia. Hay kiem tra phap nhan, giay phep, dieu khoan rut tien va canh giac voi loi cam ket chac chan co lai.",
-      sourceTitle: "Canh bao lua dao dau tu truc tuyen",
+        "Lừa đảo đầu tư thường hứa lợi nhuận cao, yêu cầu nạp tiền liên tục và tạo áp lực mời thêm người tham gia. Hãy kiểm tra pháp nhân, giấy phép, điều khoản rút tiền và cảnh giác với lời cam kết chắc chắn có lãi.",
+      sourceTitle: "Cảnh báo lừa đảo đầu tư trực tuyến",
       sourceUrl: "https://lexi.local/sources/lua-dao-dau-tu",
       legalDocumentNo: "DEMO-SCAM-01",
       effectiveDate: new Date("2026-01-01T00:00:00.000Z"),
-      reviewerNote: "Scam investment lesson for legacy Lua dao online category.",
+      reviewerNote: "Bài học lừa đảo đầu tư cho danh mục Lừa đảo online.",
       sortOrder: 1,
       questions: [
         quiz(
-          "Dau hieu nao dang nghi trong loi moi dau tu?",
-          "Cam ket loi nhuan cao va chac chan la dau hieu can canh giac.",
-          ["Cam ket loi nhuan chac chan", "Cong khai rui ro", "Hop dong ro rang", "Thong tin phap nhan minh bach"],
+          "Dấu hiệu nào đáng nghi trong lời mời đầu tư?",
+          "Cam kết lợi nhuận cao và chắc chắn là dấu hiệu cần cảnh giác.",
+          ["Cam kết lợi nhuận chắc chắn", "Công khai rủi ro", "Hợp đồng rõ ràng", "Thông tin pháp nhân minh bạch"],
           0
         ),
         quiz(
-          "Truoc khi nap tien vao app dau tu la, nen lam gi?",
-          "Can kiem tra phap nhan, giay phep va dieu kien rut tien.",
-          ["Kiem tra phap nhan", "Nap thu toan bo tien", "Gui OTP cho tu van", "Muon tien ban be"],
+          "Trước khi nạp tiền vào app đầu tư lạ, nên làm gì?",
+          "Cần kiểm tra pháp nhân, giấy phép và điều kiện rút tiền.",
+          ["Kiểm tra pháp nhân", "Nạp thử toàn bộ tiền", "Gửi OTP cho tư vấn", "Mượn tiền bạn bè"],
           0
         ),
       ],
@@ -585,26 +585,26 @@ async function seedLearningContent() {
     {
       moduleId: modules.scamShopping.id,
       slug: "tranh-bi-lua-coc-mua-hang",
-      title: "Tranh bi lua coc mua hang",
+      title: "Tránh bị lừa cọc mua hàng",
       content:
-        "Khi mua hang qua mang xa hoi, hay kiem tra lich su ban hang, danh gia, thong tin nguoi nhan tien va uu tien kenh co bao ve nguoi mua. Neu can dat coc, nen luu hoa don, tin nhan va thoa thuan giao dich.",
-      sourceTitle: "Canh bao lua dao mua ban online",
+        "Khi mua hàng qua mạng xã hội, hãy kiểm tra lịch sử bán hàng, đánh giá, thông tin người nhận tiền và ưu tiên kênh có bảo vệ người mua. Nếu cần đặt cọc, nên lưu hóa đơn, tin nhắn và thỏa thuận giao dịch.",
+      sourceTitle: "Cảnh báo lừa đảo mua bán online",
       sourceUrl: "https://lexi.local/sources/lua-dao-mua-ban",
       legalDocumentNo: "DEMO-SCAM-02",
       effectiveDate: new Date("2026-01-01T00:00:00.000Z"),
-      reviewerNote: "Shopping scam lesson for legacy category.",
+      reviewerNote: "Bài học lừa đảo mua bán cho danh mục cũ.",
       sortOrder: 1,
       questions: [
         quiz(
-          "Khi nguoi ban yeu cau dat coc gap, nen lam gi?",
-          "Nen kiem tra nguoi ban va luu bang chung truoc khi chuyen tien.",
-          ["Kiem tra va luu bang chung", "Chuyen ngay", "Gui OTP", "Xoa doan chat"],
+          "Khi người bán yêu cầu đặt cọc gấp, nên làm gì?",
+          "Nên kiểm tra người bán và lưu bằng chứng trước khi chuyển tiền.",
+          ["Kiểm tra và lưu bằng chứng", "Chuyển ngay", "Gửi OTP", "Xóa đoạn chat"],
           0
         ),
         quiz(
-          "Bang chung nao huu ich khi bi lua mua hang?",
-          "Tin nhan, bien lai chuyen khoan va thong tin bai dang la bang chung quan trong.",
-          ["Tin nhan va bien lai", "Mat khau app ngan hang", "Anh phong canh", "Lich su xem phim"],
+          "Bằng chứng nào hữu ích khi bị lừa mua hàng?",
+          "Tin nhắn, biên lai chuyển khoản và thông tin bài đăng là bằng chứng quan trọng.",
+          ["Tin nhắn và biên lai", "Mật khẩu app ngân hàng", "Ảnh phong cảnh", "Lịch sử xem phim"],
           0
         ),
       ],
@@ -612,26 +612,26 @@ async function seedLearningContent() {
     {
       moduleId: modules.shopping.id,
       slug: "doi-tra-khi-mua-hang-online",
-      title: "Doi tra khi mua hang online",
+      title: "Đổi trả khi mua hàng online",
       content:
-        "Khi mua hang online, nguoi tieu dung nen luu thong tin san pham, hoa don, tin nhan va chinh sach doi tra. Neu hang sai mo ta, kem chat luong hoac khong dung cam ket, cac bang chung nay giup yeu cau ho tro, doi tra hoac khieu nai.",
-      sourceTitle: "Luat Bao ve quyen loi nguoi tieu dung",
+        "Khi mua hàng online, người tiêu dùng nên lưu thông tin sản phẩm, hóa đơn, tin nhắn và chính sách đổi trả. Nếu hàng sai mô tả, kém chất lượng hoặc không đúng cam kết, các bằng chứng này giúp yêu cầu hỗ trợ, đổi trả hoặc khiếu nại.",
+      sourceTitle: "Luật Bảo vệ quyền lợi người tiêu dùng",
       sourceUrl: "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx",
       legalDocumentNo: "19/2023/QH15",
       effectiveDate: new Date("2024-07-01T00:00:00.000Z"),
-      reviewerNote: "Consumer protection lesson for remaining state demo.",
+      reviewerNote: "Bài học bảo vệ người tiêu dùng dùng để demo trạng thái còn lại.",
       sortOrder: 1,
       questions: [
         quiz(
-          "Bang chung nao nen luu khi mua hang online?",
-          "Hoa don, tin nhan, anh san pham va chinh sach doi tra deu huu ich khi can khieu nai.",
-          ["Hoa don va tin nhan", "Mat khau tai khoan", "OTP ngan hang", "Khong can luu gi"],
+          "Bằng chứng nào nên lưu khi mua hàng online?",
+          "Hóa đơn, tin nhắn, ảnh sản phẩm và chính sách đổi trả đều hữu ích khi cần khiếu nại.",
+          ["Hóa đơn và tin nhắn", "Mật khẩu tài khoản", "OTP ngân hàng", "Không cần lưu gì"],
           0
         ),
         quiz(
-          "Neu hang khong dung mo ta, nguoi mua nen lam gi dau tien?",
-          "Nen lien he nguoi ban/san thuong mai kem bang chung truoc khi leo thang khieu nai.",
-          ["Xoa lich su mua", "Gui yeu cau ho tro kem bang chung", "Bo qua", "Chuyen them tien"],
+          "Nếu hàng không đúng mô tả, người mua nên làm gì đầu tiên?",
+          "Nên liên hệ người bán/sàn thương mại kèm bằng chứng trước khi leo thang khiếu nại.",
+          ["Xóa lịch sử mua", "Gửi yêu cầu hỗ trợ kèm bằng chứng", "Bỏ qua", "Chuyển thêm tiền"],
           1
         ),
       ],
@@ -639,26 +639,26 @@ async function seedLearningContent() {
     {
       moduleId: modules.warranty.id,
       slug: "yeu-cau-bao-hanh-dung-cach",
-      title: "Yeu cau bao hanh dung cach",
+      title: "Yêu cầu bảo hành đúng cách",
       content:
-        "Khi san pham con thoi han bao hanh, nguoi mua nen chuan bi hoa don, phieu bao hanh, anh/video loi va mo ta tinh trang. Yeu cau bao hanh nen ghi ro ngay mua, loi gap phai va mong muon sua, doi hoac hoan tien theo chinh sach.",
-      sourceTitle: "Luat Bao ve quyen loi nguoi tieu dung",
+        "Khi sản phẩm còn thời hạn bảo hành, người mua nên chuẩn bị hóa đơn, phiếu bảo hành, ảnh/video lỗi và mô tả tình trạng. Yêu cầu bảo hành nên ghi rõ ngày mua, lỗi gặp phải và mong muốn sửa, đổi hoặc hoàn tiền theo chính sách.",
+      sourceTitle: "Luật Bảo vệ quyền lợi người tiêu dùng",
       sourceUrl: "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx",
       legalDocumentNo: "19/2023/QH15",
       effectiveDate: new Date("2024-07-01T00:00:00.000Z"),
-      reviewerNote: "Warranty lesson for consumer category.",
+      reviewerNote: "Bài học bảo hành cho danh mục người tiêu dùng.",
       sortOrder: 1,
       questions: [
         quiz(
-          "Khi yeu cau bao hanh, nen chuan bi gi?",
-          "Hoa don, phieu bao hanh va bang chung loi san pham giup xu ly nhanh hon.",
-          ["Hoa don va bang chung loi", "OTP ngan hang", "Mat khau email", "Khong can gi"],
+          "Khi yêu cầu bảo hành, nên chuẩn bị gì?",
+          "Hóa đơn, phiếu bảo hành và bằng chứng lỗi sản phẩm giúp xử lý nhanh hơn.",
+          ["Hóa đơn và bằng chứng lỗi", "OTP ngân hàng", "Mật khẩu email", "Không cần gì"],
           0
         ),
         quiz(
-          "Yeu cau bao hanh nen ghi ro noi dung nao?",
-          "Nen ghi ngay mua, loi gap phai va mong muon xu ly.",
-          ["Loi gap phai va cach xu ly mong muon", "So thich ca nhan", "Ten bai hat", "Mau xe yeu thich"],
+          "Yêu cầu bảo hành nên ghi rõ nội dung nào?",
+          "Nên ghi ngày mua, lỗi gặp phải và mong muốn xử lý.",
+          ["Lỗi gặp phải và cách xử lý mong muốn", "Sở thích cá nhân", "Tên bài hát", "Mẫu xe yêu thích"],
           0
         ),
       ],
@@ -666,22 +666,22 @@ async function seedLearningContent() {
     {
       moduleId: modules.laborLeave.id,
       slug: "demo-in-review-tu-ai-draft",
-      title: "Demo lesson dang review tu AI draft",
+      title: "Demo lesson đang review từ AI draft",
       content:
-        "Lesson nay o trang thai IN_REVIEW va inactive de demo quy trinh Admin CMS. Reviewer co the sua noi dung, them quiz, gan video roi publish.",
+        "Lesson này ở trạng thái IN_REVIEW và inactive để demo quy trình Admin CMS. Reviewer có thể sửa nội dung, thêm quiz, gắn video rồi publish.",
       sourceTitle: "Demo internal source",
       sourceUrl: "https://lexi.local/demo-source",
       legalDocumentNo: "DEMO-REVIEW",
       effectiveDate: new Date("2026-05-01T00:00:00.000Z"),
-      reviewerNote: "Use this item to demo final review before publish.",
+      reviewerNote: "Dùng mục này để demo bước duyệt cuối trước khi publish.",
       sortOrder: 99,
       reviewStatus: LessonReviewStatus.IN_REVIEW,
       isActive: false,
       questions: [
         quiz(
-          "Lesson IN_REVIEW co hien tren app learner khong?",
-          "Learner app chi lay lesson active va PUBLISHED.",
-          ["Co", "Khong", "Chi hien tren leaderboard", "Chi hien khi logout"],
+          "Lesson IN_REVIEW có hiện trên app learner không?",
+          "Learner app chỉ lấy lesson active và PUBLISHED.",
+          ["Có", "Không", "Chỉ hiện trên leaderboard", "Chỉ hiện khi logout"],
           1
         ),
       ],
@@ -799,38 +799,38 @@ async function replaceLessonQuestions(lessonId: string, questions: QuizSeed[]) {
 async function seedLegalSourcesAndDrafts(content: Awaited<ReturnType<typeof seedLearningContent>>) {
   const sources = {
     laborLeave: await upsertSource({
-      title: "Trich dieu ve nghi hang nam",
+      title: "Trích điều về nghỉ hằng năm",
       sourceUrl: "https://lexi.local/sources/nghi-hang-nam",
       legalDocumentNo: "45/2019/QH14",
       effectiveDate: new Date("2021-01-01T00:00:00.000Z"),
       crawlStatus: LegalSourceCrawlStatus.CRAWLED,
       rawText:
-        "Nguoi lao dong lam viec du 12 thang cho mot nguoi su dung lao dong thi duoc nghi hang nam, huong nguyen luong theo hop dong lao dong.",
+        "Người lao động làm việc đủ 12 tháng cho một người sử dụng lao động thì được nghỉ hằng năm, hưởng nguyên lương theo hợp đồng lao động.",
     }),
     trafficFine: await upsertSource({
-      title: "Xu phat khong mang giay phep lai xe",
+      title: "Xử phạt không mang giấy phép lái xe",
       sourceUrl: "https://lexi.local/sources/khong-mang-gplx",
       legalDocumentNo: "100/2019/ND-CP",
       effectiveDate: new Date("2020-01-01T00:00:00.000Z"),
       crawlStatus: LegalSourceCrawlStatus.CRAWLED,
       rawText:
-        "Nguoi dieu khien phuong tien can mang theo giay phep lai xe, dang ky xe va cac giay to lien quan khi tham gia giao thong.",
+        "Người điều khiển phương tiện cần mang theo giấy phép lái xe, đăng ký xe và các giấy tờ liên quan khi tham gia giao thông.",
     }),
     pending: await upsertSource({
-      title: "Nguon dang cho crawl - bao hanh hang dien tu",
+      title: "Nguồn đang chờ crawl - bảo hành hàng điện tử",
       sourceUrl: "https://lexi.local/sources/pending-warranty",
       legalDocumentNo: "PENDING-DEMO",
       effectiveDate: new Date("2026-05-01T00:00:00.000Z"),
       crawlStatus: LegalSourceCrawlStatus.PENDING,
-      rawText: "Placeholder source waiting for crawler.",
+      rawText: "Nguồn tạm đang chờ crawler xử lý.",
     }),
     failed: await upsertSource({
-      title: "Nguon loi crawl - link het han",
+      title: "Nguồn lỗi crawl - link hết hạn",
       sourceUrl: "https://lexi.local/sources/failed-expired-link",
       legalDocumentNo: "FAILED-DEMO",
       effectiveDate: new Date("2026-05-01T00:00:00.000Z"),
       crawlStatus: LegalSourceCrawlStatus.FAILED,
-      rawText: "Crawler could not fetch this source in demo mode.",
+      rawText: "Crawler không thể lấy nguồn này trong chế độ demo.",
     }),
   };
 
@@ -850,71 +850,71 @@ async function seedLegalSourcesAndDrafts(content: Awaited<ReturnType<typeof seed
   });
 
   const acceptedDraft = await upsertDraft({
-    title: "Can mang giay phep lai xe khi ra duong?",
+    title: "Cần mang giấy phép lái xe khi ra đường?",
     sourceDocumentId: sources.trafficFine.id,
     generationJobId: trafficJob.id,
     moduleId: content.modules.trafficBasics.id,
     status: LessonDraftStatus.ACCEPTED,
     content:
-      "Khi dieu khien xe, nguoi lai can mang theo giay phep lai xe phu hop, dang ky xe va cac giay to bat buoc. Neu khong xuat trinh duoc khi bi kiem tra, co the bi xu phat theo quy dinh.",
-    reviewerNote: "Draft da duyet, san sang demo nut Tao lesson.",
+      "Khi điều khiển xe, người lái cần mang theo giấy phép lái xe phù hợp, đăng ký xe và các giấy tờ bắt buộc. Nếu không xuất trình được khi bị kiểm tra, có thể bị xử phạt theo quy định.",
+    reviewerNote: "Draft đã duyệt, sẵn sàng demo nút Tạo lesson.",
     videoScript:
-      "Canh 1: nguoi lai xe bi dung kiem tra. Canh 2: checklist giay to can mang. Canh 3: loi khuyen luu ban sao thong tin.",
+      "Cảnh 1: người lái xe bị dừng kiểm tra. Cảnh 2: checklist giấy tờ cần mang. Cảnh 3: lời khuyên lưu bản sao thông tin.",
     videoPrompt:
       "Short friendly explainer video about carrying driving documents in Vietnam.",
     questions: [
       quiz(
-        "Khi tham gia giao thong, giay to nao thuong can mang?",
-        "Nguoi lai can co giay phep lai xe phu hop va giay to xe lien quan.",
-        ["Giay phep lai xe", "The thanh vien sieu thi", "Hoa don an trua", "Mat khau email"],
+        "Khi tham gia giao thông, giấy tờ nào thường cần mang?",
+        "Người lái cần có giấy phép lái xe phù hợp và giấy tờ xe liên quan.",
+        ["Giấy phép lái xe", "Thẻ thành viên siêu thị", "Hóa đơn ăn trưa", "Mật khẩu email"],
         0
       ),
       quiz(
-        "Draft ACCEPTED trong admin co the lam gi tiep?",
-        "Sprint 13 cho phep tao lesson IN_REVIEW tu draft ACCEPTED.",
-        ["Tao lesson", "Tu dong publish", "Xoa backend", "Khoa tai khoan learner"],
+        "Draft ACCEPTED trong admin có thể làm gì tiếp?",
+        "Sprint 13 cho phép tạo lesson IN_REVIEW từ draft ACCEPTED.",
+        ["Tạo lesson", "Tự động publish", "Xóa backend", "Khóa tài khoản learner"],
         0
       ),
     ],
   });
 
   await upsertDraft({
-    title: "Quyen nghi phep nam cho nhan vien moi",
+    title: "Quyền nghỉ phép năm cho nhân viên mới",
     sourceDocumentId: sources.laborLeave.id,
     generationJobId: laborJob.id,
     moduleId: content.modules.laborLeave.id,
     status: LessonDraftStatus.IN_REVIEW,
     content:
-      "Nhan vien can hieu cach tinh nghi phep nam, dieu kien huong luong va cach trao doi voi cong ty khi chua lam du 12 thang.",
-    reviewerNote: "Can reviewer bo sung vi du tinh ngay nghi theo thang.",
-    videoScript: "Nhan vat hoi HR ve ngay nghi phep con lai.",
-    videoPrompt: "Office explainer scene about annual leave balance.",
+      "Nhân viên cần hiểu cách tính nghỉ phép năm, điều kiện hưởng lương và cách trao đổi với công ty khi chưa làm đủ 12 tháng.",
+    reviewerNote: "Cần reviewer bổ sung ví dụ tính ngày nghỉ theo tháng.",
+    videoScript: "Nhân vật hỏi HR về ngày nghỉ phép còn lại.",
+    videoPrompt: "Cảnh giải thích trong văn phòng về số ngày nghỉ phép còn lại.",
     questions: [
       quiz(
-        "Lesson draft IN_REVIEW co tao lesson duoc ngay khong?",
-        "Endpoint chi cho convert draft co status ACCEPTED.",
-        ["Co", "Khong", "Chi khi la REJECTED", "Chi khi khong co source"],
+        "Lesson draft IN_REVIEW có tạo lesson được ngay không?",
+        "Endpoint chỉ cho convert draft có status ACCEPTED.",
+        ["Có", "Không", "Chỉ khi là REJECTED", "Chỉ khi không có source"],
         1
       ),
     ],
   });
 
   await upsertDraft({
-    title: "Draft bi tu choi - link khuyen mai gia mao",
+    title: "Draft bị từ chối - link khuyến mãi giả mạo",
     sourceDocumentId: sources.failed.id,
     generationJobId: laborJob.id,
     moduleId: content.modules.antiScam.id,
     status: LessonDraftStatus.REJECTED,
     content:
-      "Ban nhap nay bi tu choi vi nguon crawl khong dang tin cay va can kiem chung them.",
-    reviewerNote: "Rejected demo item for filter and status UI.",
+      "Bản nháp này bị từ chối vì nguồn crawl không đáng tin cậy và cần kiểm chứng thêm.",
+    reviewerNote: "Mục demo đã bị từ chối để kiểm tra bộ lọc và trạng thái UI.",
     videoScript: null,
     videoPrompt: null,
     questions: [
       quiz(
-        "Draft REJECTED co nen publish khong?",
-        "Draft bi tu choi can sua hoac tao lai tu nguon tin cay.",
-        ["Co ngay", "Khong", "Tu dong publish", "Gan video la xong"],
+        "Draft REJECTED có nên publish không?",
+        "Draft bị từ chối cần sửa hoặc tạo lại từ nguồn tin cậy.",
+        ["Có ngay", "Không", "Tự động publish", "Gắn video là xong"],
         1
       ),
     ],
@@ -922,21 +922,21 @@ async function seedLegalSourcesAndDrafts(content: Awaited<ReturnType<typeof seed
 
   const convertedLesson = content.lessons["demo-in-review-tu-ai-draft"];
   await upsertDraft({
-    title: "Draft da convert - nghi phep nam",
+    title: "Draft đã convert - nghỉ phép năm",
     sourceDocumentId: sources.laborLeave.id,
     generationJobId: laborJob.id,
     moduleId: content.modules.laborLeave.id,
     createdLessonId: convertedLesson.id,
     status: LessonDraftStatus.ACCEPTED,
     content: convertedLesson.content ?? "Converted draft demo.",
-    reviewerNote: "Draft nay da tao lesson, UI se disable nut Tao lesson.",
+    reviewerNote: "Draft này đã tạo lesson, UI sẽ disable nút Tạo lesson.",
     videoScript: "Converted draft script.",
-    videoPrompt: "Converted draft video prompt.",
+    videoPrompt: "Prompt video cho draft đã chuyển đổi.",
     questions: [
       quiz(
-        "Draft da co createdLessonId co convert lai duoc khong?",
-        "Backend chan convert trung mot draft.",
-        ["Co", "Khong", "Chi admin moi duoc", "Neu doi slug"],
+        "Draft đã có createdLessonId có convert lại được không?",
+        "Backend chặn convert trùng một draft.",
+        ["Có", "Không", "Chỉ admin mới được", "Nếu đổi slug"],
         1
       ),
     ],
@@ -949,7 +949,7 @@ async function seedLegalSourcesAndDrafts(content: Awaited<ReturnType<typeof seed
     status: MediaAssetStatus.RENDERING,
     provider: "demo-renderer",
     renderPrompt:
-      "Create a 30-second vertical explainer about carrying driving documents.",
+      "Tạo video dọc 30 giây giải thích về việc mang giấy tờ khi lái xe.",
   });
 
   console.log("Legal sources, AI jobs and lesson drafts seeded.");
@@ -1105,7 +1105,7 @@ async function upsertDraft(params: {
 
 async function seedMediaAssets(content: Awaited<ReturnType<typeof seedLearningContent>>) {
   await upsertMediaAsset({
-    title: "READY video - thoi gian thu viec",
+    title: "READY video - thời gian thử việc",
     lessonId: content.lessons["thu-viec-toi-da-bao-lau"].id,
     sourceType: MediaAssetSourceType.EXTERNAL_URL,
     status: MediaAssetStatus.READY,
@@ -1116,7 +1116,7 @@ async function seedMediaAssets(content: Awaited<ReturnType<typeof seedLearningCo
   });
 
   await upsertMediaAsset({
-    title: "READY video co the attach",
+    title: "READY video có thể attach",
     sourceType: MediaAssetSourceType.EXTERNAL_URL,
     status: MediaAssetStatus.READY,
     url: videoUrl,
@@ -1126,20 +1126,20 @@ async function seedMediaAssets(content: Awaited<ReturnType<typeof seedLearningCo
   });
 
   await upsertMediaAsset({
-    title: "Render request dang xu ly",
+    title: "Render request đang xử lý",
     sourceType: MediaAssetSourceType.RENDER_REQUEST,
     status: MediaAssetStatus.RENDERING,
     provider: "demo-renderer",
     renderPrompt:
-      "Generate a simple animated legal explainer about annual leave rights.",
+      "Tạo hoạt ảnh giải thích pháp lý đơn giản về quyền nghỉ hằng năm.",
   });
 
   await upsertMediaAsset({
-    title: "Render failed can retry",
+    title: "Render failed có thể retry",
     sourceType: MediaAssetSourceType.RENDER_REQUEST,
     status: MediaAssetStatus.FAILED,
     provider: "demo-renderer",
-    renderPrompt: "This failed demo asset is used for admin status filters.",
+    renderPrompt: "Media demo lỗi này dùng để kiểm tra bộ lọc trạng thái trong admin.",
   });
 
   console.log("Media assets seeded.");
@@ -1330,40 +1330,40 @@ async function seedBadgesForDemoUser(userId: string, now: Date) {
   const badges = [
     {
       code: "first_lesson",
-      title: "Bai hoc dau tien",
-      description: "Hoan thanh bai hoc dau tien.",
+      title: "Bài học đầu tiên",
+      description: "Hoàn thành bài học đầu tiên.",
       iconName: "school",
       criteriaType: BadgeCriteriaType.FIRST_LESSON,
       sortOrder: 1,
     },
     {
       code: "three_lessons",
-      title: "Khoi dau deu dan",
-      description: "Hoan thanh 3 bai hoc khac nhau.",
+      title: "Khởi đầu đều đặn",
+      description: "Hoàn thành 3 bài học khác nhau.",
       iconName: "auto_stories",
       criteriaType: BadgeCriteriaType.THREE_LESSONS,
       sortOrder: 2,
     },
     {
       code: "perfect_score",
-      title: "Diem tuyet doi",
-      description: "Dat 100% trong mot bai quiz.",
+      title: "Điểm tuyệt đối",
+      description: "Đạt 100% trong một bài quiz.",
       iconName: "verified",
       criteriaType: BadgeCriteriaType.PERFECT_SCORE,
       sortOrder: 3,
     },
     {
       code: "five_attempts",
-      title: "Thoi quen luyen tap",
-      description: "Hoan thanh 5 luot lam quiz.",
+      title: "Thói quen luyện tập",
+      description: "Hoàn thành 5 lượt làm quiz.",
       iconName: "repeat",
       criteriaType: BadgeCriteriaType.FIVE_ATTEMPTS,
       sortOrder: 4,
     },
     {
       code: "seven_day_streak",
-      title: "Chuoi 7 ngay",
-      description: "Hoc trong 7 ngay lien tiep.",
+      title: "Chuỗi 7 ngày",
+      description: "Học trong 7 ngày liên tiếp.",
       iconName: "local_fire_department",
       criteriaType: BadgeCriteriaType.SEVEN_DAY_STREAK,
       sortOrder: 5,
@@ -1400,8 +1400,8 @@ async function seedDailyChallengeReadyToClaim(userId: string, now: Date) {
   const challenge = await prisma.dailyChallenge.upsert({
     where: { code: "complete_lessons_daily" },
     update: {
-      title: "Hoan thanh bai hoc hom nay",
-      description: "Hoan thanh 3 bai hoc khac nhau de nhan XP thuong.",
+      title: "Hoàn thành bài học hôm nay",
+      description: "Hoàn thành 3 bài học khác nhau để nhận XP thưởng.",
       type: DailyChallengeType.COMPLETE_LESSONS,
       target: 3,
       rewardXp: 20,
@@ -1410,8 +1410,8 @@ async function seedDailyChallengeReadyToClaim(userId: string, now: Date) {
     },
     create: {
       code: "complete_lessons_daily",
-      title: "Hoan thanh bai hoc hom nay",
-      description: "Hoan thanh 3 bai hoc khac nhau de nhan XP thuong.",
+      title: "Hoàn thành bài học hôm nay",
+      description: "Hoàn thành 3 bài học khác nhau để nhận XP thưởng.",
       type: DailyChallengeType.COMPLETE_LESSONS,
       target: 3,
       rewardXp: 20,
@@ -1497,8 +1497,8 @@ async function seedNotifications(users: Awaited<ReturnType<typeof seedUsers>>) {
     type: NotificationDeliveryType.DAILY_REMINDER,
     deliveryKey: "demo-daily-reminder",
     status: NotificationDeliveryStatus.SENT,
-    title: "Den gio hoc LEXI",
-    body: "Hoan thanh 3 bai de nhan XP hom nay.",
+    title: "Đến giờ học LEXI",
+    body: "Hoàn thành 3 bài để nhận XP hôm nay.",
     successCount: 1,
     failureCount: 0,
     deliveredAt: new Date(),
@@ -1509,8 +1509,8 @@ async function seedNotifications(users: Awaited<ReturnType<typeof seedUsers>>) {
     type: NotificationDeliveryType.REVIEW_REMINDER,
     deliveryKey: "demo-review-reminder",
     status: NotificationDeliveryStatus.PARTIAL,
-    title: "On lai cau da sai",
-    body: "Ban co cau hoi ve nghi viec va phishing can xem lai.",
+    title: "Ôn lại câu đã sai",
+    body: "Bạn có câu hỏi về nghỉ việc và phishing cần xem lại.",
     successCount: 1,
     failureCount: 1,
     deliveredAt: new Date(),
@@ -1521,8 +1521,8 @@ async function seedNotifications(users: Awaited<ReturnType<typeof seedUsers>>) {
     type: NotificationDeliveryType.STREAK_REMINDER,
     deliveryKey: "demo-streak-reminder",
     status: NotificationDeliveryStatus.FAILED,
-    title: "Giu chuoi hoc tap",
-    body: "Demo failed delivery log for admin filters.",
+    title: "Giữ chuỗi học tập",
+    body: "Log gửi thất bại dùng để demo bộ lọc admin.",
     successCount: 0,
     failureCount: 1,
     deliveredAt: null,

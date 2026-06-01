@@ -73,6 +73,31 @@ export class AdminContentRepository {
     });
   }
 
+  createQuestions(params: {
+    lessonId: string;
+    questions: Prisma.QuizQuestionCreateWithoutLessonInput[];
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      const createdQuestions = [];
+
+      for (const question of params.questions) {
+        const createdQuestion = await tx.quizQuestion.create({
+          data: {
+            ...question,
+            lesson: {
+              connect: { id: params.lessonId },
+            },
+          },
+          include: { options: { orderBy: { sortOrder: "asc" } } },
+        });
+
+        createdQuestions.push(createdQuestion);
+      }
+
+      return createdQuestions;
+    });
+  }
+
   async updateQuestion(params: {
     questionId: string;
     data: Prisma.QuizQuestionUpdateInput;

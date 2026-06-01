@@ -112,6 +112,54 @@ enum MediaAssetStatus {
   ARCHIVED
 }
 
+enum MediaAssetPlacement {
+  LESSON_RESOURCE
+  SHORTS
+}
+
+enum FeedbackReportCategory {
+  CONTENT_ISSUE
+  LEGAL_CORRECTION
+  BUG
+  SUGGESTION
+  OTHER
+}
+
+enum FeedbackReportStatus {
+  OPEN
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum RewardTransactionType {
+  EARN
+  SPEND
+  ADJUST
+  EXPIRE
+}
+
+enum RewardSource {
+  QUIZ
+  GAME
+  DAILY_CHALLENGE
+  ADMIN
+  REDEMPTION
+}
+
+enum VoucherCampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum VoucherRedemptionStatus {
+  PENDING
+  FULFILLED
+  CANCELLED
+}
+
 // ==========================================
 // USER MODELS
 // ==========================================
@@ -129,11 +177,19 @@ model User {
   attempts               LessonAttempt[]
   progress               UserProgress[]
   refreshTokens          RefreshToken[]
+  passwordResetTokens    PasswordResetToken[]
   badges                 UserBadge[]
   challenges             UserChallenge[]
   deviceTokens           DeviceToken[]
   notificationPreference NotificationPreference?
   notificationDeliveries NotificationDeliveryLog[]
+  lessonNotes            LessonNote[]
+  lessonDiscussions      LessonDiscussion[]
+  lessonDiscussionReplies LessonDiscussionReply[]
+  feedbackReports        FeedbackReport[]
+  rewardAccount          RewardAccount?
+  rewardLedgerEntries    RewardLedgerEntry[]
+  voucherRedemptions     VoucherRedemption[]
 
   @@map("users")
 }
@@ -154,6 +210,24 @@ model RefreshToken {
   @@index([userId])
   @@index([expiresAt])
   @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([usedAt])
+  @@map("password_reset_tokens")
 }
 
 model UserProfile {
@@ -239,6 +313,8 @@ model Lesson {
   progress     UserProgress[]
   sourceDrafts LessonDraft[]
   mediaAssets  MediaAsset[]
+  notes        LessonNote[]
+  discussions  LessonDiscussion[]
 
   @@index([moduleId])
   @@map("lessons")
@@ -380,6 +456,7 @@ model MediaAsset {
   title        String?
   assetType    MediaAssetType       @default(VIDEO)
   sourceType   MediaAssetSourceType @default(EXTERNAL_URL)
+  placement    MediaAssetPlacement  @default(LESSON_RESOURCE)
   status       MediaAssetStatus     @default(DRAFT)
   url          String?
   mimeType     String?
@@ -394,8 +471,132 @@ model MediaAsset {
   @@index([draftId])
   @@index([assetType])
   @@index([sourceType])
+  @@index([placement])
   @@index([status])
   @@map("media_assets")
+}
+
+model FeedbackReport {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  category FeedbackReportCategory
+  status   FeedbackReportStatus   @default(OPEN)
+
+  subject  String
+  message  String
+  pagePath String?
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
+  @@map("feedback_reports")
+}
+
+model RewardAccount {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @unique @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  balance        Int @default(0)
+  lifetimeEarned Int @default(0)
+  lifetimeSpent  Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reward_accounts")
+}
+
+model RewardLedgerEntry {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type          RewardTransactionType
+  source        RewardSource
+  amount        Int
+  balanceAfter  Int
+  referenceId   String?
+  idempotencyKey String @unique
+  metadata      Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([source, createdAt])
+  @@index([referenceId])
+  @@map("reward_ledger_entries")
+}
+
+model RewardRule {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  code        String       @unique
+  source      RewardSource
+  title       String
+  description String?
+  points      Int
+  dailyCap    Int?
+  isActive    Boolean      @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([source])
+  @@index([isActive])
+  @@map("reward_rules")
+}
+
+model VoucherCampaign {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  title       String
+  description String?
+  costCoins   Int
+  stock       Int?
+  status      VoucherCampaignStatus @default(DRAFT)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  metadata    Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  redemptions VoucherRedemption[]
+
+  @@index([status])
+  @@index([startsAt])
+  @@index([endsAt])
+  @@map("voucher_campaigns")
+}
+
+model VoucherRedemption {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String @db.ObjectId
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaignId String @db.ObjectId
+  campaign   VoucherCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  costCoins Int
+  status    VoucherRedemptionStatus @default(PENDING)
+  code      String?
+  note      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, campaignId])
+  @@index([userId, createdAt])
+  @@index([campaignId])
+  @@index([status])
+  @@map("voucher_redemptions")
 }
 
 // ==========================================
@@ -500,6 +701,62 @@ model UserProgress {
   @@index([userId])
   @@index([lessonId])
   @@map("user_progress")
+}
+
+model LessonNote {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String @db.ObjectId
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId String @db.ObjectId
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  text             String
+  videoTimeSeconds Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, lessonId])
+  @@index([lessonId])
+  @@map("lesson_notes")
+}
+
+model LessonDiscussion {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String @db.ObjectId
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId String @db.ObjectId
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  question String
+  isSolved Boolean @default(false)
+
+  replies   LessonDiscussionReply[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, lessonId])
+  @@index([lessonId])
+  @@index([isSolved])
+  @@map("lesson_discussions")
+}
+
+model LessonDiscussionReply {
+  id           String           @id @default(auto()) @map("_id") @db.ObjectId
+  discussionId String           @db.ObjectId
+  discussion   LessonDiscussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  userId       String           @db.ObjectId
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  body       String
+  isAccepted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discussionId])
+  @@index([userId])
+  @@map("lesson_discussion_replies")
 }
 
 model Badge {
@@ -624,11 +881,15 @@ model NotificationDeliveryLog {
   successCount Int       @default(0)
   failureCount Int       @default(0)
   deliveredAt  DateTime?
+  readAt       DateTime?
+  dismissedAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   @@unique([userId, type, deliveryKey])
   @@index([type, deliveryKey])
   @@index([status])
+  @@index([userId, readAt])
+  @@index([userId, dismissedAt])
   @@map("notification_delivery_logs")
 }

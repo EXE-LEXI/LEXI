@@ -6,6 +6,7 @@ export const AUTH_TOKEN_EXPIRES_IN = {
 } as const;
 
 export const AUTH_REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const PASSWORD_RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
 
 export const AUTH_RATE_LIMITS = {
   register: {
@@ -22,6 +23,14 @@ export const AUTH_RATE_LIMITS = {
   },
   logout: {
     limit: 30,
+    ttlMs: 60_000,
+  },
+  requestPasswordReset: {
+    limit: 5,
+    ttlMs: 60_000,
+  },
+  resetPassword: {
+    limit: 5,
     ttlMs: 60_000,
   },
 } as const;

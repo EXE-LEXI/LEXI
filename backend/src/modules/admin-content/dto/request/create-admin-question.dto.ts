@@ -40,3 +40,10 @@ export class CreateAdminQuestionDto {
   @ArrayMinSize(2)
   options: CreateAdminOptionDto[];
 }
+
+export class CreateAdminQuestionsBulkDto {
+  @ValidateNested({ each: true })
+  @Type(() => CreateAdminQuestionDto)
+  @ArrayMinSize(1)
+  questions: CreateAdminQuestionDto[];
+}

@@ -1,339 +1,378 @@
-import React, { useState } from "react";
-import { 
-  BookOpen, 
-  Search, 
-  Download, 
-  FileText, 
-  Scale, 
-  Filter,
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  BookOpen,
+  Search,
+  Download,
+  FileText,
+  Scale,
   CheckCircle,
   FileCheck,
   ChevronRight,
   HelpCircle,
-  Star
+  Star,
 } from "lucide-react";
+import {
+  getResourceLegalSource,
+  getResourceLegalSources,
+  getResourceMediaAssets,
+  type ResourceLegalSourceDetail,
+  type ResourceLegalSourceSummary,
+  type ResourceMediaAsset,
+} from "../api/resources";
 
-type LegalArticle = {
-  id: string;
-  code: "civil" | "criminal" | "commercial";
-  number: string;
-  title: string;
-  content: string;
-  interpretation: string;
+type ResourcesPageProps = {
+  token: string;
 };
 
-type SyllabusDoc = {
-  id: string;
-  title: string;
-  size: string;
-  pages: number;
-  rating: number;
-  downloads: string;
-};
-
-const SYLLABUS_DOCS: SyllabusDoc[] = [
-  {
-    id: "doc-1",
-    title: "Giáo trình Luật Dân sự 101 - Khóa học Lexi Academy",
-    size: "2.4 MB",
-    pages: 45,
-    rating: 4.9,
-    downloads: "1,240 lượt tải"
-  },
-  {
-    id: "doc-2",
-    title: "Sổ tay thực chiến: Giải quyết tranh chấp Hợp đồng Dân sự",
-    size: "1.8 MB",
-    pages: 32,
-    rating: 4.8,
-    downloads: "850 lượt tải"
-  },
-  {
-    id: "doc-3",
-    title: "Cẩm nang phòng vệ: Nhận diện tội phạm lừa đảo công nghệ cao & Deepfake",
-    size: "3.2 MB",
-    pages: 28,
-    rating: 5.0,
-    downloads: "2,150 lượt tải"
+function formatDate(value: string | null) {
+  if (!value) {
+    return "Chưa có ngày hiệu lực";
   }
-];
 
-const LEGAL_ARTICLES: LegalArticle[] = [
-  // Bộ luật Dân sự 2015
-  {
-    id: "civ-12",
-    code: "civil",
-    number: "Điều 12",
-    title: "Sự tôn trọng, bảo vệ quyền dân sự",
-    content: "Quyền dân sự của cá nhân, pháp nhân được tôn trọng, bảo vệ theo quy định của pháp luật. Khi quyền dân sự bị xâm phạm, chủ thể có quyền tự bảo vệ theo quy định của Bộ luật này hoặc yêu cầu cơ quan, tổ chức có thẩm quyền bảo vệ.",
-    interpretation: "Đây là nguyên tắc nền tảng tối thượng của luật học Việt Nam, bảo đảm mọi quyền lợi hợp pháp của công dân đều được Nhà nước công nhận, bảo vệ và xử lý công bằng khi xảy ra các tranh chấp."
-  },
-  {
-    id: "civ-122",
-    code: "civil",
-    number: "Điều 122",
-    title: "Giao dịch dân sự vô hiệu",
-    content: "Giao dịch dân sự không có một trong các điều kiện quy định tại Điều 117 của Bộ luật này thì vô hiệu, trừ trường hợp Bộ luật này có quy định khác.",
-    interpretation: "Giao dịch dân sự vô hiệu nghĩa là cam kết đó hoàn toàn không có hiệu lực ràng buộc pháp lý từ thời điểm thiết lập. Các bên có nghĩa vụ phải hoàn trả cho nhau những gì đã nhận ban đầu."
-  },
-  {
-    id: "civ-156",
-    code: "civil",
-    number: "Điều 156",
-    title: "Sự kiện bất khả kháng",
-    content: "Sự kiện bất khả kháng là sự kiện xảy ra một cách khách quan không thể lường trước được và không thể khắc phục được mặc dù đã áp dụng mọi biện pháp cần thiết và khả năng cho phép.",
-    interpretation: "Khái niệm cực kỳ cốt lõi được áp dụng để miễn trừ nghĩa vụ bồi thường hợp đồng trong các hoàn cảnh đặc biệt khách quan (như thiên tai, dịch bệnh kéo dài, chiến tranh, sự thay đổi đột ngột của chính sách vĩ mô)."
-  },
-  {
-    id: "civ-351",
-    code: "civil",
-    number: "Điều 351",
-    title: "Trách nhiệm dân sự do vi phạm nghĩa vụ",
-    content: "Bên có nghĩa vụ mà vi phạm nghĩa vụ thì phải chịu trách nhiệm dân sự đối với bên có quyền. Trường hợp bên có nghĩa vụ không thực hiện được nghĩa vụ do sự kiện bất khả kháng thì không phải chịu trách nhiệm dân sự, trừ trường hợp có thỏa thuận khác hoặc pháp luật có quy định khác.",
-    interpretation: "Điều khoản cốt lõi ràng buộc nghĩa vụ bồi thường thiệt hại khi một bên vi phạm giao ước, đồng thời quy định nguyên lý loại trừ trách nhiệm khi vi phạm phát sinh trực tiếp từ Sự kiện bất khả kháng."
-  },
-  // Bộ luật Hình sự 2015
-  {
-    id: "crim-8",
-    code: "criminal",
-    number: "Điều 8",
-    title: "Khái niệm tội phạm",
-    content: "Tội phạm là hành vi nguy hiểm cho xã hội được quy định trong Bộ luật Hình sự, do người có năng lực trách nhiệm hình sự hoặc pháp nhân thương mại thực hiện một cách cố ý hoặc vô ý, xâm phạm độc lập, chủ quyền, thống nhất, toàn vẹn lãnh thổ...",
-    interpretation: "Văn bản định nghĩa nguồn gốc cơ sở pháp lý để cấu thành và xác minh một hành vi vi phạm có bị khởi tố hình sự hay chỉ xử phạt vi phạm hành chính thông thường."
-  },
-  {
-    id: "crim-174",
-    code: "criminal",
-    number: "Điều 174",
-    title: "Tội lừa đảo chiếm đoạt tài sản",
-    content: "Người nào bằng thủ đoạn gian dối chiếm đoạt tài sản của người khác trị giá từ 2.000.000 đồng đến dưới 50.000.000 đồng hoặc dưới 2.000.000 đồng nhưng thuộc một trong các trường hợp luật định, thì bị phạt cải tạo không giam giữ đến 03 năm hoặc phạt tù từ 06 tháng đến 03 năm...",
-    interpretation: "Quy định cơ cấu hình phạt của các thủ đoạn gian dối nhằm chiếm đoạt tài sản của nạn nhân. Rất phổ biến khi xử lý các vụ án lừa đảo công nghệ cao, giả mạo cuộc gọi mượn tiền qua mạng xã hội hiện nay."
-  },
-  {
-    id: "crim-290",
-    code: "criminal",
-    number: "Điều 290",
-    title: "Thu thập, trao đổi thông tin tài khoản ngân hàng trái phép",
-    content: "Người nào thu thập, tàng trữ, trao đổi, mua bán, công khai hóa thông tin về tài khoản ngân hàng của người khác trái phép nhằm mục đích trục lợi, thì bị xử lý hình sự tùy theo mức độ vi phạm...",
-    interpretation: "Lá chắn pháp lý trực diện để dập tắt và xử phạt các đường dây thu gom, mua bán số tài khoản ngân hàng ảo - công cụ tiếp tay đắc lực cho hoạt động lừa đảo rửa tiền xuyên quốc gia."
-  },
-  // Luật Thương mại 2005
-  {
-    id: "com-3",
-    code: "commercial",
-    number: "Điều 3",
-    title: "Giải thích hoạt động thương mại",
-    content: "Hoạt động thương mại là hoạt động nhằm mục đích sinh lợi, bao gồm mua bán hàng hóa, cung ứng dịch vụ, đầu tư, xúc tiến thương mại và các hoạt động nhằm mục đích sinh lợi khác...",
-    interpretation: "Điều luật vĩ mô khoanh vùng chính xác phạm vi điều chỉnh đặc thù của Luật Thương mại đối với các chủ thể là doanh nghiệp, thương nhân hoạt động kinh doanh có phát sinh lợi nhuận."
-  },
-  {
-    id: "com-294",
-    code: "commercial",
-    number: "Điều 294",
-    title: "Các trường hợp miễn trách nhiệm đối với vi phạm hợp đồng",
-    content: "Bên vi phạm hợp đồng được miễn trách nhiệm trong các trường hợp sau đây: Xảy ra trường hợp miễn trách nhiệm mà các bên đã thoả thuận; Xảy ra sự kiện bất khả kháng; Hành vi vi phạm của một bên hoàn toàn do lỗi của bên kia...",
-    interpretation: "Cơ sở cốt lõi để các doanh nghiệp tranh tụng và bảo vệ mình trước tòa án kinh tế khi các cam kết hợp tác bị gián đoạn do sự cố khách quan hoặc do lỗi hoàn toàn xuất phát từ đối tác."
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function getDocumentLabel(source: ResourceLegalSourceSummary) {
+  return source.legalDocumentNo || "Văn bản pháp lý";
+}
+
+function getMediaSize(asset: ResourceMediaAsset) {
+  const metadata = asset.metadata as { sizeLabel?: string; pages?: number } | null;
+  if (metadata?.sizeLabel) {
+    return metadata.sizeLabel;
   }
-];
+  if (asset.mimeType) {
+    return asset.mimeType;
+  }
+  return asset.assetType;
+}
 
-export const ResourcesPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"civil" | "criminal" | "commercial">("civil");
+export const ResourcesPage: React.FC<ResourcesPageProps> = ({ token }) => {
+  const [sources, setSources] = useState<ResourceLegalSourceSummary[]>([]);
+  const [mediaAssets, setMediaAssets] = useState<ResourceMediaAsset[]>([]);
+  const [selectedSource, setSelectedSource] =
+    useState<ResourceLegalSourceDetail | null>(null);
+  const [activeDocument, setActiveDocument] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedArticle, setSelectedArticle] = useState<LegalArticle>(LEGAL_ARTICLES[0]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [downloadedDocs, setDownloadedDocs] = useState<Record<string, boolean>>({});
+  const [downloadedDocs, setDownloadedDocs] = useState<Record<string, boolean>>(
+    {}
+  );
 
-  const filteredArticles = LEGAL_ARTICLES.filter((article) => {
-    const matchesTab = article.code === activeTab;
-    const matchesSearch = 
-      article.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.content.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
-  });
+  useEffect(() => {
+    let cancelled = false;
 
-  function handleTriggerDownload(docId: string) {
-    if (downloadedDocs[docId] || downloadingId) return;
+    async function loadResources() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const [nextSources, nextMedia] = await Promise.all([
+          getResourceLegalSources(token, {
+            page: 1,
+            limit: 30,
+            search: searchQuery,
+          }),
+          getResourceMediaAssets(token, {
+            page: 1,
+            limit: 12,
+            search: searchQuery,
+          }),
+        ]);
 
-    setDownloadingId(docId);
-    setTimeout(() => {
-      setDownloadedDocs((prev) => ({ ...prev, [docId]: true }));
+        if (cancelled) {
+          return;
+        }
+
+        setSources(nextSources.items);
+        setMediaAssets(nextMedia.items);
+
+        const firstSource = nextSources.items[0];
+        if (firstSource) {
+          const detail = await getResourceLegalSource(token, firstSource.id);
+          if (!cancelled) {
+            setSelectedSource(detail);
+            setActiveDocument(getDocumentLabel(firstSource));
+          }
+        } else {
+          setSelectedSource(null);
+          setActiveDocument("all");
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Không tải được thư viện");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    const timer = window.setTimeout(loadResources, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [token, searchQuery]);
+
+  const documentTabs = useMemo(() => {
+    const labels = sources.map(getDocumentLabel);
+    return Array.from(new Set(labels)).slice(0, 5);
+  }, [sources]);
+
+  const filteredSources = useMemo(() => {
+    if (activeDocument === "all") {
+      return sources;
+    }
+    return sources.filter((source) => getDocumentLabel(source) === activeDocument);
+  }, [activeDocument, sources]);
+
+  async function handleSelectSource(source: ResourceLegalSourceSummary) {
+    setError(null);
+    try {
+      setSelectedSource(await getResourceLegalSource(token, source.id));
+      setActiveDocument(getDocumentLabel(source));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không tải được văn bản");
+    }
+  }
+
+  function handleTriggerDownload(asset: ResourceMediaAsset) {
+    if (downloadedDocs[asset.id] || downloadingId) {
+      return;
+    }
+
+    setDownloadingId(asset.id);
+    window.setTimeout(() => {
+      window.open(asset.url, "_blank", "noopener,noreferrer");
+      setDownloadedDocs((prev) => ({ ...prev, [asset.id]: true }));
       setDownloadingId(null);
-    }, 1200);
+    }, 500);
   }
 
   return (
     <main className="page lexi-library-root">
-      <p className="eyebrow">Thư Viện Pháp Lý</p>
-      <h1>Học liệu & Tra cứu Bộ luật</h1>
-      
-      {/* 1. PDF Documents & Academy Syllabus Center */}
+      <p className="eyebrow">Thư viện pháp lý</p>
+      <h1>Học liệu & tra cứu văn bản</h1>
+
+      {error && <p className="form-error">{error}</p>}
+
       <section className="lexi-library-syllabus-section">
         <h2 className="lexi-library-section-title">
           <BookOpen size={20} />
-          <span>Tài liệu & Giáo trình số</span>
+          <span>Tài liệu & học liệu số</span>
         </h2>
-        
+
         <div className="lexi-syllabus-cards-grid">
-          {SYLLABUS_DOCS.map((doc) => {
-            const isDownloading = downloadingId === doc.id;
-            const isDownloaded = downloadedDocs[doc.id];
-            
+          {mediaAssets.map((asset) => {
+            const isDownloading = downloadingId === asset.id;
+            const isDownloaded = downloadedDocs[asset.id];
+
             return (
-              <article className="panel lexi-syllabus-card" key={doc.id}>
+              <article className="panel lexi-syllabus-card" key={asset.id}>
                 <div className="lexi-doc-icon-container">
                   <FileText size={26} className="lexi-doc-icon" />
                 </div>
-                
+
                 <div className="lexi-doc-content-info">
-                  <h3 className="lexi-doc-title">{doc.title}</h3>
+                  <h3 className="lexi-doc-title">
+                    {asset.title || asset.lesson?.title || "Học liệu pháp lý"}
+                  </h3>
                   <div className="lexi-doc-meta-row">
-                    <span className="lexi-doc-meta-badge">{doc.size}</span>
-                    <span className="lexi-doc-meta-badge">{doc.pages} trang</span>
+                    <span className="lexi-doc-meta-badge">
+                      {getMediaSize(asset)}
+                    </span>
+                    <span className="lexi-doc-meta-badge">
+                      {asset.provider || asset.sourceType}
+                    </span>
                     <span className="lexi-doc-meta-badge doc-rating">
                       <Star size={12} className="fill-gold" />
-                      <span>{doc.rating.toFixed(1)}</span>
+                      <span>Mới</span>
                     </span>
-                    <span className="lexi-doc-meta-desc">{doc.downloads}</span>
+                    <span className="lexi-doc-meta-desc">
+                      Cập nhật {formatDate(asset.updatedAt)}
+                    </span>
                   </div>
                 </div>
 
-                <button 
-                  className={`lexi-btn-doc-download ${isDownloaded ? "downloaded" : ""} ${isDownloading ? "loading" : ""}`}
+                <button
+                  className={`lexi-btn-doc-download ${
+                    isDownloaded ? "downloaded" : ""
+                  } ${isDownloading ? "loading" : ""}`}
                   type="button"
-                  onClick={() => handleTriggerDownload(doc.id)}
+                  onClick={() => handleTriggerDownload(asset)}
                   disabled={isDownloading}
                 >
                   {isDownloaded ? (
                     <>
                       <FileCheck size={16} />
-                      <span>Đã tải về</span>
+                      <span>Đã mở</span>
                     </>
                   ) : isDownloading ? (
                     <>
                       <div className="lexi-loader-mini"></div>
-                      <span>Đang tải...</span>
+                      <span>Đang mở...</span>
                     </>
                   ) : (
                     <>
                       <Download size={16} />
-                      <span>Tải xuống</span>
+                      <span>Mở tài liệu</span>
                     </>
                   )}
                 </button>
               </article>
             );
           })}
+
+          {!isLoading && mediaAssets.length === 0 && (
+            <article className="panel lexi-syllabus-card">
+              <div className="lexi-doc-icon-container">
+                <FileText size={26} className="lexi-doc-icon" />
+              </div>
+              <div className="lexi-doc-content-info">
+                <h3 className="lexi-doc-title">Chưa có học liệu sẵn sàng</h3>
+                <div className="lexi-doc-meta-row">
+                  <span className="lexi-doc-meta-desc">
+                    Tài liệu học tập sẽ hiển thị tại đây.
+                  </span>
+                </div>
+              </div>
+            </article>
+          )}
         </div>
       </section>
 
-      {/* 2. Interactive Legal Provisions Explorer */}
       <section className="lexi-library-explorer-section">
         <h2 className="lexi-library-section-title">
           <Scale size={20} />
-          <span>Tra cứu nhanh Văn bản Pháp luật</span>
+          <span>Tra cứu nhanh văn bản pháp luật</span>
         </h2>
 
         <div className="lexi-explorer-segmented-bar">
-          <button 
-            className={`lexi-explorer-tab ${activeTab === "civil" ? "active" : ""}`}
-            onClick={() => {
-              setActiveTab("civil");
-              const firstCiv = LEGAL_ARTICLES.find(a => a.code === "civil");
-              if (firstCiv) setSelectedArticle(firstCiv);
-            }}
+          <button
+            className={`lexi-explorer-tab ${
+              activeDocument === "all" ? "active" : ""
+            }`}
+            onClick={() => setActiveDocument("all")}
+            type="button"
           >
-            Bộ luật Dân sự 2015
+            Tất cả
           </button>
-          <button 
-            className={`lexi-explorer-tab ${activeTab === "criminal" ? "active" : ""}`}
-            onClick={() => {
-              setActiveTab("criminal");
-              const firstCrim = LEGAL_ARTICLES.find(a => a.code === "criminal");
-              if (firstCrim) setSelectedArticle(firstCrim);
-            }}
-          >
-            Bộ luật Hình sự 2015
-          </button>
-          <button 
-            className={`lexi-explorer-tab ${activeTab === "commercial" ? "active" : ""}`}
-            onClick={() => {
-              setActiveTab("commercial");
-              const firstCom = LEGAL_ARTICLES.find(a => a.code === "commercial");
-              if (firstCom) setSelectedArticle(firstCom);
-            }}
-          >
-            Luật Thương mại 2005
-          </button>
+          {documentTabs.map((label) => (
+            <button
+              key={label}
+              className={`lexi-explorer-tab ${
+                activeDocument === label ? "active" : ""
+              }`}
+              onClick={() => setActiveDocument(label)}
+              type="button"
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         <div className="lexi-explorer-grid-container">
-          
-          {/* Left panel: Search & Article List */}
           <div className="panel lexi-explorer-left-card">
             <div className="lexi-explorer-search-wrapper">
               <Search size={16} className="lexi-search-icon" />
-              <input 
-                type="text" 
-                placeholder="Tìm kiếm theo số Điều hoặc nội dung..."
+              <input
+                type="text"
+                placeholder="Tìm theo số hiệu, tiêu đề hoặc nội dung..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(event) => setSearchQuery(event.target.value)}
                 className="lexi-explorer-search-input"
               />
             </div>
 
             <div className="lexi-explorer-article-list">
-              {filteredArticles.map((article) => (
+              {filteredSources.map((source) => (
                 <button
-                  key={article.id}
-                  className={`lexi-article-row-btn ${selectedArticle.id === article.id ? "active" : ""}`}
-                  onClick={() => setSelectedArticle(article)}
+                  key={source.id}
+                  className={`lexi-article-row-btn ${
+                    selectedSource?.id === source.id ? "active" : ""
+                  }`}
+                  onClick={() => handleSelectSource(source)}
+                  type="button"
                 >
                   <div className="lexi-article-row-meta">
-                    <strong>{article.number}</strong>
-                    <span>{article.title}</span>
+                    <strong>{source.legalDocumentNo || "Nguồn"}</strong>
+                    <span>{source.title}</span>
                   </div>
                   <ChevronRight size={14} className="lexi-chevron-indicator" />
                 </button>
               ))}
 
-              {filteredArticles.length === 0 && (
+              {!isLoading && filteredSources.length === 0 && (
                 <div className="lexi-no-articles-found">
                   <HelpCircle size={32} />
-                  <p>Không tìm thấy Điều luật nào khớp với từ khóa tìm kiếm.</p>
+                  <p>Không tìm thấy văn bản phù hợp.</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Right panel: Active Article Full Content & Analysis */}
           <div className="panel lexi-explorer-right-card">
-            <div className="lexi-right-card-header">
-              <span className="lexi-active-article-tag">
-                {activeTab === "civil" ? "LUẬT DÂN SỰ" : activeTab === "criminal" ? "LUẬT HÌNH SỰ" : "LUẬT THƯƠNG MẠI"}
-              </span>
-              <h3>{selectedArticle.number}: {selectedArticle.title}</h3>
-            </div>
-
-            <div className="lexi-active-article-body">
-              <div className="lexi-provision-content-block">
-                <h4>Nội dung văn bản quy phạm:</h4>
-                <p className="lexi-raw-law-text">“{selectedArticle.content}”</p>
-              </div>
-
-              <div className="lexi-interpretation-content-block">
-                <div className="lexi-interpretation-header">
-                  <CheckCircle size={15} />
-                  <span>Giải nghĩa chi tiết từ Chuyên gia Lexi:</span>
+            {selectedSource ? (
+              <>
+                <div className="lexi-right-card-header">
+                  <span className="lexi-active-article-tag">
+                    {selectedSource.legalDocumentNo || "VĂN BẢN PHÁP LÝ"}
+                  </span>
+                  <h3>{selectedSource.title}</h3>
                 </div>
-                <p className="lexi-interpreted-text">{selectedArticle.interpretation}</p>
-              </div>
-            </div>
-          </div>
 
+                <div className="lexi-active-article-body">
+                  <div className="lexi-provision-content-block">
+                    <h4>Nội dung văn bản:</h4>
+                    <p className="lexi-raw-law-text">
+                      {selectedSource.content}
+                    </p>
+                  </div>
+
+                  <div className="lexi-interpretation-content-block">
+                    <div className="lexi-interpretation-header">
+                      <CheckCircle size={15} />
+                      <span>Thông tin nguồn:</span>
+                    </div>
+                    <p className="lexi-interpreted-text">
+                      Hiệu lực: {formatDate(selectedSource.effectiveDate)}.
+                      Cập nhật: {formatDate(selectedSource.updatedAt)}.
+                    </p>
+                    {selectedSource.sourceUrl && (
+                      <a
+                        className="button button-secondary"
+                        href={selectedSource.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Mở nguồn gốc
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="lexi-no-articles-found">
+                <HelpCircle size={32} />
+                <p>
+                  {isLoading
+                    ? "Đang tải thư viện..."
+                    : "Chưa có văn bản pháp lý đã xuất bản."}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </main>
   );
 };
+
 export default ResourcesPage;

@@ -573,6 +573,87 @@ test("admin quiz create rejects question without exactly one correct option", as
   );
 });
 
+test("admin can create quiz questions in bulk", async () => {
+  let createArgs;
+  const service = new AdminContentService({
+    findLessonById: async () => lessonFixture(),
+    createQuestions: async (args) => {
+      createArgs = args;
+      return args.questions.map((question, index) =>
+        questionFixture({
+          id: `question-${index + 1}`,
+          questionText: question.questionText,
+          explanation: question.explanation,
+          sortOrder: question.sortOrder,
+          options: question.options.create.map((option, optionIndex) => ({
+            id: `option-${index + 1}-${optionIndex + 1}`,
+            optionText: option.optionText,
+            isCorrect: option.isCorrect,
+            sortOrder: option.sortOrder,
+          })),
+        })
+      );
+    },
+  });
+
+  const response = await service.createQuestionsBulk("lesson-1", {
+    questions: [
+      {
+        text: "Question A?",
+        options: [
+          { text: "Correct A", isCorrect: true },
+          { text: "Wrong A", isCorrect: false },
+        ],
+      },
+      {
+        text: "Question B?",
+        explanation: "Because B",
+        sortOrder: 8,
+        options: [
+          { text: "Wrong B", isCorrect: false },
+          { text: "Correct B", isCorrect: true },
+        ],
+      },
+    ],
+  });
+
+  assert.equal(createArgs.lessonId, "lesson-1");
+  assert.equal(createArgs.questions.length, 2);
+  assert.equal(createArgs.questions[0].questionText, "Question A?");
+  assert.equal(createArgs.questions[0].sortOrder, 0);
+  assert.equal(createArgs.questions[1].sortOrder, 8);
+  assert.equal(response.length, 2);
+  assert.equal(response[1].text, "Question B?");
+  assert.equal(response[1].options[1].isCorrect, true);
+});
+
+test("admin bulk quiz create rejects invalid question before persistence", async () => {
+  let createCalled = false;
+  const service = new AdminContentService({
+    findLessonById: async () => lessonFixture(),
+    createQuestions: async () => {
+      createCalled = true;
+    },
+  });
+
+  await assert.rejects(
+    () =>
+      service.createQuestionsBulk("lesson-1", {
+        questions: [
+          {
+            text: "Invalid question?",
+            options: [
+              { text: "A", isCorrect: false },
+              { text: "B", isCorrect: false },
+            ],
+          },
+        ],
+      }),
+    BadRequestException
+  );
+  assert.equal(createCalled, false);
+});
+
 test("admin cannot delete the last question from a published lesson", async () => {
   let deleteCalled = false;
   const question = questionFixture();

@@ -1,17 +1,26 @@
 import { Module } from "@nestjs/common";
 import { DeviceTokensController } from "./controllers/device-tokens.controller";
+import { NotificationInboxController } from "./controllers/notification-inbox.controller";
 import { NotificationPreferencesController } from "./controllers/notification-preferences.controller";
 import { DeviceTokensRepository } from "./repositories/device-tokens.repository";
+import { NotificationInboxRepository } from "./repositories/notification-inbox.repository";
 import { NotificationPreferencesRepository } from "./repositories/notification-preferences.repository";
 import { DeviceTokensService } from "./services/device-tokens.service";
 import { NotificationPreferencesService } from "./services/notification-preferences.service";
 import { DailyReminderWorker } from "./services/daily-reminder.worker";
+import { NotificationInboxService } from "./services/notification-inbox.service";
 
 @Module({
-  controllers: [DeviceTokensController, NotificationPreferencesController],
+  controllers: [
+    DeviceTokensController,
+    NotificationInboxController,
+    NotificationPreferencesController,
+  ],
   providers: [
     DeviceTokensRepository,
     DeviceTokensService,
+    NotificationInboxRepository,
+    NotificationInboxService,
     NotificationPreferencesRepository,
     NotificationPreferencesService,
     DailyReminderWorker,

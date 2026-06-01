@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { join } from "path";
 import { AppModule } from "./app.module";
 import { securityHeadersMiddleware } from "./common/middleware/security-headers.middleware";
 import { createValidationException } from "./common/validation/validation-exception.factory";
@@ -15,6 +16,9 @@ async function bootstrap() {
 
   app.set("trust proxy", 1);
   app.use(securityHeadersMiddleware);
+  app.useStaticAssets(join(process.cwd(), "uploads"), {
+    prefix: "/uploads/",
+  });
   app.enableCors({
     origin: resolveCorsOrigins(
       configService.get<string>("CORS_ORIGINS", ""),

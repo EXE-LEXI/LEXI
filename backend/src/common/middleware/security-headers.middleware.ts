@@ -13,7 +13,11 @@ export function securityHeadersMiddleware(
     "camera=(), microphone=(), geolocation=()"
   );
   response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-  response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+  const path = request.originalUrl ?? request.url;
+  response.setHeader(
+    "Cross-Origin-Resource-Policy",
+    path.startsWith("/uploads/") ? "cross-origin" : "same-origin"
+  );
 
   if (request.secure || request.headers["x-forwarded-proto"] === "https") {
     response.setHeader(

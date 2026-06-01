@@ -47,6 +47,8 @@ export class LessonsMapper {
       ),
       totalQuestions: submission.totalQuestions,
       xpAwarded: submission.xpAwarded,
+      coinsAwarded: submission.coinsAwarded ?? 0,
+      coinBalance: submission.coinBalance ?? 0,
       bestScore: submission.bestScore,
       completedAt: submission.completedAt,
       results: submission.results.map((result) => ({
