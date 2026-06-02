@@ -190,6 +190,7 @@ model User {
   rewardAccount          RewardAccount?
   rewardLedgerEntries    RewardLedgerEntry[]
   voucherRedemptions     VoucherRedemption[]
+  chatSession            ChatSession?
 
   @@map("users")
 }
@@ -1041,4 +1042,32 @@ model AuditLog {
   @@index([entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ==========================================
+// CHATBOT MODELS
+// ==========================================
+
+model ChatSession {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @unique @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages  ChatMessage[]
+
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId     String      @db.ObjectId
+  session       ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role          String      // "user" or "model"
+  content       String
+  createdAt     DateTime    @default(now())
+
+  @@index([sessionId])
+  @@map("chat_messages")
 }
