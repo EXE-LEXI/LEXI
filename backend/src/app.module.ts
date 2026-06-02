@@ -19,6 +19,7 @@ import { FeedbackModule } from "./modules/feedback/feedback.module";
 import { RewardsModule } from "./modules/rewards/rewards.module";
 import { FirebaseModule } from "./firebase/firebase.module";
 import { ScheduleModule } from "@nestjs/schedule";
+import { AutomatedPipelineModule } from "./modules/automated-pipeline/automated-pipeline.module";
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ScheduleModule } from "@nestjs/schedule";
     RewardsModule,
     FirebaseModule,
     ScheduleModule.forRoot(),
+    AutomatedPipelineModule,
   ],
   controllers: [],
   providers: [
@@ -57,4 +59,4 @@ import { ScheduleModule } from "@nestjs/schedule";
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

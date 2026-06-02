@@ -327,12 +327,26 @@ model LegalSourceDocument {
   sourceUrl       String?   @unique
   legalDocumentNo String?
   effectiveDate   DateTime?
+  issuedDate      DateTime?
+  issuedBy        String?
 
   rawText        String
   normalizedText String?
-  contentHash    String?
+  contentHash    String?   @unique
   crawlStatus    LegalSourceCrawlStatus @default(CRAWLED)
   crawledAt      DateTime?
+
+  // AI Processing fields
+  legalCategory   String?   // CIVIL_LAW, CRIMINAL_LAW, etc.
+  keywords        String[]  // Array of keywords
+  summary         String?
+  keyPhrases      String[]  // Array of key phrases
+  isProcessedByAI Boolean   @default(false)
+
+  // Tracking
+  crawlJobId      String?
+  sourceType      String?   // RSS, SITEMAP, API, HYBRID
+  createdBy       String    @default("SYSTEM_AUTO_CRAWLER")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -342,7 +356,8 @@ model LegalSourceDocument {
 
   @@index([crawlStatus])
   @@index([legalDocumentNo])
-  @@index([contentHash])
+  @@index([legalCategory])
+  @@index([crawlJobId])
   @@map("legal_source_documents")
 }
 
@@ -892,4 +907,138 @@ model NotificationDeliveryLog {
   @@index([userId, readAt])
   @@index([userId, dismissedAt])
   @@map("notification_delivery_logs")
+}
+
+// ==========================================
+// AUTOMATED PIPELINE MODELS
+// ==========================================
+
+model SourceRegistry {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  name            String   @unique
+  description     String?
+  sourceType      String   // RSS, SITEMAP, API, HYBRID
+
+  // Configuration
+  rssUrl          String?
+  sitemapUrl      String?
+  sitemapPattern  String?
+  apiEndpoint     String?
+  apiMethod       String   @default("GET")
+  apiHeaders      Json?
+  apiPageParam    String?  @default("page")
+  apiLimitParam   String?  @default("limit")
+
+  // Scheduling
+  cronExpression  String?
+
+  // Status
+  status          String   @default("ACTIVE") // ACTIVE, DISABLED
+  lastCrawlTime   DateTime @default(now())
+  consecutiveFailures Int  @default(0)
+  lastError       String?
+
+  // Retry config
+  maxRetries      Int      @default(3)
+  retryDelayMs    Int      @default(5000)
+  timeoutMs       Int      @default(30000)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String   @default("SYSTEM")
+
+  crawlJobs CrawlJob[]
+
+  @@index([status])
+  @@index([cronExpression])
+  @@index([updatedAt])
+  @@map("source_registries")
+}
+
+model CrawlJob {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  sourceId        String   @db.ObjectId
+  source          SourceRegistry @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  status          String   // PENDING, IN_PROGRESS, COMPLETED, FAILED
+  startTime       DateTime @default(now())
+  endTime         DateTime?
+
+  discoveredCount Int      @default(0)
+  crawledCount    Int      @default(0)
+  validatedCount  Int      @default(0)
+  aiProcessedCount Int     @default(0)
+  persistedCount  Int      @default(0)
+  errorCount      Int      @default(0)
+
+  errorMessage    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sourceId])
+  @@index([status])
+  @@index([startTime])
+  @@map("crawl_jobs")
+}
+
+model PipelineMetrics {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  date            DateTime @unique
+
+  totalCrawls     Int      @default(0)
+  successfulCrawls Int     @default(0)
+  failedCrawls    Int      @default(0)
+  docsCreated     Int      @default(0)
+  docsUpdated     Int      @default(0)
+  tokensUsed      Int      @default(0)
+  estimatedCost   Float    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pipeline_metrics")
+}
+
+model CrawlErrorLog {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  crawlJobId      String
+  sourceId        String
+
+  successfulCrawls Int     @default(0)
+  failedCrawls    Int      @default(0)
+  duplicatesDetected Int   @default(0)
+  docsProcessedByAI Int    @default(0)
+  docsPersisted   Int      @default(0)
+
+  totalTokensUsed Int      @default(0)
+  estimatedCost   Float    @default(0)
+  averageCrawlTime Float   @default(0)
+  averageAiProcessTime Float @default(0)
+
+  status          String   // COMPLETED, FAILED
+  lastError       String?
+  durationMs      Int      @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([crawlJobId])
+  @@index([sourceId])
+  @@index([createdAt])
+  @@map("crawl_error_logs")
+}
+
+model AuditLog {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  entityType      String   // LegalSourceDocument, SourceRegistry, etc.
+  entityId        String
+  action          String   // CREATE, UPDATE, DELETE
+  changes         Json?
+  createdBy       String
+  createdAt       DateTime @default(now())
+
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

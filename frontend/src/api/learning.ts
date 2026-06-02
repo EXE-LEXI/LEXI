@@ -1,16 +1,27 @@
 import { apiRequest } from "./http";
 import type {
+  AdaptiveQuestion,
   BadgesResponse,
+  ContentRecommendation,
   DailyChallengeClaimResponse,
   DailyChallengesResponse,
+  KnowledgeGap,
   LearningCategory,
+  LearningConsistency,
+  LearningPath,
+  LearningPattern,
   LessonDetail,
   ModulesListResponse,
   NotificationPreferences,
+  PerformanceFeedback,
+  QuestionHint,
+  QuizImprovement,
   QuizSubmission,
   QuizSubmissionAnswer,
   ReviewMistakesResponse,
+  ReviewRecommendationItem,
   ReviewRecommendationsResponse,
+  UserLearningProfile,
   WeeklyLeaderboard,
 } from "../types/learning";
 import type {

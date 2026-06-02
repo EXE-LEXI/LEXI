@@ -26,4 +26,4 @@ import { NotificationInboxService } from "./services/notification-inbox.service"
     DailyReminderWorker,
   ],
 })
-export class NotificationModule { }
+export class NotificationModule {}

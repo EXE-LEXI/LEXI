@@ -176,8 +176,46 @@ export class AdminContentRepository {
     });
   }
 
+  findLegalSourceByUrl(sourceUrl: string) {
+    return this.prisma.legalSourceDocument.findUnique({
+      where: { sourceUrl },
+      include: {
+        lessonDrafts: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+  }
+
+  findCrawledLegalSourcesWithoutDrafts(params: { limit: number }) {
+    return this.prisma.legalSourceDocument.findMany({
+      where: {
+        crawlStatus: "CRAWLED",
+        lessonDrafts: {
+          none: {},
+        },
+      },
+      take: params.limit,
+      orderBy: [{ crawledAt: "desc" }, { updatedAt: "desc" }],
+    });
+  }
+
   createLegalSource(data: Prisma.LegalSourceDocumentCreateInput) {
     return this.prisma.legalSourceDocument.create({ data });
+  }
+
+  upsertLegalSourceByUrl(params: {
+    sourceUrl: string;
+    create: Prisma.LegalSourceDocumentCreateInput;
+    update: Prisma.LegalSourceDocumentUpdateInput;
+  }) {
+    return this.prisma.legalSourceDocument.upsert({
+      where: { sourceUrl: params.sourceUrl },
+      create: params.create,
+      update: params.update,
+    });
   }
 
   updateLegalSource(

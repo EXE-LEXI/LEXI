@@ -688,7 +688,10 @@ async function seedLearningContent() {
     },
   ];
 
-  const lessons: Record<string, Awaited<ReturnType<typeof prisma.lesson.upsert>>> = {};
+  const lessons: Record<
+    string,
+    Awaited<ReturnType<typeof prisma.lesson.upsert>>
+  > = {};
   for (const seed of lessonSeeds) {
     lessons[seed.slug] = await upsertLesson(seed);
     await replaceLessonQuestions(lessons[seed.slug].id, seed.questions);
@@ -796,7 +799,9 @@ async function replaceLessonQuestions(lessonId: string, questions: QuizSeed[]) {
   }
 }
 
-async function seedLegalSourcesAndDrafts(content: Awaited<ReturnType<typeof seedLearningContent>>) {
+async function seedLegalSourcesAndDrafts(
+  content: Awaited<ReturnType<typeof seedLearningContent>>
+) {
   const sources = {
     laborLeave: await upsertSource({
       title: "Trích điều về nghỉ hằng năm",
@@ -974,7 +979,9 @@ async function upsertSource(params: {
       normalizedText: params.rawText,
       contentHash: `demo-${params.legalDocumentNo}`,
       crawledAt:
-        params.crawlStatus === LegalSourceCrawlStatus.CRAWLED ? new Date() : null,
+        params.crawlStatus === LegalSourceCrawlStatus.CRAWLED
+          ? new Date()
+          : null,
     },
     create: {
       title: params.title,
@@ -986,7 +993,9 @@ async function upsertSource(params: {
       normalizedText: params.rawText,
       contentHash: `demo-${params.legalDocumentNo}`,
       crawledAt:
-        params.crawlStatus === LegalSourceCrawlStatus.CRAWLED ? new Date() : null,
+        params.crawlStatus === LegalSourceCrawlStatus.CRAWLED
+          ? new Date()
+          : null,
     },
   });
 }
@@ -1069,8 +1078,8 @@ async function upsertDraft(params: {
   const lessonLinkData = params.createdLessonId
     ? { createdLesson: { connect: { id: params.createdLessonId } } }
     : existing?.createdLessonId
-      ? { createdLesson: { disconnect: true } }
-      : {};
+    ? { createdLesson: { disconnect: true } }
+    : {};
 
   const updateData = {
     ...baseData,
@@ -1103,7 +1112,9 @@ async function upsertDraft(params: {
   });
 }
 
-async function seedMediaAssets(content: Awaited<ReturnType<typeof seedLearningContent>>) {
+async function seedMediaAssets(
+  content: Awaited<ReturnType<typeof seedLearningContent>>
+) {
   await upsertMediaAsset({
     title: "READY video - thời gian thử việc",
     lessonId: content.lessons["thu-viec-toi-da-bao-lau"].id,
@@ -1163,13 +1174,13 @@ async function upsertMediaAsset(params: {
     lesson: params.lessonId
       ? { connect: { id: params.lessonId } }
       : existing?.lessonId
-        ? { disconnect: true }
-        : undefined,
+      ? { disconnect: true }
+      : undefined,
     draft: params.draftId
       ? { connect: { id: params.draftId } }
       : existing?.draftId
-        ? { disconnect: true }
-        : undefined,
+      ? { disconnect: true }
+      : undefined,
     title: params.title,
     assetType: MediaAssetType.VIDEO,
     sourceType: params.sourceType,
@@ -1200,7 +1211,9 @@ async function seedDemoLearningState(
 ) {
   const allSeedUsers = [users.demo, ...users.leaderboardUsers];
   for (const user of allSeedUsers) {
-    await prisma.notificationDeliveryLog.deleteMany({ where: { userId: user.id } });
+    await prisma.notificationDeliveryLog.deleteMany({
+      where: { userId: user.id },
+    });
     await prisma.deviceToken.deleteMany({ where: { userId: user.id } });
     await prisma.userChallenge.deleteMany({ where: { userId: user.id } });
     await prisma.userBadge.deleteMany({ where: { userId: user.id } });
@@ -1214,31 +1227,127 @@ async function seedDemoLearningState(
   const today11 = atHour(now, 11);
   const yesterday = daysAgo(now, 1, 20);
 
-  await recordAttempt(users.demo.id, content.lessons["thu-viec-toi-da-bao-lau"].id, [true, true], today9);
-  await recordAttempt(users.demo.id, content.lessons["don-phuong-cham-dut-hop-dong"].id, [false, true], today10);
-  await recordAttempt(users.demo.id, content.lessons["nghi-phep-nam"].id, [true, true], today11);
-  await recordAttempt(users.demo.id, content.lessons["toc-do-trong-khu-dan-cu"].id, [false, true], yesterday);
-  await recordAttempt(users.demo.id, content.lessons["nhan-dien-link-phishing"].id, [true, false], daysAgo(now, 2, 19));
-  await recordAttempt(users.demo.id, content.lessons["doi-tra-khi-mua-hang-online"].id, [true, true], daysAgo(now, 3, 19));
-  await recordAttempt(users.demo.id, content.lessons["thu-viec-toi-da-bao-lau"].id, [true, false], daysAgo(now, 4, 19));
-  await recordAttempt(users.demo.id, content.lessons["don-phuong-cham-dut-hop-dong"].id, [true, true], daysAgo(now, 5, 19));
-  await recordAttempt(users.demo.id, content.lessons["nghi-phep-nam"].id, [false, true], daysAgo(now, 6, 19));
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["thu-viec-toi-da-bao-lau"].id,
+    [true, true],
+    today9
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["don-phuong-cham-dut-hop-dong"].id,
+    [false, true],
+    today10
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["nghi-phep-nam"].id,
+    [true, true],
+    today11
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["toc-do-trong-khu-dan-cu"].id,
+    [false, true],
+    yesterday
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["nhan-dien-link-phishing"].id,
+    [true, false],
+    daysAgo(now, 2, 19)
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["doi-tra-khi-mua-hang-online"].id,
+    [true, true],
+    daysAgo(now, 3, 19)
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["thu-viec-toi-da-bao-lau"].id,
+    [true, false],
+    daysAgo(now, 4, 19)
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["don-phuong-cham-dut-hop-dong"].id,
+    [true, true],
+    daysAgo(now, 5, 19)
+  );
+  await recordAttempt(
+    users.demo.id,
+    content.lessons["nghi-phep-nam"].id,
+    [false, true],
+    daysAgo(now, 6, 19)
+  );
 
-  await upsertProgress(users.demo.id, content.lessons["thu-viec-toi-da-bao-lau"].id, ProgressStatus.COMPLETED, 100, today9);
-  await upsertProgress(users.demo.id, content.lessons["don-phuong-cham-dut-hop-dong"].id, ProgressStatus.COMPLETED, 50, today10);
-  await upsertProgress(users.demo.id, content.lessons["nghi-phep-nam"].id, ProgressStatus.COMPLETED, 100, today11);
-  await upsertProgress(users.demo.id, content.lessons["toc-do-trong-khu-dan-cu"].id, ProgressStatus.IN_PROGRESS, 50, null);
+  await upsertProgress(
+    users.demo.id,
+    content.lessons["thu-viec-toi-da-bao-lau"].id,
+    ProgressStatus.COMPLETED,
+    100,
+    today9
+  );
+  await upsertProgress(
+    users.demo.id,
+    content.lessons["don-phuong-cham-dut-hop-dong"].id,
+    ProgressStatus.COMPLETED,
+    50,
+    today10
+  );
+  await upsertProgress(
+    users.demo.id,
+    content.lessons["nghi-phep-nam"].id,
+    ProgressStatus.COMPLETED,
+    100,
+    today11
+  );
+  await upsertProgress(
+    users.demo.id,
+    content.lessons["toc-do-trong-khu-dan-cu"].id,
+    ProgressStatus.IN_PROGRESS,
+    50,
+    null
+  );
 
   await seedBadgesForDemoUser(users.demo.id, now);
   await seedDailyChallengeReadyToClaim(users.demo.id, now);
 
-  await recordAttempt(users.leaderboardUsers[0].id, content.lessons["thu-viec-toi-da-bao-lau"].id, [true, true], today10);
-  await recordAttempt(users.leaderboardUsers[0].id, content.lessons["nhan-dien-link-phishing"].id, [true, true], today11);
-  await recordAttempt(users.leaderboardUsers[1].id, content.lessons["nghi-phep-nam"].id, [true, false], today10);
-  await recordAttempt(users.leaderboardUsers[1].id, content.lessons["doi-tra-khi-mua-hang-online"].id, [true, true], yesterday);
-  await recordAttempt(users.leaderboardUsers[2].id, content.lessons["toc-do-trong-khu-dan-cu"].id, [false, true], today9);
+  await recordAttempt(
+    users.leaderboardUsers[0].id,
+    content.lessons["thu-viec-toi-da-bao-lau"].id,
+    [true, true],
+    today10
+  );
+  await recordAttempt(
+    users.leaderboardUsers[0].id,
+    content.lessons["nhan-dien-link-phishing"].id,
+    [true, true],
+    today11
+  );
+  await recordAttempt(
+    users.leaderboardUsers[1].id,
+    content.lessons["nghi-phep-nam"].id,
+    [true, false],
+    today10
+  );
+  await recordAttempt(
+    users.leaderboardUsers[1].id,
+    content.lessons["doi-tra-khi-mua-hang-online"].id,
+    [true, true],
+    yesterday
+  );
+  await recordAttempt(
+    users.leaderboardUsers[2].id,
+    content.lessons["toc-do-trong-khu-dan-cu"].id,
+    [false, true],
+    today9
+  );
 
-  console.log("Demo learning progress, attempts, badges and leaderboard seeded.");
+  console.log(
+    "Demo learning progress, attempts, badges and leaderboard seeded."
+  );
 }
 
 function atHour(base: Date, hour: number) {
@@ -1528,7 +1637,9 @@ async function seedNotifications(users: Awaited<ReturnType<typeof seedUsers>>) {
     deliveredAt: null,
   });
 
-  console.log("Notification preferences, device token and delivery logs seeded.");
+  console.log(
+    "Notification preferences, device token and delivery logs seeded."
+  );
 }
 
 async function upsertDeliveryLog(params: {
