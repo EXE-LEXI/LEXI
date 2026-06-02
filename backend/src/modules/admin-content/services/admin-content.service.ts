@@ -6,6 +6,8 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { createHash } from "crypto";
+import { existsSync, unlinkSync } from "fs";
+import { join } from "path";
 import {
   AiGenerationStatus,
   AiGenerationType,
@@ -20,11 +22,13 @@ import {
 } from "@prisma/client";
 import { AttachMediaAssetToLessonDto } from "../dto/request/attach-media-asset-to-lesson.dto";
 import { CrawlAdminLegalSourcesDto } from "../dto/request/crawl-admin-legal-sources.dto";
+import { CreateAdminModuleDto } from "../dto/request/create-admin-module.dto";
 import { CreateAdminMediaAssetDto } from "../dto/request/create-admin-media-asset.dto";
 import {
   DEFAULT_MODULES_LIMIT,
   DEFAULT_MODULES_PAGE,
 } from "../../learning/modules/constants/modules.constants";
+import { CreateAdminLessonDto } from "../dto/request/create-admin-lesson.dto";
 import { CreateLessonFromDraftDto } from "../dto/request/create-lesson-from-draft.dto";
 import { CreateAdminLegalSourceDto } from "../dto/request/create-admin-legal-source.dto";
 import { GenerateAdminLessonDraftDto } from "../dto/request/generate-admin-lesson-draft.dto";
@@ -42,6 +46,7 @@ import { UpdateAdminLegalSourceDto } from "../dto/request/update-admin-legal-sou
 import { UpdateAdminLessonDraftDto } from "../dto/request/update-admin-lesson-draft.dto";
 import { UpdateAdminLessonDto } from "../dto/request/update-admin-lesson.dto";
 import { UpdateAdminMediaAssetDto } from "../dto/request/update-admin-media-asset.dto";
+import { UpdateAdminModuleDto } from "../dto/request/update-admin-module.dto";
 import { UpdateAdminQuestionDto } from "../dto/request/update-admin-question.dto";
 import {
   AdminLegalSourceListResponseDto,
@@ -62,6 +67,11 @@ import {
   AdminLessonListResponseDto,
   AdminQuestionResponseDto,
 } from "../dto/response/admin-lesson-response.dto";
+import {
+  AdminCategoryResponseDto,
+  AdminModuleListResponseDto,
+  AdminModuleResponseDto,
+} from "../dto/response/admin-module-response.dto";
 import { AdminContentMapper } from "../mappers/admin-content.mapper";
 import { AdminContentRepository } from "../repositories/admin-content.repository";
 
@@ -89,6 +99,77 @@ export class AdminContentService {
       page,
       limit,
     });
+  }
+
+  async getCategories(): Promise<AdminCategoryResponseDto[]> {
+    const categories = await this.adminContentRepository.findCategories();
+    return categories.map((category) => AdminContentMapper.toCategory(category));
+  }
+
+  async getModules(query: {
+    page?: number;
+    limit?: number;
+    categoryId?: string;
+    search?: string;
+  }): Promise<AdminModuleListResponseDto> {
+    const page = query.page ?? DEFAULT_MODULES_PAGE;
+    const limit = query.limit ?? DEFAULT_MODULES_LIMIT;
+    const [total, modules] = await this.adminContentRepository.findModules({
+      where: this.buildModuleWhere(query),
+      page,
+      limit,
+    });
+
+    return AdminContentMapper.toPaginatedModules({
+      modules,
+      total,
+      page,
+      limit,
+    });
+  }
+
+  async createModule(
+    createDto: CreateAdminModuleDto
+  ): Promise<AdminModuleResponseDto> {
+    await this.getCategoryOrThrow(createDto.categoryId);
+    const module = await this.adminContentRepository.createModule({
+      category: { connect: { id: createDto.categoryId } },
+      slug: this.buildManualSlug(createDto.title, createDto.slug, "module"),
+      title: createDto.title,
+      description: createDto.description,
+      sortOrder: createDto.sortOrder ?? 0,
+      isActive: createDto.isActive ?? true,
+    });
+    return AdminContentMapper.toModule(module);
+  }
+
+  async updateModule(
+    moduleId: string,
+    updateDto: UpdateAdminModuleDto
+  ): Promise<AdminModuleResponseDto> {
+    const currentModule = await this.getLearningModuleOrThrow(moduleId);
+    if (updateDto.categoryId) {
+      await this.getCategoryOrThrow(updateDto.categoryId);
+    }
+
+    const module = await this.adminContentRepository.updateModule(moduleId, {
+      ...(updateDto.categoryId
+        ? { category: { connect: { id: updateDto.categoryId } } }
+        : {}),
+      slug:
+        updateDto.slug !== undefined || updateDto.title !== undefined
+          ? this.buildManualSlug(
+              updateDto.title ?? currentModule.title,
+              updateDto.slug ?? currentModule.slug,
+              "module"
+            )
+          : undefined,
+      title: updateDto.title,
+      description: updateDto.description,
+      sortOrder: updateDto.sortOrder,
+      isActive: updateDto.isActive,
+    });
+    return AdminContentMapper.toModule(module);
   }
 
   async getLegalSources(
@@ -327,6 +408,19 @@ export class AdminContentService {
     return AdminContentMapper.toMediaAsset(asset);
   }
 
+  async deleteMediaAsset(assetId: string): Promise<AdminMediaAssetResponseDto> {
+    const asset = await this.getMediaAssetOrThrow(assetId);
+    if (asset.lessonId || asset.lesson) {
+      throw new BadRequestException(
+        "Cannot delete a media asset that is attached to a lesson"
+      );
+    }
+
+    await this.deleteMediaAssetStorage(asset);
+    const deleted = await this.adminContentRepository.deleteMediaAsset(assetId);
+    return AdminContentMapper.toMediaAsset(deleted);
+  }
+
   async attachMediaAssetToLesson(
     assetId: string,
     dto: AttachMediaAssetToLessonDto
@@ -369,6 +463,24 @@ export class AdminContentService {
       status: dto.status,
     });
     return AdminContentMapper.toLessonDraft(draft);
+  }
+
+  async createLesson(
+    createDto: CreateAdminLessonDto
+  ): Promise<AdminLessonDetailResponseDto> {
+    await this.getLearningModuleOrThrow(createDto.moduleId);
+    const data = this.buildLessonCreateData(createDto);
+    const candidate = {
+      ...data,
+      questions: [],
+    };
+
+    if (candidate.reviewStatus === LessonReviewStatus.PUBLISHED) {
+      this.assertPublishableLesson(candidate);
+    }
+
+    const lesson = await this.adminContentRepository.createLesson(data);
+    return AdminContentMapper.toLessonDetail(lesson);
   }
 
   async createLessonFromDraft(
@@ -712,6 +824,14 @@ export class AdminContentService {
       /(?:có hiệu lực|hiệu lực thi hành)[^.\n]{0,120}?(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/iu
     );
     if (!match) {
+      const fallbackMatch = text.match(
+        /(?:co hieu luc|hieu luc thi hanh|takes effect|effective from|effect on)[^.\n]{0,120}?(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/iu
+      );
+      if (fallbackMatch) {
+        const day = fallbackMatch[1].padStart(2, "0");
+        const month = fallbackMatch[2].padStart(2, "0");
+        return `${fallbackMatch[3]}-${month}-${day}T00:00:00.000Z`;
+      }
       return null;
     }
     const day = match[1].padStart(2, "0");
@@ -843,6 +963,29 @@ export class AdminContentService {
     return where;
   }
 
+  private buildModuleWhere(query: {
+    categoryId?: string;
+    search?: string;
+  }): Prisma.LearningModuleWhereInput {
+    const where: Prisma.LearningModuleWhereInput = {};
+    if (query.categoryId) {
+      where.categoryId = query.categoryId;
+    }
+    if (query.search) {
+      where.OR = [
+        { title: { contains: query.search, mode: "insensitive" } },
+        { slug: { contains: query.search, mode: "insensitive" } },
+        { description: { contains: query.search, mode: "insensitive" } },
+        {
+          category: {
+            title: { contains: query.search, mode: "insensitive" },
+          },
+        },
+      ];
+    }
+    return where;
+  }
+
   private buildLessonWhere(
     query: GetAdminLessonsQueryDto
   ): Prisma.LessonWhereInput {
@@ -945,6 +1088,27 @@ export class AdminContentService {
     };
   }
 
+  private buildLessonCreateData(
+    createDto: CreateAdminLessonDto
+  ): Prisma.LessonCreateInput {
+    return {
+      module: { connect: { id: createDto.moduleId } },
+      slug: this.buildManualLessonSlug(createDto.title, createDto.slug),
+      title: createDto.title,
+      content: createDto.content,
+      videoUrl: createDto.videoUrl,
+      sourceTitle: createDto.sourceTitle,
+      sourceUrl: createDto.sourceUrl,
+      legalDocumentNo: createDto.legalDocumentNo,
+      effectiveDate: this.toDateValue(createDto.effectiveDate),
+      reviewedAt: this.toDateValue(createDto.reviewedAt),
+      reviewerNote: createDto.reviewerNote,
+      sortOrder: createDto.sortOrder ?? 0,
+      reviewStatus: createDto.reviewStatus ?? LessonReviewStatus.DRAFT,
+      isActive: createDto.isActive ?? false,
+    };
+  }
+
   private buildMediaAssetCreateData(
     dto: CreateAdminMediaAssetDto
   ): Prisma.MediaAssetCreateInput {
@@ -1044,9 +1208,22 @@ export class AdminContentService {
     model: string;
     promptVersion: string;
   }> {
-    const provider = this.getConfigValue("AI_DRAFT_PROVIDER") || "local";
-    if (provider !== "local") {
+    const provider = (
+      this.getConfigValue("AI_DRAFT_PROVIDER") || "local"
+    ).toLowerCase();
+    const hasProviderConfig =
+      Boolean(this.getConfigValue("AI_DRAFT_ENDPOINT")) &&
+      Boolean(this.getConfigValue("AI_DRAFT_API_KEY")) &&
+      Boolean(this.getConfigValue("AI_DRAFT_MODEL"));
+
+    if (provider !== "local" && hasProviderConfig) {
       return this.generateProviderLessonDraft(source, dto, provider);
+    }
+
+    if (provider !== "local" && this.isProduction()) {
+      throw new BadRequestException(
+        "AI provider requires AI_DRAFT_ENDPOINT, AI_DRAFT_API_KEY and AI_DRAFT_MODEL"
+      );
     }
 
     return {
@@ -1209,7 +1386,15 @@ export class AdminContentService {
   }
 
   private getConfigValue(key: string): string | undefined {
-    return this.configService?.get<string>(key) ?? process.env[key];
+    if (this.configService) {
+      return this.configService.get<string>(key);
+    }
+
+    return key === "NODE_ENV" ? process.env[key] : undefined;
+  }
+
+  private isProduction(): boolean {
+    return this.getConfigValue("NODE_ENV") === "production";
   }
 
   private buildGeneratedQuestion(index: number, source: any) {
@@ -1259,12 +1444,51 @@ export class AdminContentService {
     return `${baseSlug}-${String(draft.id).slice(0, 8)}`;
   }
 
+  private buildManualLessonSlug(title: string, slug?: string | null): string {
+    return this.buildManualSlug(title, slug, "lesson");
+  }
+
+  private buildManualSlug(
+    title: string,
+    slug?: string | null,
+    fallback = "item"
+  ): string {
+    const base = (slug?.trim() || title)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 70);
+
+    return base || `${fallback}-${Date.now()}`;
+  }
+
   private async getLessonOrThrow(lessonId: string) {
     const lesson = await this.adminContentRepository.findLessonById(lessonId);
     if (!lesson) {
       throw new NotFoundException("Lesson not found");
     }
     return lesson;
+  }
+
+  private async getLearningModuleOrThrow(moduleId: string) {
+    const learningModule =
+      await this.adminContentRepository.findLearningModuleById(moduleId);
+    if (!learningModule) {
+      throw new NotFoundException("Learning module not found");
+    }
+    return learningModule;
+  }
+
+  private async getCategoryOrThrow(categoryId: string) {
+    const category = await this.adminContentRepository.findCategoryById(
+      categoryId
+    );
+    if (!category) {
+      throw new NotFoundException("Category not found");
+    }
+    return category;
   }
 
   private async getLegalSourceOrThrow(sourceId: string) {
@@ -1293,6 +1517,76 @@ export class AdminContentService {
       throw new NotFoundException("Media asset not found");
     }
     return asset;
+  }
+
+  private async deleteMediaAssetStorage(asset: any): Promise<void> {
+    const provider = String(asset.provider ?? "").toUpperCase();
+
+    if (provider === "CLOUDINARY") {
+      await this.deleteCloudinaryVideo(asset);
+      return;
+    }
+
+    if (provider === "LOCAL") {
+      this.deleteLocalVideo(asset);
+    }
+  }
+
+  private deleteLocalVideo(asset: any): void {
+    const fileName = asset.metadata?.storage?.fileName;
+    if (!fileName || typeof fileName !== "string") {
+      return;
+    }
+
+    const filePath = join(process.cwd(), "uploads", "media", fileName);
+    if (existsSync(filePath)) {
+      unlinkSync(filePath);
+    }
+  }
+
+  private async deleteCloudinaryVideo(asset: any): Promise<void> {
+    const publicId = asset.metadata?.storage?.publicId;
+    if (!publicId || typeof publicId !== "string") {
+      throw new BadRequestException(
+        "Cloudinary publicId is missing for this media asset"
+      );
+    }
+
+    const cloudName = this.getConfigValue("CLOUDINARY_CLOUD_NAME");
+    const apiKey = this.getConfigValue("CLOUDINARY_API_KEY");
+    const apiSecret = this.getConfigValue("CLOUDINARY_API_SECRET");
+    if (!cloudName || !apiKey || !apiSecret) {
+      throw new BadRequestException("Cloudinary video storage is not configured");
+    }
+
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const signature = createHash("sha1")
+      .update(`public_id=${publicId}&timestamp=${timestamp}${apiSecret}`)
+      .digest("hex");
+
+    const formData = new FormData();
+    formData.append("public_id", publicId);
+    formData.append("api_key", apiKey);
+    formData.append("timestamp", timestamp);
+    formData.append("signature", signature);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/video/destroy`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+    const payload = (await response.json()) as {
+      result?: string;
+      error?: { message?: string };
+    };
+
+    if (!response.ok || !["ok", "not found"].includes(payload.result ?? "")) {
+      throw new BadRequestException(
+        payload.error?.message ?? "Cloudinary delete failed"
+      );
+    }
   }
 
   private async getQuestionOrThrow(questionId: string) {

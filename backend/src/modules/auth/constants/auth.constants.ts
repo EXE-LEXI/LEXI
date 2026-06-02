@@ -1,7 +1,7 @@
 export const PASSWORD_SALT_ROUNDS = 10;
 
 export const AUTH_TOKEN_EXPIRES_IN = {
-  access: "15m",
+  access: "2h",
   refresh: "7d",
 } as const;
 

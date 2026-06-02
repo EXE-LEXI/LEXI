@@ -23,6 +23,7 @@ import {
   CreateAdminQuestionDto,
   CreateAdminQuestionsBulkDto,
 } from "../dto/request/create-admin-question.dto";
+import { CreateAdminLessonDto } from "../dto/request/create-admin-lesson.dto";
 import { GetAdminLessonsQueryDto } from "../dto/request/get-admin-lessons-query.dto";
 import { UpdateAdminLessonDto } from "../dto/request/update-admin-lesson.dto";
 import { UpdateAdminQuestionDto } from "../dto/request/update-admin-question.dto";
@@ -57,6 +58,15 @@ export class AdminLessonsController {
     @Param("lessonId") lessonId: string
   ): Promise<AdminLessonDetailResponseDto> {
     return this.adminContentService.getLesson(lessonId);
+  }
+
+  @Post("lessons")
+  @ApiOperation({ summary: "Create a lesson manually" })
+  @ApiOkResponse({ type: AdminLessonDetailResponseDto })
+  createLesson(
+    @Body() createDto: CreateAdminLessonDto
+  ): Promise<AdminLessonDetailResponseDto> {
+    return this.adminContentService.createLesson(createDto);
   }
 
   @Patch("lessons/:lessonId")

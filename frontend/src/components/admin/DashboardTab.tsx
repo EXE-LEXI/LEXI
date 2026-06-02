@@ -1,12 +1,9 @@
 import React from "react";
 import {
-  BarChart3,
   BrainCircuit,
   Database,
   Download,
-  FileText,
   GraduationCap,
-  Layers,
   Video,
 } from "lucide-react";
 import type {
@@ -20,6 +17,7 @@ import { formatDate } from "../../utils/format";
 
 type AdminTab =
   | "dashboard"
+  | "modules"
   | "lessons"
   | "quizzes"
   | "users"
@@ -120,7 +118,7 @@ export function DashboardTab({
             Dữ liệu lấy từ API admin hiện tại
           </div>
         </div>
-        <button className="lexi-cms-export-btn" onClick={handleExportCsv}>
+        <button className="lexi-cms-export-btn" onClick={handleExportCsv} type="button">
           <Download size={14} /> Xuất báo cáo CSV
         </button>
       </div>
@@ -200,7 +198,7 @@ export function DashboardTab({
         <div className="lexi-cms-panel-card">
           <div className="lexi-cms-panel-header">
             <h2>Bài học mới cập nhật</h2>
-            <a href="#lessons" className="lexi-cms-link-all" onClick={(e) => { e.preventDefault(); setActiveTab("lessons"); }}>
+            <a href="#lessons" className="lexi-cms-link-all" onClick={(event) => { event.preventDefault(); setActiveTab("lessons"); }}>
               Xem tất cả
             </a>
           </div>
@@ -231,14 +229,14 @@ export function DashboardTab({
           <BrainCircuit size={22} />
         </div>
         <div className="lexi-cms-ai-content">
-          <h3>AI Mentor Đề Xuất</h3>
+          <h3>Gợi ý từ AI Mentor</h3>
           <p className="lexi-cms-ai-desc">{mentorText}</p>
         </div>
         <div className="lexi-cms-ai-actions">
-          <button className="lexi-cms-btn-ai-action" onClick={() => setActiveTab(mentorTargetTab)}>
-            {mentorTargetTab === "sources" ? "Thêm nguồn pháp lý" : "Mở AI Content Builder"}
+          <button className="lexi-cms-btn-ai-action" onClick={() => setActiveTab(mentorTargetTab)} type="button">
+            {mentorTargetTab === "sources" ? "Thêm nguồn pháp lý" : "Mở trình tạo nội dung AI"}
           </button>
-          <button className="lexi-cms-btn-ai-ignore" onClick={() => setActiveTab("logs")}>
+          <button className="lexi-cms-btn-ai-ignore" onClick={() => setActiveTab("logs")} type="button">
             Xem logs
           </button>
         </div>
@@ -246,4 +244,5 @@ export function DashboardTab({
     </>
   );
 }
+
 export default DashboardTab;

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -29,7 +30,7 @@ import {
 } from "@prisma/client";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { basename, extname, join } from "path";
-import { randomUUID } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { Roles } from "../../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../../auth/guards/roles.guard";
@@ -84,7 +85,7 @@ export class AdminMediaController {
   @ApiConsumes("multipart/form-data")
   @ApiOperation({ summary: "Upload a local video file and register media asset" })
   @ApiOkResponse({ type: AdminMediaAssetResponseDto })
-  uploadMediaAsset(
+  async uploadMediaAsset(
     @UploadedFile() file: any,
     @Body("title") title?: string,
     @Body("placement") placement?: string
@@ -114,22 +115,13 @@ export class AdminMediaController {
       );
     }
 
-    const uploadDir = join(process.cwd(), "uploads", "media");
-    if (!existsSync(uploadDir)) {
-      mkdirSync(uploadDir, { recursive: true });
-    }
-
     const baseName =
       basename(originalName, extension)
         .replace(/[^a-zA-Z0-9_-]+/g, "-")
         .replace(/^-+|-+$/g, "")
         .slice(0, 80) || "video";
-    const fileName = `${Date.now()}-${randomUUID()}-${baseName}${extension}`;
-    const filePath = join(uploadDir, fileName);
-    writeFileSync(filePath, file.buffer);
-
-    const publicUrl = `${this.getPublicBaseUrl()}/uploads/media/${fileName}`;
     const mediaPlacement = this.resolveMediaPlacement(placement);
+    const uploadResult = await this.uploadVideoFile(file, baseName, extension);
 
     return this.adminContentService.createMediaAsset({
       title: title?.trim() || basename(originalName, extension),
@@ -137,12 +129,13 @@ export class AdminMediaController {
       sourceType: MediaAssetSourceType.EXTERNAL_URL,
       placement: mediaPlacement,
       status: MediaAssetStatus.READY,
-      url: publicUrl,
+      url: uploadResult.url,
       mimeType: file.mimetype,
-      provider: "LOCAL",
+      provider: uploadResult.provider,
       metadata: {
         originalName,
         size: file.size,
+        storage: uploadResult.metadata,
         ...(mediaPlacement === MediaAssetPlacement.SHORTS
           ? {
               shorts: {
@@ -168,6 +161,15 @@ export class AdminMediaController {
     @Body() dto: UpdateAdminMediaAssetDto
   ): Promise<AdminMediaAssetResponseDto> {
     return this.adminContentService.updateMediaAsset(assetId, dto);
+  }
+
+  @Delete(":assetId")
+  @ApiOperation({ summary: "Delete a media asset and its stored video file" })
+  @ApiOkResponse({ type: AdminMediaAssetResponseDto })
+  deleteMediaAsset(
+    @Param("assetId") assetId: string
+  ): Promise<AdminMediaAssetResponseDto> {
+    return this.adminContentService.deleteMediaAsset(assetId);
   }
 
   @Post(":assetId/attach-to-lesson")
@@ -207,5 +209,128 @@ export class AdminMediaController {
     }
 
     throw new BadRequestException("Invalid media placement");
+  }
+
+  private async uploadVideoFile(
+    file: any,
+    baseName: string,
+    extension: string
+  ): Promise<{
+    url: string;
+    provider: "LOCAL" | "CLOUDINARY";
+    metadata: Record<string, unknown>;
+  }> {
+    const provider = this.configService
+      .get<string>("VIDEO_STORAGE_PROVIDER", "local")
+      .toLowerCase();
+
+    if (provider === "cloudinary") {
+      return this.uploadToCloudinary(file, baseName);
+    }
+
+    if (provider !== "local") {
+      throw new BadRequestException("Unsupported VIDEO_STORAGE_PROVIDER");
+    }
+
+    return this.uploadToLocalStorage(file, baseName, extension);
+  }
+
+  private uploadToLocalStorage(
+    file: any,
+    baseName: string,
+    extension: string
+  ): {
+    url: string;
+    provider: "LOCAL";
+    metadata: Record<string, unknown>;
+  } {
+    const uploadDir = join(process.cwd(), "uploads", "media");
+    if (!existsSync(uploadDir)) {
+      mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const fileName = `${Date.now()}-${randomUUID()}-${baseName}${extension}`;
+    const filePath = join(uploadDir, fileName);
+    writeFileSync(filePath, file.buffer);
+
+    return {
+      url: `${this.getPublicBaseUrl()}/uploads/media/${fileName}`,
+      provider: "LOCAL",
+      metadata: {
+        fileName,
+        path: "uploads/media",
+      },
+    };
+  }
+
+  private async uploadToCloudinary(
+    file: any,
+    baseName: string
+  ): Promise<{
+    url: string;
+    provider: "CLOUDINARY";
+    metadata: Record<string, unknown>;
+  }> {
+    const cloudName = this.configService.get<string>("CLOUDINARY_CLOUD_NAME");
+    const apiKey = this.configService.get<string>("CLOUDINARY_API_KEY");
+    const apiSecret = this.configService.get<string>("CLOUDINARY_API_SECRET");
+    const folder =
+      this.configService.get<string>("CLOUDINARY_VIDEO_FOLDER") ??
+      "lexi/videos";
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      throw new BadRequestException(
+        "Cloudinary video storage is not configured"
+      );
+    }
+
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const publicId = `${baseName}-${randomUUID()}`;
+    const signaturePayload = `folder=${folder}&public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
+    const signature = createHash("sha1")
+      .update(signaturePayload)
+      .digest("hex");
+
+    const formData = new FormData();
+    formData.append("file", new Blob([file.buffer], { type: file.mimetype }));
+    formData.append("api_key", apiKey);
+    formData.append("timestamp", timestamp);
+    formData.append("signature", signature);
+    formData.append("folder", folder);
+    formData.append("public_id", publicId);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+    const payload = (await response.json()) as {
+      secure_url?: string;
+      public_id?: string;
+      resource_type?: string;
+      bytes?: number;
+      duration?: number;
+      error?: { message?: string };
+    };
+
+    if (!response.ok || !payload.secure_url) {
+      throw new BadRequestException(
+        payload.error?.message ?? "Cloudinary upload failed"
+      );
+    }
+
+    return {
+      url: payload.secure_url,
+      provider: "CLOUDINARY",
+      metadata: {
+        publicId: payload.public_id,
+        resourceType: payload.resource_type,
+        bytes: payload.bytes,
+        duration: payload.duration,
+        folder,
+      },
+    };
   }
 }

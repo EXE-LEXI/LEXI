@@ -11,11 +11,15 @@ type AdminHeaderProps = {
 };
 
 const placeholders: Record<string, string> = {
-  users: "Tim kiem nguoi dung...",
-  feedback: "Tim feedback, trang, noi dung...",
-  lessons: "Tim khoa hoc...",
-  quizzes: "Tim bai kiem tra...",
-  sources: "Tim nguon phap ly...",
+  users: "Tìm kiếm người dùng...",
+  feedback: "Tìm phản hồi, trang, nội dung...",
+  modules: "Tìm khóa học...",
+  lessons: "Tìm bài học...",
+  quizzes: "Tìm bài kiểm tra...",
+  sources: "Tìm nguồn pháp lý...",
+  aiDrafts: "Tìm bản nháp AI...",
+  media: "Tìm tài liệu hoặc media...",
+  logs: "Tìm báo cáo...",
 };
 
 export function AdminHeader({
@@ -39,7 +43,7 @@ export function AdminHeader({
         <Search className="lexi-cms-search-icon" size={16} />
         <input
           type="text"
-          placeholder={placeholders[activeTab] ?? "Tim kiem..."}
+          placeholder={placeholders[activeTab] ?? "Tìm kiếm..."}
           className="lexi-cms-search-input"
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
@@ -47,15 +51,18 @@ export function AdminHeader({
       </div>
 
       <div className="lexi-cms-header-right">
-        <button className="lexi-cms-icon-btn" type="button" title="Chua co thong bao quan tri moi" aria-label="Thong bao quan tri">
+        <button
+          className="lexi-cms-icon-btn"
+          type="button"
+          title="Chưa có thông báo quản trị mới"
+          aria-label="Thông báo quản trị"
+        >
           <Bell size={20} />
         </button>
         <button
           className="lexi-cms-icon-btn"
-          onClick={() => {
-            if (onNavigate) onNavigate("/dashboard");
-          }}
-          title="Tro lai giao dien hoc vien"
+          onClick={() => onNavigate?.("/dashboard")}
+          title="Trở lại giao diện học viên"
           type="button"
         >
           <History size={20} />

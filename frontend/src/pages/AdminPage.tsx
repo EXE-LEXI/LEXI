@@ -1,22 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import type {
+  AdminCategory,
   AdminDeliveryLog,
   AdminDraft,
   AdminLesson,
   AdminMediaAsset,
+  AdminModule,
+  AdminQuestion,
   AdminSource,
-  AdminQuestion
 } from "../api/admin";
-import {
-  getAdminQuestions,
-  deleteAdminQuestion
-} from "../api/admin";
+import { deleteAdminQuestion, getAdminQuestions } from "../api/admin";
 import type { AuthResponse } from "../types/auth";
-
-// Import modularized sub-components
 import { AdminSidebar } from "../components/admin/AdminSidebar";
 import { AdminHeader } from "../components/admin/AdminHeader";
 import { DashboardTab } from "../components/admin/DashboardTab";
+import { ModulesTab } from "../components/admin/ModulesTab";
 import { LessonsTab } from "../components/admin/LessonsTab";
 import { QuizzesTab } from "../components/admin/QuizzesTab";
 import { UsersTab } from "../components/admin/UsersTab";
@@ -32,6 +30,7 @@ import { VouchersTab } from "../components/admin/VouchersTab";
 
 type AdminTabType =
   | "dashboard"
+  | "modules"
   | "lessons"
   | "quizzes"
   | "users"
@@ -44,6 +43,8 @@ type AdminTabType =
   | "vouchers";
 
 type AdminPageProps = {
+  categories: AdminCategory[];
+  modules: AdminModule[];
   lessons: AdminLesson[];
   sources: AdminSource[];
   drafts: AdminDraft[];
@@ -57,51 +58,38 @@ type AdminPageProps = {
 };
 
 export function AdminPage({
+  categories: initialCategories,
+  modules: initialModules,
   lessons: initialLessons,
   sources,
   drafts,
   mediaAssets: initialMedia,
   deliveryLogs,
-  isLoading,
-  error: pageError,
   session,
   onNavigate,
   onLogout,
 }: AdminPageProps) {
-  // Navigation tabs
   const [activeTab, setActiveTab] = useState<AdminTabType>("dashboard");
-
-  // Local state for interactive updates
+  const [localCategories, setLocalCategories] = useState<AdminCategory[]>([]);
+  const [localModules, setLocalModules] = useState<AdminModule[]>([]);
   const [localLessons, setLocalLessons] = useState<AdminLesson[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [questionTypeFilter, setQuestionTypeFilter] = useState("all");
   const [isQuestionDrawerOpen, setIsQuestionDrawerOpen] = useState(false);
-
-  // Drawer edit states
   const [editingLesson, setEditingLesson] = useState<AdminLesson | null>(null);
-
-  // Quiz builder states
-  const [selectedLessonIdForQuiz, setSelectedLessonIdForQuiz] = useState<string>("");
+  const [isCreatingLesson, setIsCreatingLesson] = useState(false);
+  const [selectedLessonIdForQuiz, setSelectedLessonIdForQuiz] = useState("");
   const [quizQuestions, setQuizQuestions] = useState<AdminQuestion[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [adminNotice, setAdminNotice] = useState<string | null>(null);
-  const [editingQuestion, setEditingQuestion] = useState<{
-    id: string;
-    questionText: string;
-    optionA: string;
-    optionB: string;
-    optionC: string;
-    optionD: string;
-    correctOptionIndex: number;
-    explanation: string;
-  } | null>(null);
+  const [editingQuestion, setEditingQuestion] = useState<AdminQuestion | null>(null);
 
-  // Sync initial props to state
-  useEffect(() => {
-    setLocalLessons(initialLessons);
-  }, [initialLessons]);
+  const token = session?.accessToken || "";
 
-  // Load questions when selected lesson changes
+  useEffect(() => setLocalCategories(initialCategories), [initialCategories]);
+  useEffect(() => setLocalModules(initialModules), [initialModules]);
+  useEffect(() => setLocalLessons(initialLessons), [initialLessons]);
+
   useEffect(() => {
     if (selectedLessonIdForQuiz && session) {
       void fetchQuestions(selectedLessonIdForQuiz);
@@ -110,10 +98,7 @@ export function AdminPage({
     }
   }, [selectedLessonIdForQuiz, session]);
 
-  const token = session?.accessToken || "";
-
-  // ── QUIZ QUESTIONS LOGIC ──
-  const fetchQuestions = async (lessonId: string) => {
+  async function fetchQuestions(lessonId: string) {
     setIsLoadingQuestions(true);
     try {
       const data = await getAdminQuestions(token, lessonId);
@@ -123,220 +108,183 @@ export function AdminPage({
     } finally {
       setIsLoadingQuestions(false);
     }
-  };
+  }
 
-  const handleEditQuestion = (q: AdminQuestion) => {
-    setEditingQuestion({
-      id: q.id,
-      questionText: q.text,
-      optionA: q.options[0]?.text || "",
-      optionB: q.options[1]?.text || "",
-      optionC: q.options[2]?.text || "",
-      optionD: q.options[3]?.text || "",
-      correctOptionIndex: q.options.findIndex((o: any) => o.isCorrect) >= 0 ? q.options.findIndex((o: any) => o.isCorrect) : 0,
-      explanation: q.explanation || ""
-    });
+  function handleEditQuestion(question: AdminQuestion) {
+    setEditingQuestion(question);
     setIsQuestionDrawerOpen(true);
-  };
+  }
 
-  const handleDeleteQuestion = async (qId: string) => {
+  async function handleDeleteQuestion(questionId: string) {
     if (!window.confirm("Bạn có chắc chắn muốn xóa câu hỏi này?")) return;
-
     try {
-      await deleteAdminQuestion(token, qId);
-      setQuizQuestions(prev => prev.filter(q => q.id !== qId));
+      await deleteAdminQuestion(token, questionId);
+      setQuizQuestions((prev) => prev.filter((question) => question.id !== questionId));
       setAdminNotice("Đã xóa câu hỏi.");
     } catch (err: any) {
       setAdminNotice("Không thể xóa câu hỏi: " + (err.message || err));
     }
-  };
+  }
 
-  const handleSaveQuestion = (savedQuestion: AdminQuestion, isEdit: boolean) => {
-    if (isEdit) {
-      setQuizQuestions(prev => prev.map(q => q.id === savedQuestion.id ? savedQuestion : q));
-    } else {
-      setQuizQuestions(prev => [...prev, savedQuestion]);
-    }
-  };
-
-  const handleEditLesson = (lesson: AdminLesson) => {
-    setEditingLesson({ ...lesson });
-  };
-
-  const handleSaveLesson = (updatedLesson: AdminLesson) => {
-    setLocalLessons(prev =>
-      prev.map(l => l.id === updatedLesson.id ? updatedLesson : l)
+  function handleSaveQuestion(savedQuestion: AdminQuestion, isEdit: boolean) {
+    setQuizQuestions((prev) =>
+      isEdit
+        ? prev.map((question) => (question.id === savedQuestion.id ? savedQuestion : question))
+        : [...prev, savedQuestion]
     );
-  };
+  }
 
-  const handleSetQuizForm = (form: any) => {
+  function handleEditLesson(lesson: AdminLesson) {
+    setIsCreatingLesson(false);
+    setEditingLesson({ ...lesson });
+  }
+
+  function handleCreateLesson() {
+    setEditingLesson(null);
+    setIsCreatingLesson(true);
+  }
+
+  function updateModuleLessonCount(lesson: AdminLesson) {
+    if (!lesson.module?.id) return;
+    setLocalModules((prev) =>
+      prev.map((module) =>
+        module.id === lesson.module?.id
+          ? { ...module, lessonCount: module.lessonCount + 1 }
+          : module
+      )
+    );
+  }
+
+  function handleSaveLesson(updatedLesson: AdminLesson, isCreate?: boolean) {
+    setLocalLessons((prev) =>
+      isCreate
+        ? [updatedLesson, ...prev]
+        : prev.map((lesson) => (lesson.id === updatedLesson.id ? updatedLesson : lesson))
+    );
+    if (isCreate) updateModuleLessonCount(updatedLesson);
+  }
+
+  function handleManageLessonQuiz(lessonId: string) {
+    setSelectedLessonIdForQuiz(lessonId);
+    setActiveTab("quizzes");
+  }
+
+  function handleSetQuizForm(form: any) {
     setEditingQuestion(form);
     setIsQuestionDrawerOpen(true);
-  };
+  }
 
-  const handleAddQuestion = () => {
+  function handleAddQuestion() {
     setEditingQuestion(null);
     setIsQuestionDrawerOpen(true);
-  };
+  }
 
   return (
     <div className="lexi-cms-root">
-      
-      {/* SIDEBAR NAVIGATION */}
-      <AdminSidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        onLogout={onLogout} 
-      />
+      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={onLogout} />
 
-      {/* MAIN WORKSPACE CONTENT AREA */}
       <main className="lexi-cms-main">
-        
-        {/* Top Header Row */}
-        <AdminHeader 
-          activeTab={activeTab} 
-          searchQuery={searchQuery} 
-          setSearchQuery={setSearchQuery} 
-          session={session} 
-          onNavigate={onNavigate} 
-        />
+        <AdminHeader activeTab={activeTab} searchQuery={searchQuery} setSearchQuery={setSearchQuery} session={session} onNavigate={onNavigate} />
 
-        {adminNotice ? (
-          <div className="lexi-inline-notice">
-            <span>{adminNotice}</span>
-          </div>
-        ) : null}
+        {adminNotice && <div className="lexi-inline-notice"><span>{adminNotice}</span></div>}
 
-        {/* Dynamic Panel Content based on Active Tab */}
         {activeTab === "dashboard" && (
-          <DashboardTab 
-            lessons={localLessons} 
+          <DashboardTab
+            lessons={localLessons}
             sources={sources}
             drafts={drafts}
             mediaAssets={initialMedia}
             deliveryLogs={deliveryLogs}
-            setActiveTab={setActiveTab} 
-            setSelectedLessonIdForQuiz={setSelectedLessonIdForQuiz} 
-            setQuizForm={handleSetQuizForm} 
+            setActiveTab={setActiveTab}
+            setSelectedLessonIdForQuiz={setSelectedLessonIdForQuiz}
+            setQuizForm={handleSetQuizForm}
+          />
+        )}
+
+        {activeTab === "modules" && (
+          <ModulesTab
+            token={token}
+            categories={localCategories}
+            initialModules={localModules}
+            searchQuery={searchQuery}
+            onModulesChange={setLocalModules}
           />
         )}
 
         {activeTab === "lessons" && (
-          <LessonsTab 
-            lessons={localLessons} 
-            searchQuery={searchQuery} 
-            onEditLesson={handleEditLesson} 
+          <LessonsTab
+            lessons={localLessons}
+            searchQuery={searchQuery}
+            onEditLesson={handleEditLesson}
+            onCreateLesson={handleCreateLesson}
+            onManageQuiz={handleManageLessonQuiz}
           />
         )}
 
         {activeTab === "quizzes" && (
-          <QuizzesTab 
+          <QuizzesTab
             token={token}
-            lessons={localLessons} 
-            quizQuestions={quizQuestions} 
-            selectedLessonIdForQuiz={selectedLessonIdForQuiz} 
-            setSelectedLessonIdForQuiz={setSelectedLessonIdForQuiz} 
-            questionTypeFilter={questionTypeFilter} 
-            setQuestionTypeFilter={setQuestionTypeFilter} 
-            searchQuery={searchQuery} 
-            isLoadingQuestions={isLoadingQuestions} 
-            onEditQuestion={handleEditQuestion} 
-            onDeleteQuestion={handleDeleteQuestion} 
-            onAddQuestion={handleAddQuestion} 
+            lessons={localLessons}
+            quizQuestions={quizQuestions}
+            selectedLessonIdForQuiz={selectedLessonIdForQuiz}
+            setSelectedLessonIdForQuiz={setSelectedLessonIdForQuiz}
+            questionTypeFilter={questionTypeFilter}
+            setQuestionTypeFilter={setQuestionTypeFilter}
+            searchQuery={searchQuery}
+            isLoadingQuestions={isLoadingQuestions}
+            onEditQuestion={handleEditQuestion}
+            onDeleteQuestion={(questionId) => void handleDeleteQuestion(questionId)}
+            onAddQuestion={handleAddQuestion}
             onRefreshQuestions={() => fetchQuestions(selectedLessonIdForQuiz)}
           />
         )}
 
-        {activeTab === "users" && (
-          session ? (
-            <UsersTab
-              token={session.accessToken}
-              searchQuery={searchQuery}
-            />
-          ) : (
-            <p className="form-error">Yêu cầu phiên đăng nhập quản trị viên.</p>
-          )
-        )}
-
-        {activeTab === "media" && (
-          <MediaTab 
-            token={token} 
-            initialMedia={initialMedia} 
-            lessons={localLessons} 
-          />
-        )}
-
-        {activeTab === "feedback" && (
-          session ? (
-            <FeedbackReportsTab
-              token={session.accessToken}
-              searchQuery={searchQuery}
-            />
-          ) : (
-            <p className="form-error">Yêu cầu phiên đăng nhập quản trị viên.</p>
-          )
-        )}
-
-        {activeTab === "vouchers" && (
-          session ? (
-            <VouchersTab token={session.accessToken} />
-          ) : (
-            <p className="form-error">Yêu cầu phiên đăng nhập quản trị viên.</p>
-          )
-        )}
-
-        {activeTab === "logs" && (
-          <LogsTab 
-            deliveryLogs={deliveryLogs} 
-          />
-        )}
-
-        {activeTab === "settings" && (
-          <SettingsTab />
-        )}
-
-        {activeTab === "sources" && (
-          <SourcesTab 
-            token={token} 
-            initialSources={sources} 
-          />
-        )}
-
+        {activeTab === "users" && (session ? <UsersTab token={session.accessToken} searchQuery={searchQuery} /> : <p className="form-error">Yêu cầu phiên đăng nhập quản trị viên.</p>)}
+        {activeTab === "media" && <MediaTab token={token} initialMedia={initialMedia} lessons={localLessons} />}
+        {activeTab === "feedback" && (session ? <FeedbackReportsTab token={session.accessToken} searchQuery={searchQuery} /> : <p className="form-error">Yêu cầu phiên đăng nhập quản trị viên.</p>)}
+        {activeTab === "vouchers" && (session ? <VouchersTab token={session.accessToken} /> : <p className="form-error">Yêu cầu phiên đăng nhập quản trị viên.</p>)}
+        {activeTab === "logs" && <LogsTab deliveryLogs={deliveryLogs} />}
+        {activeTab === "settings" && <SettingsTab />}
+        {activeTab === "sources" && <SourcesTab token={token} initialSources={sources} modules={localModules} />}
         {activeTab === "aiDrafts" && (
-          <AiDraftsTab 
-            token={token} 
-            initialDrafts={drafts} 
+          <AiDraftsTab
+            token={token}
+            initialDrafts={drafts}
             sources={sources}
+            modules={localModules}
             lessons={localLessons}
             onLessonCreated={(newLesson) => {
               setLocalLessons((prev) => [newLesson, ...prev]);
+              updateModuleLessonCount(newLesson);
             }}
           />
         )}
-
       </main>
 
-      {/* Slide-over Side Drawer Question Editor overlay */}
       {isQuestionDrawerOpen && (
-        <QuestionDrawer 
-          token={token} 
-          selectedLessonIdForQuiz={selectedLessonIdForQuiz} 
-          initialData={editingQuestion} 
-          onClose={() => setIsQuestionDrawerOpen(false)} 
-          onSave={handleSaveQuestion} 
+        <QuestionDrawer
+          token={token}
+          selectedLessonIdForQuiz={selectedLessonIdForQuiz}
+          initialData={editingQuestion}
+          lessons={localLessons}
+          onClose={() => setIsQuestionDrawerOpen(false)}
+          onSave={handleSaveQuestion}
         />
       )}
 
-      {/* SLIDE-OVER SIDE DRAWER PANEL (For Lesson Editing) */}
-      {editingLesson && (
-        <LessonDrawer 
-          lesson={editingLesson} 
-          token={token} 
-          onClose={() => setEditingLesson(null)} 
-          onSave={handleSaveLesson} 
+      {(editingLesson || isCreatingLesson) && (
+        <LessonDrawer
+          lesson={editingLesson}
+          lessons={localLessons}
+          modules={localModules}
+          token={token}
+          onClose={() => {
+            setEditingLesson(null);
+            setIsCreatingLesson(false);
+          }}
+          onSave={handleSaveLesson}
         />
       )}
-
     </div>
   );
 }

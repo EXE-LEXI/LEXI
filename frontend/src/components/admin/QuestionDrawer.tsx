@@ -1,22 +1,13 @@
 import React, { useState } from "react";
-import type { AdminQuestion, AdminQuestionPayload } from "../../api/admin";
+import type { AdminQuestion, AdminQuestionPayload, AdminLesson } from "../../api/admin";
 import { createAdminQuestion, updateAdminQuestion } from "../../api/admin";
-
-type QuestionDrawerForm = {
-  id: string;
-  questionText: string;
-  optionA: string;
-  optionB: string;
-  optionC: string;
-  optionD: string;
-  correctOptionIndex: number;
-  explanation: string;
-};
+import { X, Save, BookOpen, FileText, CheckCircle2, AlertCircle, Edit3, HelpCircle } from "lucide-react";
 
 type QuestionDrawerProps = {
   token: string;
   selectedLessonIdForQuiz: string;
-  initialData: QuestionDrawerForm | null;
+  initialData: AdminQuestion | null;
+  lessons: AdminLesson[];
   onClose: () => void;
   onSave: (savedQuestion: AdminQuestion, isEdit: boolean) => void;
 };
@@ -25,28 +16,41 @@ export function QuestionDrawer({
   token,
   selectedLessonIdForQuiz,
   initialData,
+  lessons,
   onClose,
   onSave,
 }: QuestionDrawerProps) {
-  const [form, setForm] = useState<QuestionDrawerForm>(
-    initialData || {
-      id: "",
-      questionText: "",
-      optionA: "",
-      optionB: "",
-      optionC: "",
-      optionD: "",
-      correctOptionIndex: 0,
-      explanation: "",
-    }
+  const isEdit = !!initialData?.id;
+
+  const [lessonId, setLessonId] = useState(
+    selectedLessonIdForQuiz || (lessons[0]?.id || "")
   );
+
+  const [questionText, setQuestionText] = useState(initialData?.text || "");
+  const [optionA, setOptionA] = useState(initialData?.options[0]?.text || "");
+  const [optionB, setOptionB] = useState(initialData?.options[1]?.text || "");
+  const [optionC, setOptionC] = useState(initialData?.options[2]?.text || "");
+  const [optionD, setOptionD] = useState(initialData?.options[3]?.text || "");
+  const [correctOptionIndex, setCorrectOptionIndex] = useState(
+    initialData?.options ? Math.max(0, initialData.options.findIndex((opt) => opt.isCorrect)) : 0
+  );
+  const [explanation, setExplanation] = useState(initialData?.explanation || "");
+
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!selectedLessonIdForQuiz) {
-      setError("Vui long chon mot khoa hoc phap ly cu the truoc khi them hoac sua cau hoi.");
+    if (!lessonId) {
+      setError("Vui lòng chọn một bài học cụ thể để gắn câu hỏi.");
+      return;
+    }
+    if (!questionText.trim()) {
+      setError("Vui lòng nhập nội dung câu hỏi.");
+      return;
+    }
+    if (!optionA.trim() || !optionB.trim() || !optionC.trim() || !optionD.trim()) {
+      setError("Vui lòng điền đầy đủ cả 4 phương án trả lời.");
       return;
     }
 
@@ -54,113 +58,171 @@ export function QuestionDrawer({
     setError(null);
     try {
       const options = [
-        { id: form.id ? "opt-a" : undefined, text: form.optionA, isCorrect: form.correctOptionIndex === 0 },
-        { id: form.id ? "opt-b" : undefined, text: form.optionB, isCorrect: form.correctOptionIndex === 1 },
-        { id: form.id ? "opt-c" : undefined, text: form.optionC, isCorrect: form.correctOptionIndex === 2 },
-        { id: form.id ? "opt-d" : undefined, text: form.optionD, isCorrect: form.correctOptionIndex === 3 },
+        { id: initialData?.options[0]?.id, text: optionA.trim(), isCorrect: correctOptionIndex === 0 },
+        { id: initialData?.options[1]?.id, text: optionB.trim(), isCorrect: correctOptionIndex === 1 },
+        { id: initialData?.options[2]?.id, text: optionC.trim(), isCorrect: correctOptionIndex === 2 },
+        { id: initialData?.options[3]?.id, text: optionD.trim(), isCorrect: correctOptionIndex === 3 },
       ];
 
       const payload: AdminQuestionPayload = {
-        text: form.questionText,
+        text: questionText.trim(),
         options,
-        explanation: form.explanation,
+        explanation: explanation.trim() || null,
       };
 
-      if (form.id) {
-        const updated = await updateAdminQuestion(token, form.id, payload);
+      if (isEdit && initialData?.id) {
+        const updated = await updateAdminQuestion(token, initialData.id, payload);
         onSave(updated, true);
       } else {
-        const created = await createAdminQuestion(token, selectedLessonIdForQuiz, payload);
+        const created = await createAdminQuestion(token, lessonId, payload);
         onSave(created, false);
       }
       onClose();
     } catch (err: any) {
-      setError("Khong luu duoc cau hoi: " + (err.message || err));
+      setError("Không lưu được câu hỏi: " + (err.message || err));
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="lexi-cms-drawer-overlay" onClick={onClose}>
-      <div className="lexi-cms-drawer" onClick={(event) => event.stopPropagation()}>
-        <div className="lexi-cms-drawer-header">
-          <h3>{form.id ? "Hieu chinh cau hoi" : "Them cau hoi moi"}</h3>
-          <button
-            className="lexi-cms-btn-icon-action"
-            onClick={onClose}
-            style={{ fontSize: "20px", fontWeight: "bold" }}
-            type="button"
-          >
-            &times;
+    <div className="lexi-premium-drawer-overlay" onClick={onClose}>
+      <div className="lexi-premium-drawer" onClick={(event) => event.stopPropagation()} style={{ width: "min(640px, 100vw)" }}>
+        <div className="lexi-premium-drawer-header">
+          <div className="lexi-premium-drawer-badge">CÂU HỎI</div>
+          <h3>{isEdit ? "Hiệu chỉnh câu hỏi" : "Thêm câu hỏi mới"}</h3>
+          <p className="lexi-premium-drawer-sub">Tạo câu hỏi trắc nghiệm hoặc tình huống để đánh giá kiến thức bài học.</p>
+          <button className="lexi-premium-drawer-close" type="button" onClick={onClose} aria-label="Đóng">
+            <X size={18} />
           </button>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: "flex", flexDirection: "column", gap: "18px", flex: 1, overflowY: "auto", paddingRight: "6px" }}
-        >
-          {error && <p className="form-error">{error}</p>}
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+          <div className="lexi-premium-drawer-content">
+            {error && (
+              <div className="lexi-premium-error-alert">
+                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "2px" }} />
+                <span>{error}</span>
+              </div>
+            )}
 
-          <div className="lexi-cms-form-group">
-            <label>Noi dung cau hoi</label>
-            <textarea
-              required
-              rows={4}
-              className="lexi-cms-form-textarea"
-              placeholder="Nhap noi dung tinh huong hoac cau hoi trac nghiem..."
-              value={form.questionText}
-              onChange={(event) => setForm((prev) => ({ ...prev, questionText: event.target.value }))}
-            />
-          </div>
+            <div className="lexi-premium-form-card">
+              <div className="lexi-premium-form-card-title">
+                <BookOpen size={15} style={{ color: "#4f46e5" }} />
+                <span>Cấu hình chung</span>
+              </div>
 
-          <div className="lexi-cms-form-group">
-            <label>Cac phuong an tra loi va dap an dung</label>
+              <div className="lexi-premium-form-group">
+                <label>Bài học pháp luật gắn câu hỏi</label>
+                <div className="lexi-premium-input-wrapper">
+                  <BookOpen className="lexi-premium-input-icon" size={16} />
+                  <select
+                    className="lexi-premium-select"
+                    value={lessonId}
+                    onChange={(event) => setLessonId(event.target.value)}
+                    disabled={isEdit}
+                    required
+                  >
+                    <option value="">-- Chọn bài học --</option>
+                    {lessons.map((lesson) => (
+                      <option key={lesson.id} value={lesson.id}>
+                        {lesson.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <span className="lexi-premium-helper-text">Lọc danh sách bài giảng ở trang chính sẽ tự động chọn bài học này.</span>
+              </div>
+            </div>
 
-            {[
-              ["optionA", 0, "Phuong an A"],
-              ["optionB", 1, "Phuong an B"],
-              ["optionC", 2, "Phuong an C"],
-              ["optionD", 3, "Phuong an D"],
-            ].map(([field, index, placeholder]) => (
-              <div className="lexi-cms-option-row" key={field}>
-                <input
-                  type="radio"
-                  name="correctOpt"
-                  className="lexi-cms-option-radio"
-                  checked={form.correctOptionIndex === index}
-                  onChange={() => setForm((prev) => ({ ...prev, correctOptionIndex: index as number }))}
-                />
-                <input
+            <div className="lexi-premium-form-card">
+              <div className="lexi-premium-form-card-title">
+                <HelpCircle size={15} style={{ color: "#4f46e5" }} />
+                <span>Nội dung câu hỏi</span>
+              </div>
+
+              <div className="lexi-premium-form-group">
+                <label>Nội dung chi tiết tình huống / câu hỏi</label>
+                <textarea
                   required
-                  type="text"
-                  className="lexi-cms-form-input"
-                  placeholder={placeholder as string}
-                  value={form[field as keyof QuestionDrawerForm] as string}
-                  onChange={(event) => setForm((prev) => ({ ...prev, [field as string]: event.target.value }))}
+                  rows={4}
+                  className="lexi-premium-textarea"
+                  placeholder="Nhập tình huống thực tế hoặc câu hỏi kiểm tra lý thuyết..."
+                  value={questionText}
+                  onChange={(event) => setQuestionText(event.target.value)}
                 />
               </div>
-            ))}
+            </div>
+
+            <div className="lexi-premium-form-card">
+              <div className="lexi-premium-form-card-title">
+                <CheckCircle2 size={15} style={{ color: "#4f46e5" }} />
+                <span>Phương án trả lời & Đáp án đúng</span>
+              </div>
+              <span className="lexi-premium-helper-text" style={{ marginTop: "-8px", marginBottom: "4px" }}>
+                Nhập văn bản cho 4 phương án và tích vào vòng tròn bên trái để chỉ định đáp án đúng (dòng sẽ sáng xanh).
+              </span>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {[
+                  { field: "A", val: optionA, setVal: setOptionA, index: 0, placeholder: "Phương án A" },
+                  { field: "B", val: optionB, setVal: setOptionB, index: 1, placeholder: "Phương án B" },
+                  { field: "C", val: optionC, setVal: setOptionC, index: 2, placeholder: "Phương án C" },
+                  { field: "D", val: optionD, setVal: setOptionD, index: 3, placeholder: "Phương án D" },
+                ].map((item) => (
+                  <div
+                    key={item.field}
+                    className={`lexi-premium-option-row ${correctOptionIndex === item.index ? "correct" : ""}`}
+                    onClick={() => setCorrectOptionIndex(item.index)}
+                  >
+                    <input
+                      type="radio"
+                      name="correctOption"
+                      className="lexi-premium-option-radio"
+                      checked={correctOptionIndex === item.index}
+                      onChange={() => setCorrectOptionIndex(item.index)}
+                    />
+                    <input
+                      required
+                      type="text"
+                      className="lexi-premium-option-input"
+                      placeholder={item.placeholder}
+                      value={item.val}
+                      onChange={(event) => item.setVal(event.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="lexi-premium-form-card">
+              <div className="lexi-premium-form-card-title">
+                <Edit3 size={15} style={{ color: "#4f46e5" }} />
+                <span>Giải thích & Căn cứ pháp lý</span>
+              </div>
+
+              <div className="lexi-premium-form-group">
+                <label>Lý giải đáp án chính xác</label>
+                <textarea
+                  required
+                  rows={3}
+                  className="lexi-premium-textarea"
+                  placeholder="Ghi rõ điều khoản pháp lý và lý giải vì sao phương án đó lại đúng..."
+                  value={explanation}
+                  onChange={(event) => setExplanation(event.target.value)}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="lexi-cms-form-group">
-            <label>Can cu phap ly va giai thich</label>
-            <textarea
-              required
-              rows={3}
-              className="lexi-cms-form-textarea"
-              placeholder="Nhap can cu va giai thich phap ly chi tiet..."
-              value={form.explanation}
-              onChange={(event) => setForm((prev) => ({ ...prev, explanation: event.target.value }))}
-            />
-          </div>
-
-          <div className="lexi-cms-drawer-actions">
-            <button className="lexi-cms-btn-save" type="submit" disabled={isSaving}>
-              {isSaving ? "Dang luu..." : "Luu cau hoi"}
+          <div className="lexi-premium-drawer-actions">
+            <button className="lexi-premium-btn-save" type="submit" disabled={isSaving}>
+              <CheckCircle2 size={16} />
+              <span>{isSaving ? "Đang lưu..." : "Lưu câu hỏi"}</span>
             </button>
-            <button className="lexi-cms-btn-cancel" type="button" onClick={onClose}>
-              Huy
+            <button className="lexi-premium-btn-cancel" type="button" onClick={onClose}>
+              Hủy
             </button>
           </div>
         </form>

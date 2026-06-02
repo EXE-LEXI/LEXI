@@ -23,6 +23,10 @@ export function validateEnv(config: EnvConfig) {
   if (nodeEnv === "production") {
     assertProductionSecret("JWT_SECRET", config.JWT_SECRET);
     assertProductionSecret("JWT_REFRESH_SECRET", config.JWT_REFRESH_SECRET);
+
+    if (!config.CORS_ORIGINS?.trim()) {
+      throw new Error("CORS_ORIGINS is required in production");
+    }
   }
 
   return {
@@ -37,9 +41,9 @@ export function validateEnv(config: EnvConfig) {
     LEGAL_SOURCE_CRAWL_QUESTION_COUNT:
       config.LEGAL_SOURCE_CRAWL_QUESTION_COUNT ?? "3",
     LEGAL_AUTO_PIPELINE_ENABLED:
-      config.LEGAL_AUTO_PIPELINE_ENABLED ?? "true",
+      config.LEGAL_AUTO_PIPELINE_ENABLED ?? "false",
     LEGAL_AUTO_PIPELINE_BOOTSTRAP:
-      config.LEGAL_AUTO_PIPELINE_BOOTSTRAP ?? "true",
+      config.LEGAL_AUTO_PIPELINE_BOOTSTRAP ?? "false",
     LEGAL_AUTO_PIPELINE_MAX_URLS_PER_SOURCE:
       config.LEGAL_AUTO_PIPELINE_MAX_URLS_PER_SOURCE ?? "50",
     OPENAI_MODEL: config.OPENAI_MODEL ?? "gpt-4o-mini",

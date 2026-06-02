@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { AdminAiController } from "./controllers/admin-ai.controller";
 import { AdminLessonsController } from "./controllers/admin-lessons.controller";
 import { AdminMediaController } from "./controllers/admin-media.controller";
+import { AdminModulesController } from "./controllers/admin-modules.controller";
 import { AdminNotificationsController } from "./controllers/admin-notifications.controller";
 import { AdminSourcesController } from "./controllers/admin-sources.controller";
 import { AiLearningController } from "./controllers/ai-learning.controller";
@@ -18,6 +19,7 @@ import { AiJobProcessor } from "./services/ai-job-processor.service";
     AdminAiController,
     AdminLessonsController,
     AdminMediaController,
+    AdminModulesController,
     AdminNotificationsController,
     AdminSourcesController,
     AiLearningController,
