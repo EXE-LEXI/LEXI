@@ -8,7 +8,10 @@ import {
   Trash2,
   ChevronRight,
   Compass,
-  Download
+  Download,
+  BookOpen,
+  AlertCircle,
+  X
 } from "lucide-react";
 import type { AdminLesson, AdminQuestion, AdminQuestionOption, AdminQuestionPayload } from "../../api/admin";
 import { createAdminQuestionsBulk } from "../../api/admin";
@@ -58,6 +61,8 @@ export function QuizzesTab({
   } | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [isGuidelineOpen, setIsGuidelineOpen] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -110,7 +115,27 @@ export function QuizzesTab({
   };
 
   const handleShowGuideline = () => {
-    setNotice('Mau JSON: [{ "cau_hoi": "...", "phuong_an": ["A", "B"], "dap_an_dung": 0, "giai_thich": "..." }] hoac [{ "text": "...", "options": [{ "text": "A", "isCorrect": true }], "explanation": "..." }].');
+    setIsGuidelineOpen(true);
+  };
+
+  const handleCopyTemplate = () => {
+    const templateText = JSON.stringify([
+      {
+        "cau_hoi": "Thời giờ làm việc bình thường của người lao động không quá bao nhiêu giờ trong một ngày?",
+        "phuong_an": [
+          "Không quá 8 giờ trong một ngày và 48 giờ trong một tuần",
+          "Không quá 10 giờ trong một ngày và 48 giờ trong một tuần",
+          "Không quá 12 giờ trong một ngày và 50 giờ trong một tuần",
+          "Không quá 8 giờ trong một ngày và 40 giờ trong một tuần"
+        ],
+        "dap_an_dung": 0,
+        "giai_thich": "Căn cứ Điều 105 Bộ Luật Lao Động 2019, thời giờ làm việc bình thường không quá 08 giờ trong 01 ngày và không quá 48 giờ trong 01 tuần."
+      }
+    ], null, 2);
+
+    navigator.clipboard.writeText(templateText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleProcessBulkData = async () => {
@@ -369,11 +394,39 @@ export function QuizzesTab({
             onChange={handleFileChange} 
           />
           <h3 className="lexi-cms-bulk-import-title">Kéo thả tệp JSON vào đây</h3>
-          <p className="lexi-cms-bulk-import-subtitle">Hoặc dán mã JSON của bạn trực tiếp vào bên dưới</p>
-          
+          <p className="lexi-cms-bulk-import-subtitle" style={{ marginBottom: "16px" }}>Hoặc dán mã JSON của bạn trực tiếp vào bên dưới</p>
+
+          {selectedLessonIdForQuiz ? (
+            <div className="lexi-premium-notice-alert" style={{ width: "90%", maxWidth: "680px", margin: "0 auto 16px auto", textAlign: "left", display: "flex", gap: "8px", justifyContent: "flex-start", alignItems: "center" }}>
+              <BookOpen size={16} style={{ flexShrink: 0 }} />
+              <div>
+                <strong>Điểm đến câu hỏi:</strong> Tất cả câu hỏi nhập hàng loạt này sẽ được tự động gán vào bài học: 
+                <span style={{ color: "#4f46e5", fontWeight: 800 }}> {lessons.find(l => l.id === selectedLessonIdForQuiz)?.title || "Chưa xác định"}</span>.
+              </div>
+            </div>
+          ) : (
+            <div className="lexi-premium-error-alert" style={{ width: "90%", maxWidth: "680px", margin: "0 auto 16px auto", textAlign: "left", display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                <strong>Chưa chọn bài học đích!</strong> Vui lòng chọn bài học để gán cho các câu hỏi nhập hàng loạt:
+              </div>
+              <select 
+                className="lexi-premium-select" 
+                style={{ background: "#ffffff", borderColor: "#fca5a5", padding: "8px 12px", fontSize: "12.5px" }}
+                value={selectedLessonIdForQuiz}
+                onChange={(e) => setSelectedLessonIdForQuiz(e.target.value)}
+              >
+                <option value="">-- Click để chọn bài học gán câu hỏi --</option>
+                {lessons.map(l => (
+                  <option key={l.id} value={l.id}>{l.title}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <textarea 
             className="lexi-cms-bulk-import-textarea"
-            placeholder='[ { "cau_hoi": "...", "loai": "..." } ]'
+            placeholder='[ { "cau_hoi": "...", "phuong_an": ["A", "B", "C", "D"], "dap_an_dung": 0, "giai_thich": "..." } ]'
             value={bulkJson}
             onChange={(e) => setBulkJson(e.target.value)}
           />
@@ -513,6 +566,79 @@ export function QuizzesTab({
           <button className="lexi-cms-btn-page" title="Trang sau"><ChevronRight size={14} /></button>
         </div>
       </div>
+
+      {isGuidelineOpen && (
+        <div className="lexi-premium-drawer-overlay" style={{ zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setIsGuidelineOpen(false)}>
+          <div className="lexi-premium-form-card lexi-animate-fade" onClick={(e) => e.stopPropagation()} style={{ width: "min(640px, calc(100vw - 32px))", maxHeight: "85vh", overflowY: "auto", margin: "auto", padding: "28px" }}>
+            <div className="lexi-premium-drawer-header" style={{ padding: "0 0 16px 0", background: "none", borderBottom: "1px solid #e2e8f0" }}>
+              <div className="lexi-premium-drawer-badge" style={{ background: "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)", color: "#15803d" }}>CẤU TRÚC JSON</div>
+              <h3 style={{ margin: "6px 0 0 0" }}>Hướng dẫn nhập hàng loạt</h3>
+              <button className="lexi-premium-drawer-close" type="button" style={{ top: "0", right: "0" }} onClick={() => setIsGuidelineOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "18px", marginTop: "20px", fontSize: "13px", lineHeight: "1.6", color: "#334155" }}>
+              <p style={{ margin: 0, fontWeight: 600, color: "#1e293b" }}>
+                Hệ thống LEXI CMS hỗ trợ tải lên danh sách câu hỏi bằng định dạng JSON. Bạn có thể soạn thảo file bằng tiếng Việt hoặc tiếng Anh theo các trường chuẩn dưới đây:
+              </p>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", background: "#f8fafc", padding: "16px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: "12px" }}>
+                  <strong style={{ color: "#4f46e5" }}>cau_hoi / text</strong>
+                  <span>Nội dung câu hỏi trắc nghiệm hoặc tình huống pháp lý.</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: "12px", borderTop: "1px solid #f1f5f9", paddingTop: "8px" }}>
+                  <strong style={{ color: "#4f46e5" }}>phuong_an / options</strong>
+                  <span>Mảng gồm 4 phương án trả lời dạng chữ (A, B, C, D).</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: "12px", borderTop: "1px solid #f1f5f9", paddingTop: "8px" }}>
+                  <strong style={{ color: "#4f46e5" }}>dap_an_dung</strong>
+                  <span>Số từ <code>0</code> đến <code>3</code> tương ứng với phương án đúng (0 = A, 1 = B, 2 = C, 3 = D).</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: "12px", borderTop: "1px solid #f1f5f9", paddingTop: "8px" }}>
+                  <strong style={{ color: "#4f46e5" }}>giai_thich</strong>
+                  <span>Lời giải thích chi tiết và căn cứ pháp luật tương ứng.</span>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <strong style={{ color: "#0f172a" }}>📄 File mẫu chuẩn (Tiếng Việt)</strong>
+                  <button
+                    type="button"
+                    onClick={handleCopyTemplate}
+                    style={{ background: "#4f46e5", color: "#ffffff", border: "none", borderRadius: "8px", padding: "6px 14px", fontSize: "11.5px", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", transition: "all 0.25s" }}
+                  >
+                    {copied ? "✓ Đã sao chép!" : "📋 Sao chép mẫu"}
+                  </button>
+                </div>
+                <pre style={{ margin: 0, padding: "16px", background: "#0f172a", color: "#e2e8f0", borderRadius: "12px", overflowX: "auto", fontFamily: "monospace", fontSize: "12.5px" }}>
+{`[
+  {
+    "cau_hoi": "Thời giờ làm việc bình thường của người lao động không quá bao nhiêu giờ trong một ngày?",
+    "phuong_an": [
+      "Không quá 8 giờ trong một ngày và 48 giờ trong một tuần",
+      "Không quá 10 giờ trong một ngày và 48 giờ trong một tuần",
+      "Không quá 12 giờ trong một ngày và 50 giờ trong một tuần",
+      "Không quá 8 giờ trong một ngày và 40 giờ trong một tuần"
+    ],
+    "dap_an_dung": 0,
+    "giai_thich": "Căn cứ Điều 105 Bộ Luật Lao Động 2019, thời giờ làm việc bình thường không quá 08 giờ trong 01 ngày và không quá 48 giờ trong 01 tuần."
+  }
+]`}
+                </pre>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "24px", paddingTop: "16px", borderTop: "1px solid #e2e8f0" }}>
+              <button className="lexi-premium-btn-cancel" style={{ padding: "8px 24px", fontSize: "13px", flex: "none" }} type="button" onClick={() => setIsGuidelineOpen(false)}>
+                Đóng hướng dẫn
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,57 @@ import { PrismaService } from "../../../core/prisma.service";
 export class AdminContentRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  findCategories() {
+    return this.prisma.category.findMany({
+      orderBy: [{ sortOrder: "asc" }, { title: "asc" }],
+    });
+  }
+
+  findCategoryById(categoryId: string) {
+    return this.prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+  }
+
+  findModules(params: {
+    where: Prisma.LearningModuleWhereInput;
+    page: number;
+    limit: number;
+  }) {
+    return this.prisma.$transaction([
+      this.prisma.learningModule.count({ where: params.where }),
+      this.prisma.learningModule.findMany({
+        where: params.where,
+        skip: (params.page - 1) * params.limit,
+        take: params.limit,
+        include: this.moduleInclude(),
+        orderBy: [{ sortOrder: "asc" }, { updatedAt: "desc" }],
+      }),
+    ]);
+  }
+
+  findModuleById(moduleId: string) {
+    return this.prisma.learningModule.findUnique({
+      where: { id: moduleId },
+      include: this.moduleInclude(),
+    });
+  }
+
+  createModule(data: Prisma.LearningModuleCreateInput) {
+    return this.prisma.learningModule.create({
+      data,
+      include: this.moduleInclude(),
+    });
+  }
+
+  updateModule(moduleId: string, data: Prisma.LearningModuleUpdateInput) {
+    return this.prisma.learningModule.update({
+      where: { id: moduleId },
+      data,
+      include: this.moduleInclude(),
+    });
+  }
+
   findLessons(params: {
     where: Prisma.LessonWhereInput;
     page: number;
@@ -26,6 +77,20 @@ export class AdminContentRepository {
   findLessonById(lessonId: string) {
     return this.prisma.lesson.findUnique({
       where: { id: lessonId },
+      include: this.lessonDetailInclude(),
+    });
+  }
+
+  findLearningModuleById(moduleId: string) {
+    return this.prisma.learningModule.findUnique({
+      where: { id: moduleId },
+      select: { id: true, slug: true, title: true },
+    });
+  }
+
+  createLesson(data: Prisma.LessonCreateInput) {
+    return this.prisma.lesson.create({
+      data,
       include: this.lessonDetailInclude(),
     });
   }
@@ -427,6 +492,13 @@ export class AdminContentRepository {
     });
   }
 
+  deleteMediaAsset(assetId: string) {
+    return this.prisma.mediaAsset.delete({
+      where: { id: assetId },
+      include: this.mediaAssetInclude(),
+    });
+  }
+
   attachMediaAssetToLesson(params: {
     assetId: string;
     lessonId: string;
@@ -497,6 +569,17 @@ export class AdminContentRepository {
         },
       },
     } satisfies Prisma.LessonInclude;
+  }
+
+  private moduleInclude() {
+    return {
+      category: true,
+      _count: {
+        select: {
+          lessons: true,
+        },
+      },
+    } satisfies Prisma.LearningModuleInclude;
   }
 
   private lessonDetailInclude() {

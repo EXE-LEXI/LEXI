@@ -22,15 +22,19 @@ import { SubscriptionPage } from "../pages/SubscriptionPage";
 import { FeedbackPage } from "../pages/FeedbackPage";
 import { RewardsPage } from "../pages/RewardsPage";
 import {
+  getAdminCategories,
   getAdminLessonDrafts,
   getAdminLessons,
   getAdminMediaAssets,
+  getAdminModules,
   getAdminNotificationLogs,
   getAdminSources,
+  type AdminCategory,
   type AdminDeliveryLog,
   type AdminDraft,
   type AdminLesson,
   type AdminMediaAsset,
+  type AdminModule,
   type AdminSource,
 } from "../api/admin";
 import { API_BASE_URL } from "../api/config";
@@ -105,6 +109,8 @@ function App() {
   const [history, setHistory] = useState<LearningHistoryItem[]>([]);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [deviceToken, setDeviceToken] = useState("");
+  const [adminCategories, setAdminCategories] = useState<AdminCategory[]>([]);
+  const [adminModules, setAdminModules] = useState<AdminModule[]>([]);
   const [adminLessons, setAdminLessons] = useState<AdminLesson[]>([]);
   const [adminSources, setAdminSources] = useState<AdminSource[]>([]);
   const [adminDrafts, setAdminDrafts] = useState<AdminDraft[]>([]);
@@ -333,13 +339,17 @@ function App() {
     setLoading(true);
     setPageError(null);
     try {
-      const [lessons, sources, drafts, media, logs] = await Promise.all([
+      const [adminCategoryList, adminModuleList, lessons, sources, drafts, media, logs] = await Promise.all([
+        getAdminCategories(token),
+        getAdminModules(token),
         getAdminLessons(token),
         getAdminSources(token),
         getAdminLessonDrafts(token),
         getAdminMediaAssets(token),
         getAdminNotificationLogs(token),
       ]);
+      setAdminCategories(adminCategoryList);
+      setAdminModules(adminModuleList.items);
       setAdminLessons(lessons.items);
       setAdminSources(sources.items);
       setAdminDrafts(drafts.items);
@@ -527,6 +537,8 @@ function App() {
   if (page.path === ROUTES.admin && session?.user?.role === "ADMIN") {
     return (
       <AdminPage
+        categories={adminCategories}
+        modules={adminModules}
         lessons={adminLessons}
         sources={adminSources}
         drafts={adminDrafts}
@@ -581,6 +593,8 @@ function App() {
         />
       ) : page.path === ROUTES.admin && session.user.role === "ADMIN" ? (
         <AdminPage
+          categories={adminCategories}
+          modules={adminModules}
           lessons={adminLessons}
           sources={adminSources}
           drafts={adminDrafts}

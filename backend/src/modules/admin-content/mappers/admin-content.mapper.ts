@@ -21,8 +21,63 @@ import {
   AdminLessonSummaryResponseDto,
   AdminQuestionResponseDto,
 } from "../dto/response/admin-lesson-response.dto";
+import {
+  AdminCategoryResponseDto,
+  AdminModuleListResponseDto,
+  AdminModuleResponseDto,
+} from "../dto/response/admin-module-response.dto";
 
 export class AdminContentMapper {
+  static toCategory(category: any): AdminCategoryResponseDto {
+    return {
+      id: category.id,
+      slug: category.slug,
+      title: category.title,
+      description: category.description,
+      iconUrl: category.iconUrl,
+      sortOrder: category.sortOrder,
+      isActive: category.isActive,
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
+    };
+  }
+
+  static toModule(module: any): AdminModuleResponseDto {
+    return {
+      id: module.id,
+      categoryId: module.categoryId,
+      slug: module.slug,
+      title: module.title,
+      description: module.description,
+      sortOrder: module.sortOrder,
+      isActive: module.isActive,
+      category: this.toCategory(module.category),
+      lessonCount: module._count?.lessons ?? module.lessons?.length ?? 0,
+      createdAt: module.createdAt,
+      updatedAt: module.updatedAt,
+    };
+  }
+
+  static toModules(modules: any[]): AdminModuleResponseDto[] {
+    return modules.map((module) => this.toModule(module));
+  }
+
+  static toPaginatedModules(params: {
+    modules: any[];
+    total: number;
+    page: number;
+    limit: number;
+  }): AdminModuleListResponseDto {
+    return {
+      items: params.modules.map((module) => this.toModule(module)),
+      meta: buildPaginationMeta({
+        total: params.total,
+        page: params.page,
+        limit: params.limit,
+      }),
+    };
+  }
+
   static toLessonSummary(lesson: any): AdminLessonSummaryResponseDto {
     return {
       id: lesson.id,

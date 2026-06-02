@@ -6,30 +6,118 @@ import type {
   PaginatedResponse,
 } from "../types/api";
 
+export type LessonReviewStatus = "DRAFT" | "IN_REVIEW" | "PUBLISHED" | "ARCHIVED";
+export type LessonDraftStatus = "DRAFT" | "IN_REVIEW" | "ACCEPTED" | "REJECTED";
+export type LegalSourceCrawlStatus = "PENDING" | "CRAWLED" | "FAILED" | "ARCHIVED";
+
+export type AdminCategory = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  iconUrl: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminModule = {
+  id: string;
+  categoryId: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  category: AdminCategory;
+  lessonCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminQuestionOption = {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+  sortOrder: number;
+};
+
+export type AdminQuestion = {
+  id: string;
+  text: string;
+  explanation: string | null;
+  sortOrder: number;
+  options: AdminQuestionOption[];
+};
+
 export type AdminLesson = {
   id: string;
   title: string;
   slug?: string;
-  module?: { title: string };
-  category?: { title: string };
-  reviewStatus?: string;
+  content?: string | null;
+  videoUrl?: string | null;
+  sourceTitle?: string | null;
+  sourceUrl?: string | null;
+  legalDocumentNo?: string | null;
+  effectiveDate?: string | null;
+  reviewedAt?: string | null;
+  reviewerNote?: string | null;
+  sortOrder?: number;
+  module?: {
+    id: string;
+    title: string;
+    category?: { id: string; title: string };
+  };
+  category?: { id?: string; title: string };
+  reviewStatus?: LessonReviewStatus | string;
   isActive?: boolean;
+  questions?: AdminQuestion[];
+  createdAt?: string;
   updatedAt?: string;
 };
 
 export type AdminSource = {
   id: string;
   title: string;
+  sourceUrl?: string | null;
   documentNo?: string | null;
-  crawlStatus?: string;
+  legalDocumentNo?: string | null;
+  effectiveDate?: string | null;
+  rawText?: string;
+  normalizedText?: string | null;
+  contentHash?: string | null;
+  crawlStatus?: LegalSourceCrawlStatus | string;
+  crawledAt?: string | null;
+  createdAt?: string;
   updatedAt?: string;
 };
 
 export type AdminDraft = {
   id: string;
   title: string;
-  status?: string;
+  content?: string;
+  videoScript?: string | null;
+  videoPrompt?: string | null;
+  reviewerNote?: string | null;
+  status?: LessonDraftStatus | string;
   source?: { title: string };
+  sourceDocument?: {
+    id: string;
+    title: string;
+    legalDocumentNo?: string | null;
+    sourceUrl?: string | null;
+  };
+  module?: { id: string; title: string } | null;
+  createdLesson?: {
+    id: string;
+    slug: string;
+    title: string;
+    reviewStatus: string;
+    isActive: boolean;
+  } | null;
+  questions?: AdminQuestion[];
+  createdAt?: string;
   updatedAt?: string;
 };
 
@@ -145,21 +233,6 @@ export type AdminUserSummary = {
   totalLegalCoins: number;
 };
 
-export type AdminQuestionOption = {
-  id: string;
-  text: string;
-  isCorrect: boolean;
-  sortOrder: number;
-};
-
-export type AdminQuestion = {
-  id: string;
-  text: string;
-  explanation: string | null;
-  sortOrder: number;
-  options: AdminQuestionOption[];
-};
-
 export type AdminQuestionPayload = {
   text: string;
   explanation?: string | null;
@@ -172,9 +245,71 @@ export type AdminQuestionPayload = {
   }>;
 };
 
+export type AdminModulePayload = {
+  categoryId: string;
+  slug?: string | null;
+  title: string;
+  description?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
+};
+
+export type AdminLessonPayload = {
+  moduleId: string;
+  slug?: string | null;
+  title: string;
+  content?: string | null;
+  videoUrl?: string | null;
+  sourceTitle?: string | null;
+  sourceUrl?: string | null;
+  legalDocumentNo?: string | null;
+  effectiveDate?: string | null;
+  reviewedAt?: string | null;
+  reviewerNote?: string | null;
+  sortOrder?: number;
+  reviewStatus?: LessonReviewStatus;
+  isActive?: boolean;
+};
+
+export type AdminSourcesCrawlResponse = {
+  sources: AdminSource[];
+  drafts: AdminDraft[];
+  errors: Array<{ url: string; message: string }>;
+};
+
 export function getAdminLessons(token: string) {
   return apiRequest<PaginatedResponse<AdminLesson>>("/admin/lessons", {
     token,
+  });
+}
+
+export function getAdminCategories(token: string) {
+  return apiRequest<AdminCategory[]>("/admin/categories", { token });
+}
+
+export function getAdminModules(token: string) {
+  return apiRequest<PaginatedResponse<AdminModule>>("/admin/modules", {
+    token,
+  });
+}
+
+export function createAdminModule(token: string, payload: AdminModulePayload) {
+  return apiRequest<AdminModule>("/admin/modules", {
+    token,
+    method: "POST",
+    body: payload,
+  });
+}
+
+export function updateAdminModule(
+  token: string,
+  moduleId: string,
+  payload: Partial<AdminModulePayload>
+) {
+  return apiRequest<AdminModule>(`/admin/modules/${moduleId}`, {
+    token,
+    method: "PATCH",
+    body: payload,
   });
 }
 
@@ -217,15 +352,9 @@ export function getAdminFeedbackReports(
   const query = new URLSearchParams();
   query.set("page", String(params.page ?? 1));
   query.set("limit", String(params.limit ?? 20));
-  if (params.status && params.status !== "all") {
-    query.set("status", params.status);
-  }
-  if (params.category && params.category !== "all") {
-    query.set("category", params.category);
-  }
-  if (params.search?.trim()) {
-    query.set("search", params.search.trim());
-  }
+  if (params.status && params.status !== "all") query.set("status", params.status);
+  if (params.category && params.category !== "all") query.set("category", params.category);
+  if (params.search?.trim()) query.set("search", params.search.trim());
 
   return apiRequest<PaginatedResponse<AdminFeedbackReport>>(
     `/admin/feedback-reports?${query.toString()}`,
@@ -307,9 +436,7 @@ export function getAdminVoucherRedemptions(
   const query = new URLSearchParams();
   query.set("page", String(params.page ?? 1));
   query.set("limit", String(params.limit ?? 20));
-  if (params.status && params.status !== "all") {
-    query.set("status", params.status);
-  }
+  if (params.status && params.status !== "all") query.set("status", params.status);
 
   return apiRequest<PaginatedResponse<AdminVoucherRedemption>>(
     `/admin/rewards/voucher-redemptions?${query.toString()}`,
@@ -343,9 +470,7 @@ export function getAdminUsers(
   const query = new URLSearchParams();
   query.set("page", String(params.page ?? 1));
   query.set("limit", String(params.limit ?? 20));
-  if (params.search?.trim()) {
-    query.set("search", params.search.trim());
-  }
+  if (params.search?.trim()) query.set("search", params.search.trim());
 
   return apiRequest<PaginatedResponse<AdminUser>>(
     `/admin/users?${query.toString()}`,
@@ -358,11 +483,19 @@ export function getAdminUserSummary(token: string) {
 }
 
 export function getAdminLesson(token: string, lessonId: string) {
-  return apiRequest<any>(`/admin/lessons/${lessonId}`, { token });
+  return apiRequest<AdminLesson>(`/admin/lessons/${lessonId}`, { token });
 }
 
-export function updateAdminLesson(token: string, lessonId: string, payload: any) {
-  return apiRequest<any>(`/admin/lessons/${lessonId}`, {
+export function createAdminLesson(token: string, payload: AdminLessonPayload) {
+  return apiRequest<AdminLesson>("/admin/lessons", {
+    token,
+    method: "POST",
+    body: payload,
+  });
+}
+
+export function updateAdminLesson(token: string, lessonId: string, payload: Partial<AdminLessonPayload>) {
+  return apiRequest<AdminLesson>(`/admin/lessons/${lessonId}`, {
     token,
     method: "PATCH",
     body: payload,
@@ -428,9 +561,7 @@ export async function uploadAdminMediaFile(
   const formData = new FormData();
   formData.append("file", file);
   formData.append("placement", placement);
-  if (title?.trim()) {
-    formData.append("title", title.trim());
-  }
+  if (title?.trim()) formData.append("title", title.trim());
 
   const response = await fetch(`${API_BASE_URL}/admin/media-assets/upload`, {
     method: "POST",
@@ -460,9 +591,15 @@ export function attachMediaAssetToLesson(token: string, assetId: string, payload
   });
 }
 
-// Admin Sources CRUD
+export function deleteAdminMediaAsset(token: string, assetId: string) {
+  return apiRequest<AdminMediaAsset>(`/admin/media-assets/${assetId}`, {
+    token,
+    method: "DELETE",
+  });
+}
+
 export function createAdminSource(token: string, payload: any) {
-  return apiRequest<any>("/admin/sources", {
+  return apiRequest<AdminSource>("/admin/sources", {
     token,
     method: "POST",
     body: payload,
@@ -470,11 +607,11 @@ export function createAdminSource(token: string, payload: any) {
 }
 
 export function getAdminSource(token: string, sourceId: string) {
-  return apiRequest<any>(`/admin/sources/${sourceId}`, { token });
+  return apiRequest<AdminSource>(`/admin/sources/${sourceId}`, { token });
 }
 
 export function updateAdminSource(token: string, sourceId: string, payload: any) {
-  return apiRequest<any>(`/admin/sources/${sourceId}`, {
+  return apiRequest<AdminSource>(`/admin/sources/${sourceId}`, {
     token,
     method: "PATCH",
     body: payload,
@@ -488,9 +625,24 @@ export function deleteAdminSource(token: string, sourceId: string) {
   });
 }
 
-// Admin AI Lesson Drafts Workflow
+export function crawlAdminSources(
+  token: string,
+  payload: {
+    urls: string[];
+    moduleId?: string | null;
+    generateDrafts?: boolean;
+    questionCount?: number;
+  }
+) {
+  return apiRequest<AdminSourcesCrawlResponse>("/admin/sources/crawl", {
+    token,
+    method: "POST",
+    body: payload,
+  });
+}
+
 export function generateAdminLessonDraft(token: string, payload: any) {
-  return apiRequest<any>("/admin/ai/lesson-drafts/generate", {
+  return apiRequest<AdminDraft>("/admin/ai/lesson-drafts/generate", {
     token,
     method: "POST",
     body: payload,
@@ -498,11 +650,11 @@ export function generateAdminLessonDraft(token: string, payload: any) {
 }
 
 export function getAdminLessonDraft(token: string, draftId: string) {
-  return apiRequest<any>(`/admin/ai/lesson-drafts/${draftId}`, { token });
+  return apiRequest<AdminDraft>(`/admin/ai/lesson-drafts/${draftId}`, { token });
 }
 
 export function updateAdminLessonDraft(token: string, draftId: string, payload: any) {
-  return apiRequest<any>(`/admin/ai/lesson-drafts/${draftId}`, {
+  return apiRequest<AdminDraft>(`/admin/ai/lesson-drafts/${draftId}`, {
     token,
     method: "PATCH",
     body: payload,
@@ -510,7 +662,7 @@ export function updateAdminLessonDraft(token: string, draftId: string, payload: 
 }
 
 export function createLessonFromDraft(token: string, draftId: string, payload: any) {
-  return apiRequest<any>(`/admin/ai/lesson-drafts/${draftId}/create-lesson`, {
+  return apiRequest<AdminLesson>(`/admin/ai/lesson-drafts/${draftId}/create-lesson`, {
     token,
     method: "POST",
     body: payload,
