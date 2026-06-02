@@ -20,6 +20,7 @@ import { RewardsModule } from "./modules/rewards/rewards.module";
 import { FirebaseModule } from "./firebase/firebase.module";
 import { ScheduleModule } from "@nestjs/schedule";
 import { AutomatedPipelineModule } from "./modules/automated-pipeline/automated-pipeline.module";
+import { ChatbotModule } from "./modules/chatbot/chatbot.module";
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { AutomatedPipelineModule } from "./modules/automated-pipeline/automated-
     FirebaseModule,
     ScheduleModule.forRoot(),
     AutomatedPipelineModule,
+    ChatbotModule,
   ],
   controllers: [],
   providers: [

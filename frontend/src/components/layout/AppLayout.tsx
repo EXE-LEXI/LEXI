@@ -3,6 +3,7 @@ import { ROUTES } from "../../routes/paths";
 import type { AuthResponse } from "../../types/auth";
 import { Bell, Settings, LogOut } from "lucide-react";
 import { LegalDisclaimer } from "./LegalDisclaimer";
+import { ChatbotWidget } from "../common/ChatbotWidget";
 
 type AppLayoutProps = PropsWithChildren<{
   session: AuthResponse | null;
@@ -164,6 +165,7 @@ export function AppLayout({
         }}
       />
       {children}
+      <ChatbotWidget session={session} />
     </div>
   );
 }
