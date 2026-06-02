@@ -13,6 +13,14 @@ export const ROUTES = {
   resources: "/resources",
   shorts: "/shorts",
   game: "/game",
+  history: "/history",
+  attemptDetail: "/history/:attemptId",
+  account: "/account",
+  notifications: "/notifications",
+  community: "/community",
+  subscription: "/subscription",
+  feedback: "/feedback",
+  rewards: "/rewards",
 } as const;
 
 export type RouteMap = typeof ROUTES;

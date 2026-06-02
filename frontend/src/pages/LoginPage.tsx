@@ -1,5 +1,9 @@
 import React, { useState } from "react";
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
+import {
+  requestPasswordReset,
+  resetPassword,
+} from "../api/auth";
 
 type AuthPageProps = {
   mode: "login" | "register";
@@ -28,10 +32,23 @@ export function LoginPage({
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [localError, setLocalError] = useState<string | null>(null);
+  const [featureNotice, setFeatureNotice] = useState<string | null>(null);
+  const [isResetFlowOpen, setIsResetFlowOpen] = useState(false);
+  const [isResetSubmitting, setIsResetSubmitting] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [resetConfirmPassword, setResetConfirmPassword] = useState("");
 
   // Clear errors when toggling modes to make transitions feel clean
   function handleToggleMode(targetMode: "login" | "register") {
     setLocalError(null);
+    setFeatureNotice(null);
+    setIsResetFlowOpen(false);
+    setResetEmail("");
+    setResetToken("");
+    setResetNewPassword("");
+    setResetConfirmPassword("");
     setShowPassword(false);
     setShowConfirmPassword(false);
     setPassword("");
@@ -42,6 +59,7 @@ export function LoginPage({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLocalError(null);
+    setFeatureNotice(null);
 
     const formData = new FormData(event.currentTarget);
     const emailValue = String(formData.get("email") ?? "");
@@ -69,6 +87,62 @@ export function LoginPage({
     });
   }
 
+  async function handleRequestReset() {
+    setLocalError(null);
+    setFeatureNotice(null);
+    setIsResetSubmitting(true);
+
+    try {
+      const response = await requestPasswordReset(resetEmail);
+      if (response.resetToken) {
+        setResetToken(response.resetToken);
+        setFeatureNotice(
+          "Mã đặt lại mật khẩu đã được tạo cho môi trường thử nghiệm này. Vui lòng kiểm tra và điền mật khẩu mới phía dưới."
+        );
+      } else {
+        setFeatureNotice(
+          "Nếu email này tồn tại và hệ thống gửi thư được định cấu hình, hướng dẫn đặt lại mật khẩu sẽ được gửi."
+        );
+      }
+    } catch (err) {
+      setLocalError(
+        err instanceof Error ? err.message : "Không thể gửi yêu cầu đặt lại mật khẩu"
+      );
+    } finally {
+      setIsResetSubmitting(false);
+    }
+  }
+
+  async function handleConfirmReset() {
+    setLocalError(null);
+    setFeatureNotice(null);
+
+    if (resetNewPassword !== resetConfirmPassword) {
+      setLocalError("Mật khẩu mới và xác nhận mật khẩu không trùng khớp.");
+      return;
+    }
+
+    setIsResetSubmitting(true);
+    try {
+      await resetPassword({
+        token: resetToken,
+        newPassword: resetNewPassword,
+      });
+      setFeatureNotice("Đặt lại mật khẩu thành công. Bây giờ bạn có thể đăng nhập.");
+      setIsResetFlowOpen(false);
+      setResetEmail("");
+      setResetToken("");
+      setResetNewPassword("");
+      setResetConfirmPassword("");
+    } catch (err) {
+      setLocalError(
+        err instanceof Error ? err.message : "Không thể đặt lại mật khẩu"
+      );
+    } finally {
+      setIsResetSubmitting(false);
+    }
+  }
+
   const activeError = localError || error;
 
   return (
@@ -84,7 +158,7 @@ export function LoginPage({
           </div>
           
           <div className="lexi-register-left-intro">
-            <h1>Master the Law.<br />Level Up.</h1>
+            <h1>Làm Chủ Pháp Luật.<br />Thăng Hạng Bản Thân.</h1>
             <p>
               Tham gia cộng đồng học thuật pháp lý tương tác hàng đầu. Khám phá hàng ngàn bài học được thiết kế chuyên nghiệp, thú vị và hiệu quả.
             </p>
@@ -190,6 +264,12 @@ export function LoginPage({
                   </div>
                 ) : null}
 
+                {featureNotice ? (
+                  <div className="lexi-inline-notice" style={{ marginBottom: "20px", marginTop: "-8px" }}>
+                    <span>{featureNotice}</span>
+                  </div>
+                ) : null}
+
                 <button 
                   className="lexi-auth-btn-primary" 
                   type="submit" 
@@ -228,9 +308,17 @@ export function LoginPage({
                 {/* Password field */}
                 <div className="lexi-auth-label">
                   <span>Mật khẩu</span>
-                  <span className="lexi-auth-forgot-link" onClick={() => alert("Chức năng đang phát triển!")}>
+                  <button
+                    className="lexi-auth-forgot-link"
+                    type="button"
+                    onClick={() => {
+                      setLocalError(null);
+                      setFeatureNotice(null);
+                      setIsResetFlowOpen((value) => !value);
+                    }}
+                  >
                     Quên mật khẩu?
-                  </span>
+                  </button>
                 </div>
                 <div className="lexi-auth-input-wrapper">
                   <Lock size={16} className="lexi-auth-input-icon" />
@@ -252,9 +340,89 @@ export function LoginPage({
                   <span>Ghi nhớ đăng nhập</span>
                 </label>
 
+                {isResetFlowOpen ? (
+                  <div className="lexi-auth-reset-panel">
+                    <label className="lexi-auth-label">Email khôi phục</label>
+                    <div className="lexi-auth-input-wrapper">
+                      <Mail size={16} className="lexi-auth-input-icon" />
+                      <input
+                        type="email"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        placeholder="Nhập email cần đặt lại mật khẩu"
+                      />
+                    </div>
+                    <button
+                      className="lexi-social-btn"
+                      type="button"
+                      disabled={isResetSubmitting || !resetEmail}
+                      onClick={handleRequestReset}
+                    >
+                      Gửi yêu cầu reset
+                    </button>
+
+                    <label className="lexi-auth-label">Reset token</label>
+                    <div className="lexi-auth-input-wrapper">
+                      <Lock size={16} className="lexi-auth-input-icon" />
+                      <input
+                        type="text"
+                        value={resetToken}
+                        onChange={(e) => setResetToken(e.target.value)}
+                        placeholder="Dán token từ email hoặc beta response"
+                      />
+                    </div>
+
+                    <label className="lexi-auth-label">Mật khẩu mới</label>
+                    <div className="lexi-auth-input-wrapper">
+                      <Lock size={16} className="lexi-auth-input-icon" />
+                      <input
+                        type="password"
+                        minLength={6}
+                        value={resetNewPassword}
+                        onChange={(e) => setResetNewPassword(e.target.value)}
+                        placeholder="Tối thiểu 6 ký tự"
+                      />
+                    </div>
+
+                    <label className="lexi-auth-label">Xác nhận mật khẩu mới</label>
+                    <div className="lexi-auth-input-wrapper">
+                      <Lock size={16} className="lexi-auth-input-icon" />
+                      <input
+                        type="password"
+                        minLength={6}
+                        value={resetConfirmPassword}
+                        onChange={(e) => setResetConfirmPassword(e.target.value)}
+                        placeholder="Nhập lại mật khẩu mới"
+                      />
+                    </div>
+
+                    <button
+                      className="lexi-auth-btn-primary"
+                      type="button"
+                      disabled={
+                        isResetSubmitting ||
+                        !resetToken ||
+                        resetNewPassword.length < 6 ||
+                        !resetConfirmPassword
+                      }
+                      onClick={handleConfirmReset}
+                    >
+                      <span>
+                        {isResetSubmitting ? "Đang xử lý..." : "Đặt lại mật khẩu"}
+                      </span>
+                    </button>
+                  </div>
+                ) : null}
+
                 {activeError ? (
                   <div className="error-text" style={{ marginBottom: "20px", marginTop: "-8px" }}>
                     <span>{activeError}</span>
+                  </div>
+                ) : null}
+
+                {featureNotice ? (
+                  <div className="lexi-inline-notice" style={{ marginBottom: "20px", marginTop: "-8px" }}>
+                    <span>{featureNotice}</span>
                   </div>
                 ) : null}
 
@@ -277,7 +445,11 @@ export function LoginPage({
                   <button 
                     type="button" 
                     className="lexi-social-btn" 
-                    onClick={() => alert("Google Sign-In đang kết nối...")}
+                    onClick={() =>
+                      setFeatureNotice(
+                        "Đăng nhập Google chưa kết nối trong bản thử nghiệm này. Vui lòng sử dụng email và mật khẩu."
+                      )
+                    }
                   >
                     <img 
                       src="https://img.icons8.com/color/48/google-logo.png" 
@@ -289,7 +461,11 @@ export function LoginPage({
                   <button 
                     type="button" 
                     className="lexi-social-btn" 
-                    onClick={() => alert("Facebook Sign-In đang kết nối...")}
+                    onClick={() =>
+                      setFeatureNotice(
+                        "Đăng nhập Facebook chưa kết nối trong bản thử nghiệm này. Vui lòng sử dụng email và mật khẩu."
+                      )
+                    }
                   >
                     <img 
                       src="https://img.icons8.com/color/48/facebook-new.png" 

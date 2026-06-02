@@ -22,6 +22,8 @@ build/
 **/build/
 coverage/
 **/coverage/
+uploads/
+**/uploads/
 
 # Environment and secrets
 .env
@@ -36,5 +38,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-
 

@@ -198,6 +198,7 @@ export class AdminContentMapper {
       title: asset.title,
       assetType: asset.assetType,
       sourceType: asset.sourceType,
+      placement: asset.placement,
       status: asset.status,
       url: asset.url,
       mimeType: asset.mimeType,

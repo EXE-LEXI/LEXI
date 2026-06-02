@@ -28,6 +28,7 @@ import type {
   CurrentLesson,
   LearningHistoryItem,
   ProgressSummary,
+  AttemptDetail,
 } from "../types/progress";
 import type { PaginatedResponse } from "../types/api";
 
@@ -155,121 +156,6 @@ export function revokeDeviceToken(token: string, deviceToken: string) {
   );
 }
 
-// ====== AI LEARNING FEATURES ======
-
-/**
- * Get personalized learning recommendations based on user progress
- */
-export function getRecommendations(token: string, limit: number = 5) {
-  return apiRequest<ContentRecommendation[]>(
-    `/api/ai-learning/recommendations?limit=${limit}`,
-    { token }
-  );
-}
-
-/**
- * Get comprehensive user learning profile and statistics
- */
-export function getLearningProfile(token: string) {
-  return apiRequest<UserLearningProfile>(
-    "/api/ai-learning/learning-profile",
-    { token }
-  );
-}
-
-/**
- * Get quiz improvement suggestions for a specific lesson
- */
-export function getQuizImprovements(token: string, lessonId: string) {
-  return apiRequest<QuizImprovement>(
-    `/api/ai-learning/quiz-improvements/${lessonId}`,
-    { token }
-  );
-}
-
-/**
- * Analyze user's learning consistency and study streak
- */
-export function getLearningConsistency(token: string) {
-  return apiRequest<LearningConsistency>(
-    "/api/ai-learning/consistency-analysis",
-    { token }
-  );
-}
-
-/**
- * Identify knowledge gaps and suggest related lessons
- */
-export function getKnowledgeGaps(token: string, limit: number = 5) {
-  return apiRequest<KnowledgeGap[]>(
-    `/api/ai-learning/knowledge-gaps?limit=${limit}`,
-    { token }
-  );
-}
-
-/**
- * Get adaptive quiz questions with difficulty adjusted to user level
- */
-export function getAdaptiveQuizQuestions(
-  token: string,
-  lessonId: string,
-  count: number = 3
-) {
-  return apiRequest<AdaptiveQuestion[]>(
-    `/api/ai-learning/adaptive-quiz/${lessonId}?count=${count}`,
-    { token }
-  );
-}
-
-/**
- * Get personalized learning path with milestones
- */
-export function getLearningPath(token: string) {
-  return apiRequest<LearningPath>(
-    "/api/ai-learning/learning-path",
-    { token }
-  );
-}
-
-/**
- * Get AI-generated performance feedback for a quiz attempt
- */
-export function getPerformanceFeedback(token: string, attemptId: string) {
-  return apiRequest<PerformanceFeedback>(
-    `/api/ai-learning/attempt/${attemptId}/feedback`,
-    { token }
-  );
-}
-
-/**
- * Get a hint for a specific quiz question
- */
-export function getQuestionHint(token: string, questionId: string) {
-  return apiRequest<QuestionHint>(
-    `/api/ai-learning/hint/${questionId}`,
-    { token }
-  );
-}
-
-/**
- * Analyze user's learning patterns and get study recommendations
- */
-export function getLearningPatterns(token: string) {
-  return apiRequest<LearningPattern>(
-    "/api/ai-learning/learning-patterns",
-    { token }
-  );
-}
-
-/**
- * Get personalized review recommendations
- */
-export function getAiReviewRecommendations(
-  token: string,
-  limit: number = 5
-) {
-  return apiRequest<ReviewRecommendationItem[]>(
-    `/api/ai-learning/review-recommendations?limit=${limit}`,
-    { token }
-  );
+export function getLearningAttemptDetail(token: string, attemptId: string) {
+  return apiRequest<AttemptDetail>(`/progress/me/history/${attemptId}`, { token });
 }

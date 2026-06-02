@@ -2,6 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import {
   MediaAssetSourceType,
   MediaAssetStatus,
+  MediaAssetPlacement,
   MediaAssetType,
 } from "@prisma/client";
 import { PaginatedResponseDto } from "../../../../common/dto/pagination-meta.dto";
@@ -43,6 +44,9 @@ export class AdminMediaAssetResponseDto {
 
   @ApiProperty({ enum: MediaAssetSourceType })
   sourceType: MediaAssetSourceType;
+
+  @ApiProperty({ enum: MediaAssetPlacement })
+  placement: MediaAssetPlacement;
 
   @ApiProperty({ enum: MediaAssetStatus })
   status: MediaAssetStatus;

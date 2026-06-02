@@ -8,11 +8,15 @@ import { validateEnv } from "./config/env.validation";
 import { PrismaModule } from "./core/prisma.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { AdminContentModule } from "./modules/admin-content/admin-content.module";
+import { AdminUsersModule } from "./modules/admin-users/admin-users.module";
 import { GamificationModule } from "./modules/gamification/gamification.module";
 import { LeaderboardModule } from "./modules/leaderboard/leaderboard.module";
 import { LearningModule } from "./modules/learning/learning.module";
 import { NotificationModule } from "./modules/notification/notification.module";
+import { ResourcesModule } from "./modules/resources/resources.module";
 import { UsersModule } from "./modules/users/users.module";
+import { FeedbackModule } from "./modules/feedback/feedback.module";
+import { RewardsModule } from "./modules/rewards/rewards.module";
 import { FirebaseModule } from "./firebase/firebase.module";
 import { ScheduleModule } from "@nestjs/schedule";
 import { AutomatedPipelineModule } from "./modules/automated-pipeline/automated-pipeline.module";
@@ -26,11 +30,15 @@ import { AutomatedPipelineModule } from "./modules/automated-pipeline/automated-
     PrismaModule,
     AuthModule,
     AdminContentModule,
+    AdminUsersModule,
     UsersModule,
     LearningModule,
     GamificationModule,
     LeaderboardModule,
     NotificationModule,
+    ResourcesModule,
+    FeedbackModule,
+    RewardsModule,
     FirebaseModule,
     ScheduleModule.forRoot(),
     AutomatedPipelineModule,

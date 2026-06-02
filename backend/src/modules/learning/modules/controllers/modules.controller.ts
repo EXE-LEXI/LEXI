@@ -5,6 +5,8 @@ import {
   ApiOperation,
   ApiTags,
 } from "@nestjs/swagger";
+import { CurrentUser } from "../../../auth/decorators/current-user.decorator";
+import { AuthUserDto } from "../../../auth/dto/response/auth-user.dto";
 import { JwtAuthGuard } from "../../../auth/guards/jwt-auth.guard";
 import { GetModulesQueryDto } from "../dto/request/get-modules-query.dto";
 import { ModulesListResponseDto } from "../dto/response/module-response.dto";
@@ -21,9 +23,11 @@ export class ModulesController {
   @ApiOperation({ summary: "Get active learning modules" })
   @ApiOkResponse({ type: ModulesListResponseDto })
   async getModules(
+    @CurrentUser() user: AuthUserDto,
     @Query() query: GetModulesQueryDto
   ): Promise<ModulesListResponseDto> {
     return this.modulesService.getModules({
+      userId: user.id,
       categoryId: query.categoryId,
       page: query.page,
       limit: query.limit,

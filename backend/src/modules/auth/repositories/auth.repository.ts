@@ -51,6 +51,16 @@ export class AuthRepository {
     });
   }
 
+  findActiveUserIdByEmail(email: string) {
+    return this.prisma.user.findFirst({
+      where: {
+        email,
+        status: "ACTIVE",
+      },
+      select: { id: true },
+    });
+  }
+
   createUser(dto: RegisterDto, passwordHash: string) {
     return this.prisma.user.create({
       data: {
@@ -142,6 +152,73 @@ export class AuthRepository {
         revokedAt: null,
       },
       data: { revokedAt: new Date() },
+    });
+  }
+
+  createPasswordResetToken(data: {
+    userId: string;
+    tokenHash: string;
+    expiresAt: Date;
+  }) {
+    return this.prisma.passwordResetToken.create({
+      data,
+      select: {
+        id: true,
+        userId: true,
+        expiresAt: true,
+      },
+    });
+  }
+
+  consumePasswordResetToken(tokenHash: string, passwordHash: string) {
+    const now = new Date();
+
+    return this.prisma.$transaction(async (tx) => {
+      const tokenRecord = await tx.passwordResetToken.findFirst({
+        where: {
+          tokenHash,
+          usedAt: null,
+          expiresAt: { gt: now },
+        },
+        select: {
+          id: true,
+          userId: true,
+          user: {
+            select: { status: true },
+          },
+        },
+      });
+
+      if (!tokenRecord || tokenRecord.user.status !== "ACTIVE") {
+        return null;
+      }
+
+      const updateResult = await tx.passwordResetToken.updateMany({
+        where: {
+          id: tokenRecord.id,
+          usedAt: null,
+        },
+        data: { usedAt: now },
+      });
+
+      if (updateResult.count !== 1) {
+        return null;
+      }
+
+      await tx.user.update({
+        where: { id: tokenRecord.userId },
+        data: { passwordHash },
+      });
+
+      await tx.refreshToken.updateMany({
+        where: {
+          userId: tokenRecord.userId,
+          revokedAt: null,
+        },
+        data: { revokedAt: now },
+      });
+
+      return { userId: tokenRecord.userId };
     });
   }
 }

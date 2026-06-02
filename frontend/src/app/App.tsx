@@ -12,17 +12,21 @@ import { ReviewPage } from "../pages/ReviewPage";
 import { SettingsPage } from "../pages/SettingsPage";
 import { ShortsPage } from "../pages/ShortsPage";
 import { GamePage } from "../pages/GamePage";
-import { ToastContainer } from "../components/Toast/Toast";
-import { useToast } from "../hooks/useToast";
+import { LeaderboardPage } from "../pages/LeaderboardPage";
+import { LearningHistoryPage } from "../pages/LearningHistoryPage";
+import { AttemptDetailPage } from "../pages/AttemptDetailPage";
+import { AccountSettingsPage } from "../pages/AccountSettingsPage";
+import { NotificationCenterPage } from "../pages/NotificationCenterPage";
+import { CommunityPage } from "../pages/CommunityPage";
+import { SubscriptionPage } from "../pages/SubscriptionPage";
+import { FeedbackPage } from "../pages/FeedbackPage";
+import { RewardsPage } from "../pages/RewardsPage";
 import {
-  crawlAdminLegalSources,
   getAdminLessonDrafts,
   getAdminLessons,
   getAdminMediaAssets,
   getAdminNotificationLogs,
   getAdminSources,
-  processAdminLegalSources,
-  type AdminCrawlResponse,
   type AdminDeliveryLog,
   type AdminDraft,
   type AdminLesson,
@@ -30,7 +34,7 @@ import {
   type AdminSource,
 } from "../api/admin";
 import { API_BASE_URL } from "../api/config";
-import { login, logout, register } from "../api/auth";
+import { login, logout, refreshAuthSession, register } from "../api/auth";
 import {
   claimDailyChallenge,
   getBadges,
@@ -51,11 +55,6 @@ import {
   updateNotificationPreferences,
   upsertDeviceToken,
 } from "../api/learning";
-import {
-  getRecommendations,
-  getLearningProfile,
-  getLearningConsistency,
-} from "../api/learning";
 import { ApiError } from "../api/http";
 import { ROUTES } from "../routes/paths";
 import {
@@ -75,9 +74,6 @@ import type {
   ReviewMistake,
   ReviewRecommendation,
   WeeklyLeaderboard,
-  ContentRecommendation,
-  UserLearningProfile,
-  LearningConsistency,
 } from "../types/learning";
 import type { CurrentLesson, LearningHistoryItem, ProgressSummary } from "../types/progress";
 
@@ -89,10 +85,9 @@ function App() {
   const [page, setPage] = useState<PageState>(() => ({
     path: window.location.pathname,
   }));
-  const [session, setSession] = useState<AuthResponse | null>(() =>
-    readAuthSession()
-  );
-  const { toasts, removeToast, success, error, info, warning } = useToast();
+  const [initialSession] = useState<AuthResponse | null>(() => readAuthSession());
+  const [session, setSession] = useState<AuthResponse | null>(initialSession);
+  const [isSessionChecking, setIsSessionChecking] = useState(Boolean(initialSession));
   const [authError, setAuthError] = useState<string | null>(null);
   const [isAuthSubmitting, setIsAuthSubmitting] = useState(false);
   const [summary, setSummary] = useState<ProgressSummary | null>(null);
@@ -115,15 +110,16 @@ function App() {
   const [adminDrafts, setAdminDrafts] = useState<AdminDraft[]>([]);
   const [adminMedia, setAdminMedia] = useState<AdminMediaAsset[]>([]);
   const [adminLogs, setAdminLogs] = useState<AdminDeliveryLog[]>([]);
-  const [adminCrawlResult, setAdminCrawlResult] = useState<AdminCrawlResponse | null>(null);
-  const [aiRecommendations, setAiRecommendations] = useState<ContentRecommendation[]>([]);
-  const [aiLearningProfile, setAiLearningProfile] = useState<UserLearningProfile | null>(null);
-  const [aiConsistency, setAiConsistency] = useState<LearningConsistency | null>(null);
   const [loading, setLoading] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
 
   const lessonId = useMemo(() => {
     const match = page.path.match(/^\/lessons\/([^/]+)$/);
+    return match?.[1] ?? null;
+  }, [page.path]);
+
+  const attemptId = useMemo(() => {
+    const match = page.path.match(/^\/history\/([^/]+)$/);
     return match?.[1] ?? null;
   }, [page.path]);
 
@@ -137,13 +133,58 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!initialSession) {
+      return;
+    }
+
+    const refreshToken = initialSession.refreshToken;
+    let isCancelled = false;
+
+    async function restoreSession() {
+      try {
+        const auth = await refreshAuthSession(refreshToken);
+
+        if (isCancelled) {
+          return;
+        }
+
+        saveAuthSession(auth);
+        setSession(auth);
+      } catch {
+        if (isCancelled) {
+          return;
+        }
+
+        clearAuthSession();
+        setSession(null);
+        setPageError(null);
+        setAuthError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      } finally {
+        if (!isCancelled) {
+          setIsSessionChecking(false);
+        }
+      }
+    }
+
+    void restoreSession();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [initialSession]);
+
+  useEffect(() => {
+    if (isSessionChecking) {
+      return;
+    }
+
     if (!session && page.path !== ROUTES.home && page.path !== ROUTES.login && page.path !== ROUTES.register) {
       navigate(ROUTES.login, true);
     }
-  }, [session, page.path]);
+  }, [isSessionChecking, session, page.path]);
 
   useEffect(() => {
-    if (!session) {
+    if (!session || isSessionChecking) {
       return;
     }
 
@@ -170,7 +211,7 @@ function App() {
     if (lessonId) {
       void loadLesson(session.accessToken, lessonId);
     }
-  }, [session, page.path, lessonId, selectedCategoryId]);
+  }, [isSessionChecking, session, page.path, lessonId, selectedCategoryId]);
 
   function navigate(path: string, replace = false) {
     if (window.location.pathname !== path) {
@@ -203,9 +244,6 @@ function App() {
         nextLeaderboard,
         nextRecommendations,
         nextHistory,
-        nextAiRecommendations,
-        nextAiProfile,
-        nextAiConsistency,
       ] = await Promise.all([
         getProgressSummary(token),
         getCurrentLesson(token),
@@ -214,9 +252,6 @@ function App() {
         getWeeklyLeaderboard(token),
         getReviewRecommendations(token),
         getLearningHistory(token, 1, 6),
-        getRecommendations(token, 5).catch(() => []),
-        getLearningProfile(token).catch(() => null),
-        getLearningConsistency(token).catch(() => null),
       ]);
       setSummary(nextSummary);
       setCurrentLesson(nextCurrentLesson);
@@ -225,9 +260,6 @@ function App() {
       setLeaderboard(nextLeaderboard);
       setRecommendations(nextRecommendations.items);
       setHistory(nextHistory.items);
-      setAiRecommendations(nextAiRecommendations);
-      setAiLearningProfile(nextAiProfile);
-      setAiConsistency(nextAiConsistency);
     } catch (error) {
       setPageError(getErrorMessage(error));
     } finally {
@@ -320,10 +352,6 @@ function App() {
     }
   }
 
-  async function refreshAdmin(token: string) {
-    await loadAdmin(token);
-  }
-
   async function handleAuthSubmit(payload: {
     email: string;
     password: string;
@@ -343,7 +371,7 @@ function App() {
 
       saveAuthSession(auth);
       setSession(auth);
-      navigate(ROUTES.dashboard, true);
+      navigate(auth.user.role === "ADMIN" ? ROUTES.admin : ROUTES.dashboard, true);
     } catch (error) {
       setAuthError(getErrorMessage(error));
     } finally {
@@ -389,7 +417,7 @@ function App() {
       const answers = Object.entries(answersByQuestion).map(
         ([questionId, selectedOptionId]) => ({
           questionId,
-          selectedOptionId,
+          optionId: selectedOptionId,
         })
       );
       setQuizResult(await submitQuiz(session.accessToken, lesson.id, answers));
@@ -473,87 +501,11 @@ function App() {
     }
   }
 
-  async function handleCrawlLegalSources(payload: {
-    urls: string[];
-    moduleId?: string | null;
-    generateDrafts?: boolean;
-    questionCount?: number;
-  }) {
-    if (!session) {
-      return;
-    }
-
-    if (payload.urls.length === 0) {
-      warning("Vui lòng nhập ít nhất một URL");
-      return;
-    }
-
-    setLoading(true);
-    setPageError(null);
-    const toastId = info(`Đang cào ${payload.urls.length} URL...`, 0);
-    try {
-      const result = await crawlAdminLegalSources(session.accessToken, payload);
-      removeToast(toastId);
-
-      if (result.errors.length > 0) {
-        const errorCount = result.errors.length;
-        const successCount = result.sources.length;
-        warning(
-          `Hoàn tất: ${successCount} thành công, ${errorCount} lỗi. Xem chi tiết dưới đây.`
-        );
-        result.errors.forEach((err) => {
-          error(`${err.url}: ${err.message}`, 5000);
-        });
-      } else if (result.sources.length > 0) {
-        success(
-          `Cào thành công ${result.sources.length} nguồn${
-            result.drafts.length > 0 ? ` và tạo ${result.drafts.length} bản nháp` : ""
-          }`
-        );
-      } else {
-        info("Không tìm thấy nội dung để cào");
-      }
-
-      setAdminCrawlResult(result);
-      await refreshAdmin(session.accessToken);
-    } catch (err) {
-      removeToast(toastId);
-      const errorMsg = getErrorMessage(err);
-      error(errorMsg);
-      setPageError(errorMsg);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleProcessLegalSources(payload: {
-    moduleId?: string | null;
-    limit?: number;
-    questionCount?: number;
-  }) {
-    if (!session) {
-      return;
-    }
-
-    setLoading(true);
-    setPageError(null);
-    const toastId = info("Đang xử lý nguồn đã cào...", 0);
-    try {
-      const drafts = await processAdminLegalSources(session.accessToken, payload);
-      removeToast(toastId);
-      success(`Tạo thành công ${drafts.length} bản nháp mới`);
-      await refreshAdmin(session.accessToken);
-    } catch (err) {
-      removeToast(toastId);
-      const errorMsg = getErrorMessage(err);
-      error(errorMsg);
-      setPageError(errorMsg);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   const mode = page.path === ROUTES.register ? "register" : "login";
+
+  if (isSessionChecking) {
+    return null;
+  }
 
   if (!session) {
     if (page.path === ROUTES.home) {
@@ -568,6 +520,23 @@ function App() {
         onModeChange={(nextMode) =>
           navigate(nextMode === "register" ? ROUTES.register : ROUTES.login)
         }
+      />
+    );
+  }
+
+  if (page.path === ROUTES.admin && session?.user?.role === "ADMIN") {
+    return (
+      <AdminPage
+        lessons={adminLessons}
+        sources={adminSources}
+        drafts={adminDrafts}
+        mediaAssets={adminMedia}
+        deliveryLogs={adminLogs}
+        isLoading={loading}
+        error={pageError}
+        session={session}
+        onNavigate={navigate}
+        onLogout={handleLogout}
       />
     );
   }
@@ -619,20 +588,64 @@ function App() {
           deliveryLogs={adminLogs}
           isLoading={loading}
           error={pageError}
-          crawlResult={adminCrawlResult}
-          onCrawlLegalSources={handleCrawlLegalSources}
-          onProcessLegalSources={handleProcessLegalSources}
+          session={session}
+          onNavigate={navigate}
+          onLogout={handleLogout}
         />
       ) : page.path === ROUTES.profile ? (
         <ProfilePage
           session={session}
-          aiRecommendations={aiRecommendations}
-          aiLearningProfile={aiLearningProfile}
-          aiConsistency={aiConsistency}
           onNavigate={navigate}
         />
+      ) : page.path === ROUTES.leaderboard ? (
+        <LeaderboardPage
+          leaderboard={leaderboard}
+          isLoading={loading}
+          error={pageError}
+          onRefresh={() => loadDashboard(session.accessToken)}
+          session={session}
+        />
+      ) : page.path === ROUTES.history ? (
+        <LearningHistoryPage
+          token={session.accessToken}
+          onNavigate={navigate}
+        />
+      ) : attemptId ? (
+        <AttemptDetailPage
+          token={session.accessToken}
+          attemptId={attemptId}
+          onNavigate={navigate}
+        />
+      ) : page.path === ROUTES.account ? (
+        <AccountSettingsPage
+          token={session.accessToken}
+          session={session}
+          onUpdateSession={setSession}
+        />
+      ) : page.path === ROUTES.notifications ? (
+        <NotificationCenterPage
+          session={session}
+          onNavigate={navigate}
+        />
+      ) : page.path === ROUTES.community ? (
+        <CommunityPage
+          session={session}
+          onNavigate={navigate}
+        />
+      ) : page.path === ROUTES.subscription ? (
+        <SubscriptionPage
+          session={session}
+          onNavigate={navigate}
+        />
+      ) : page.path === ROUTES.feedback ? (
+        <FeedbackPage
+          token={session.accessToken}
+          onNavigate={navigate}
+        />
+      ) : page.path === ROUTES.rewards ? (
+        <RewardsPage token={session.accessToken} />
       ) : page.path === ROUTES.resources ? (
-        <ResourcesPage />
+        <ResourcesPage token={session.accessToken} />
       ) : page.path === ROUTES.shorts ? (
         <ShortsPage
           session={session}
@@ -645,6 +658,7 @@ function App() {
         />
       ) : lessonId ? (
         <LessonPage
+          token={session.accessToken}
           lesson={lesson}
           result={quizResult}
           isLoading={loading && !lesson}
@@ -656,7 +670,6 @@ function App() {
       ) : (
         <NotFoundPage />
       )}
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </AppLayout>
   );
 }

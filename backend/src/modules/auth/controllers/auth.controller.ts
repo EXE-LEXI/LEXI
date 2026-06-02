@@ -13,9 +13,15 @@ import { CurrentUser } from "../decorators/current-user.decorator";
 import { LoginDto } from "../dto/request/login.dto";
 import { RefreshTokenDto } from "../dto/request/refresh-token.dto";
 import { RegisterDto } from "../dto/request/register.dto";
+import { RequestPasswordResetDto } from "../dto/request/request-password-reset.dto";
+import { ResetPasswordDto } from "../dto/request/reset-password.dto";
 import { AuthResponseDto } from "../dto/response/auth-response.dto";
 import { AuthUserDto } from "../dto/response/auth-user.dto";
 import { LogoutResponseDto } from "../dto/response/logout-response.dto";
+import {
+  PasswordResetRequestResponseDto,
+  PasswordResetResponseDto,
+} from "../dto/response/password-reset-response.dto";
 import { JwtAuthGuard } from "../guards/jwt-auth.guard";
 import { AuthService } from "../services/auth.service";
 
@@ -58,6 +64,28 @@ export class AuthController {
   @ApiOkResponse({ type: LogoutResponseDto })
   async logout(@Body() dto: RefreshTokenDto): Promise<LogoutResponseDto> {
     return this.authService.logout(dto.refreshToken);
+  }
+
+  @Post("password-reset/request")
+  @UseGuards(RateLimitGuard)
+  @RateLimit(AUTH_RATE_LIMITS.requestPasswordReset)
+  @ApiOperation({ summary: "Request a password reset token" })
+  @ApiOkResponse({ type: PasswordResetRequestResponseDto })
+  async requestPasswordReset(
+    @Body() dto: RequestPasswordResetDto
+  ): Promise<PasswordResetRequestResponseDto> {
+    return this.authService.requestPasswordReset(dto);
+  }
+
+  @Post("password-reset/confirm")
+  @UseGuards(RateLimitGuard)
+  @RateLimit(AUTH_RATE_LIMITS.resetPassword)
+  @ApiOperation({ summary: "Reset password using a valid reset token" })
+  @ApiOkResponse({ type: PasswordResetResponseDto })
+  async resetPassword(
+    @Body() dto: ResetPasswordDto
+  ): Promise<PasswordResetResponseDto> {
+    return this.authService.resetPassword(dto);
   }
 
   @Get("me")

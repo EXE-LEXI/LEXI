@@ -7,6 +7,7 @@ import { LessonQueryService } from "./lesson-query.service";
 import { LessonsMapper } from "../mappers/lessons.mapper";
 import { QuizGradingService } from "./quiz-grading.service";
 import { RewardService } from "./reward.service";
+import { RewardsService } from "../../../rewards/services/rewards.service";
 import { QuizSubmissionAnswer } from "../interfaces/quiz-submission.types";
 
 @Injectable()
@@ -17,7 +18,8 @@ export class QuizSubmissionService {
     private readonly quizGradingService: QuizGradingService,
     private readonly lessonProgressService: LessonProgressService,
     private readonly rewardService: RewardService,
-    private readonly badgesService: BadgesService
+    private readonly badgesService: BadgesService,
+    private readonly rewardsService?: RewardsService
   ) {}
 
   async submitQuiz(
@@ -79,6 +81,15 @@ export class QuizSubmissionService {
         );
 
       await this.rewardService.applyXpAward(tx, userId, xpAwarded);
+      const coinReward = this.rewardsService
+        ? await this.rewardsService.awardQuizAttempt(tx, {
+            userId,
+            attemptId: createdAttempt.id,
+            score: evaluation.score,
+            previousBestScore,
+            now,
+          })
+        : { coinsAwarded: 0, coinBalance: 0 };
       const newBadges = await this.badgesService.awardEarnedBadges(
         tx,
         userId,
@@ -88,6 +99,8 @@ export class QuizSubmissionService {
       return {
         attemptId: createdAttempt.id,
         xpAwarded,
+        coinsAwarded: coinReward.coinsAwarded,
+        coinBalance: coinReward.coinBalance,
         bestScore: Math.max(previousBestScore, evaluation.score),
         completedAt,
         newBadges,
@@ -100,6 +113,8 @@ export class QuizSubmissionService {
       correctCount: evaluation.correctCount,
       totalQuestions: evaluation.totalQuestions,
       xpAwarded: submission.xpAwarded,
+      coinsAwarded: submission.coinsAwarded,
+      coinBalance: submission.coinBalance,
       bestScore: submission.bestScore,
       completedAt: submission.completedAt,
       newBadges: submission.newBadges,

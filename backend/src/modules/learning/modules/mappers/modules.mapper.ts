@@ -16,11 +16,22 @@ export class ModulesMapper {
       isActive: module.isActive,
       createdAt: module.createdAt,
       updatedAt: module.updatedAt,
-      lessons: module.lessons.map((lesson) => ({
-        id: lesson.id,
-        title: lesson.title,
-        sortOrder: lesson.sortOrder,
-      })),
+      lessons: (module.lessons ?? []).map((lesson) => {
+        const progress = lesson.progress?.[0] ?? null;
+
+        return {
+          id: lesson.id,
+          title: lesson.title,
+          sortOrder: lesson.sortOrder,
+          progress: progress
+            ? {
+                status: progress.status,
+                lastScore: progress.lastScore,
+                completedAt: progress.completedAt,
+              }
+            : null,
+        };
+      }),
     };
   }
 

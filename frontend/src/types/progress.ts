@@ -65,3 +65,40 @@ export type LearningHistoryItem = {
   startedAt: string;
   finishedAt: string | null;
 };
+
+export type AttemptOption = {
+  id: string;
+  text: string;
+};
+
+export type AttemptAnswer = {
+  questionId: string;
+  questionText: string;
+  explanation: string | null;
+  isCorrect: boolean;
+  selectedOption: AttemptOption;
+  correctOption: AttemptOption | null;
+};
+
+export type AttemptDetail = {
+  id: string;
+  lesson: {
+    id: string;
+    title: string;
+  };
+  module: {
+    id: string;
+    title: string;
+  };
+  category: {
+    id: string;
+    title: string;
+  };
+  score: number;
+  correctAnswers: number;
+  wrongAnswers: number;
+  totalQuestions: number;
+  startedAt: string;
+  finishedAt: string | null;
+  answers: AttemptAnswer[];
+};

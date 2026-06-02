@@ -1,6 +1,7 @@
 import {
   MediaAssetSourceType,
   MediaAssetStatus,
+  MediaAssetPlacement,
   MediaAssetType,
 } from "@prisma/client";
 import { IsEnum, IsObject, IsOptional, IsString, IsUrl } from "class-validator";
@@ -25,6 +26,10 @@ export class CreateAdminMediaAssetDto {
   @IsOptional()
   @IsEnum(MediaAssetSourceType)
   sourceType?: MediaAssetSourceType;
+
+  @IsOptional()
+  @IsEnum(MediaAssetPlacement)
+  placement?: MediaAssetPlacement;
 
   @IsOptional()
   @IsEnum(MediaAssetStatus)

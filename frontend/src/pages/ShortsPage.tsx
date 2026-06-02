@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { AuthResponse } from "../types/auth";
 import { ROUTES } from "../routes/paths";
+import { getResourceMediaAssets, type ResourceMediaAsset } from "../api/resources";
 
 type ShortsPageProps = {
   session: AuthResponse | null;
@@ -133,6 +134,46 @@ const VIDEOS_DATA: LegalShortVideo[] = [
   }
 ];
 
+function toShortVideo(asset: ResourceMediaAsset): LegalShortVideo {
+  const metadata = asset.metadata as { shorts?: Record<string, unknown> } | null;
+  const shorts = metadata?.shorts ?? {};
+  const quiz = shorts.quiz as LegalShortVideo["quiz"] | undefined;
+
+  return {
+    id: asset.id,
+    category: normalizeShortCategory(shorts.category),
+    title: asset.title || "Video ngan Lexi",
+    author: typeof shorts.author === "string" ? shorts.author : "Lexi",
+    description:
+      typeof shorts.description === "string"
+        ? shorts.description
+        : "Video ngan phap ly duoc tai len tu khu quan tri Lexi.",
+    videoUrl: asset.url,
+    likes: toNumber(shorts.likes, 0),
+    commentsCount: toNumber(shorts.commentsCount, 0),
+    bookmarksCount: toNumber(shorts.bookmarksCount, 0),
+    quiz:
+      quiz && Array.isArray(quiz.options)
+        ? quiz
+        : {
+            question: "Video nay dang duoc xuat ban len Lexi Shorts. Ban co muon luu lai de xem lai sau khong?",
+            options: ["Co", "Khong", "De sau"],
+            correctIndex: 0,
+            explanation: "Lexi se bo sung cau hoi tuong tac rieng cho tung video trong buoc bien tap tiep theo.",
+          },
+  };
+}
+
+function normalizeShortCategory(value: unknown): LegalShortVideo["category"] {
+  return value === "fraud" || value === "civil" || value === "trivia"
+    ? value
+    : "trivia";
+}
+
+function toNumber(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
 export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) => {
   const [activeCategory, setActiveCategory] = useState<"all" | "fraud" | "civil" | "trivia">("all");
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -145,11 +186,51 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
   const [userCoins, setUserCoins] = useState(session?.user?.profile?.xp ? Math.floor(session.user.profile.xp / 3) : 450);
   const [userXp, setUserXp] = useState(session?.user?.profile?.xp || 1200);
   const [showRewardToast, setShowRewardToast] = useState(false);
+  const [shortsNotice, setShortsNotice] = useState<string | null>(null);
+  const [uploadedShortVideos, setUploadedShortVideos] = useState<LegalShortVideo[]>([]);
+
+  // Advanced Interactive Video Player States
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isBuffering, setIsBuffering] = useState(true);
+  const [volume, setVolume] = useState(0.8);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!session?.accessToken) {
+      setUploadedShortVideos([]);
+      return;
+    }
+
+    getResourceMediaAssets(session.accessToken, {
+      page: 1,
+      limit: 50,
+      placement: "SHORTS",
+    })
+      .then((response) => {
+        if (isMounted) {
+          setUploadedShortVideos(response.items.map(toShortVideo));
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          showShortsNotice("Khong the tai danh sach video ngan tu server.");
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session?.accessToken]);
+
+  const videos = uploadedShortVideos.length > 0 ? uploadedShortVideos : VIDEOS_DATA;
+
   // Filter videos
-  const filteredVideos = VIDEOS_DATA.filter(
+  const filteredVideos = videos.filter(
     (v) => activeCategory === "all" || v.category === activeCategory
   );
 
@@ -159,6 +240,7 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.muted = isMuted;
+      videoRef.current.volume = volume;
       if (isPlaying) {
         videoRef.current.play().catch(() => {
           // Auto-play might be blocked by browser on first load
@@ -167,14 +249,48 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
         videoRef.current.pause();
       }
     }
-  }, [isPlaying, isMuted, currentVideoIndex, activeCategory]);
+  }, [isPlaying, isMuted, volume, currentVideoIndex, activeCategory]);
 
-  // Reset quiz state when video changes
+  // Reset quiz state and video stats when video changes
   useEffect(() => {
     setSelectedAnswer(null);
     setIsQuizSubmitted(false);
     setIsPlaying(true);
+    setCurrentTime(0);
+    setDuration(0);
+    setIsBuffering(true);
   }, [currentVideoIndex, activeCategory]);
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+      setIsBuffering(false);
+    }
+  };
+
+  const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (videoRef.current && duration > 0) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const percentage = Math.min(Math.max(clickX / rect.width, 0), 1);
+      const newTime = percentage * duration;
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    if (isNaN(time)) return "0:00";
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
 
   const fullName = session?.user?.profile?.fullName || session?.user?.email || "Học viên";
   const initials = fullName
@@ -242,6 +358,20 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
     }
   }
 
+  function showShortsNotice(message: string) {
+    setShortsNotice(message);
+    window.setTimeout(() => setShortsNotice(null), 3000);
+  }
+
+  async function handleShareCurrentVideo() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      showShortsNotice("Đã sao chép liên kết Shorts.");
+    } catch {
+      showShortsNotice("Không thể sao chép liên kết. Vui lòng sao chép thủ công từ thanh địa chỉ.");
+    }
+  }
+
   return (
     <div className="lexi-shorts-root">
       
@@ -252,65 +382,14 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
         </div>
       )}
 
+      {shortsNotice ? (
+        <div className="lexi-reward-toast">
+          <span>{shortsNotice}</span>
+        </div>
+      ) : null}
+
       <div className="lexi-shorts-container">
         
-        {/* =======================================================
-           LEFT SIDEBAR NAVIGATION
-           ======================================================= */}
-        <aside className="lexi-shorts-sidebar">
-          <div className="lexi-sidebar-logo-block">
-            <span className="lexi-sidebar-logo">Lexi</span>
-          </div>
-
-          <nav className="lexi-sidebar-menu">
-            <a href="/" onClick={(e) => { e.preventDefault(); onNavigate(ROUTES.home); }}>
-              <LayoutDashboard size={18} />
-              <span>Tổng quan</span>
-            </a>
-            <a href="/modules" onClick={(e) => { e.preventDefault(); onNavigate(ROUTES.modules); }}>
-              <Compass size={18} />
-              <span>Khóa học của tôi</span>
-            </a>
-            <a href="/review" onClick={(e) => { e.preventDefault(); onNavigate(ROUTES.review); }}>
-              <Award size={18} />
-              <span>Thành tích</span>
-            </a>
-            <a href="#history" onClick={(e) => e.preventDefault()}>
-              <History size={18} />
-              <span>Lịch sử học</span>
-            </a>
-            <a href="/shorts" className="active" onClick={(e) => { e.preventDefault(); onNavigate(ROUTES.shorts); }}>
-              <Tv size={18} />
-              <span>Video Ngắn</span>
-            </a>
-            <a href="/game" onClick={(e) => { e.preventDefault(); onNavigate(ROUTES.game); }}>
-              <Gamepad2 size={18} />
-              <span>Đấu trường Game</span>
-            </a>
-            <a href="/settings" onClick={(e) => { e.preventDefault(); onNavigate(ROUTES.settings); }}>
-              <Settings size={18} />
-              <span>Cài đặt</span>
-            </a>
-          </nav>
-
-          <div className="lexi-sidebar-footer">
-            <div className="lexi-sidebar-user-card">
-              <div className="lexi-sidebar-avatar">{initials}</div>
-              <div className="lexi-sidebar-user-info">
-                <strong>{fullName}</strong>
-                <span>Cấp độ 12 • Hạng Vàng</span>
-              </div>
-            </div>
-
-            <button 
-              className="lexi-sidebar-btn-premium"
-              onClick={() => alert("Tính năng Nâng cấp Premium sắp ra mắt!")}
-            >
-              Nâng cấp Premium
-            </button>
-          </div>
-        </aside>
-
         {/* =======================================================
            CENTER MAIN VIDEO PANEL
            ======================================================= */}
@@ -339,139 +418,11 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
           </header>
 
           {/* Central Workspace layout */}
+          {/* Central Workspace layout */}
           <div className="lexi-shorts-workspace">
             
-            {/* 1. vertical Video Player column */}
-            <div className="lexi-video-feed-column">
-              
-              {currentVideo ? (
-                <div className="lexi-shorts-player-card">
-                  
-                  {/* HTML5 video tag */}
-                  <video
-                    ref={videoRef}
-                    src={currentVideo.videoUrl}
-                    className="lexi-shorts-video-element"
-                    loop
-                    playsInline
-                    onClick={handleTogglePlay}
-                  />
-
-                  {/* Top action overlays: sound & loading indication */}
-                  <div className="lexi-shorts-top-overlay">
-                    <button 
-                      className="lexi-btn-player-control" 
-                      onClick={handleToggleMute}
-                      title={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}
-                    >
-                      {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                    </button>
-                    
-                    <span className="lexi-video-category-tag">
-                      {currentVideo.category === "fraud" ? "🛡️ Lừa Đảo" : currentVideo.category === "civil" ? "🏠 Dân Sự" : "💡 Mẹo Luật"}
-                    </span>
-                  </div>
-
-                  {/* Big Play/Pause indicator overlay */}
-                  {!isPlaying && (
-                    <div className="lexi-player-paused-icon" onClick={handleTogglePlay}>
-                      <Play size={44} className="fill-white stroke-white" />
-                    </div>
-                  )}
-
-                  {/* Side floating control buttons overlay */}
-                  <div className="lexi-shorts-right-actions">
-                    
-                    {/* Like button */}
-                    <button 
-                      className={`lexi-float-action ${likedVideos[currentVideo.id] ? "liked" : ""}`}
-                      onClick={() => handleToggleLike(currentVideo.id)}
-                    >
-                      <Heart size={22} className={likedVideos[currentVideo.id] ? "fill-red stroke-red" : ""} />
-                      <span>{currentVideo.likes + (likedVideos[currentVideo.id] ? 1 : 0)}</span>
-                    </button>
-
-                    {/* Bookmark */}
-                    <button 
-                      className={`lexi-float-action ${bookmarkedVideos[currentVideo.id] ? "bookmarked" : ""}`}
-                      onClick={() => handleToggleBookmark(currentVideo.id)}
-                    >
-                      <Bookmark size={22} className={bookmarkedVideos[currentVideo.id] ? "fill-gold stroke-gold" : ""} />
-                      <span>{currentVideo.bookmarksCount + (bookmarkedVideos[currentVideo.id] ? 1 : 0)}</span>
-                    </button>
-
-                    {/* Comment */}
-                    <button 
-                      className="lexi-float-action"
-                      onClick={() => alert("Tính năng xem bình luận video sắp ra mắt!")}
-                    >
-                      <MessageCircle size={22} />
-                      <span>{currentVideo.commentsCount}</span>
-                    </button>
-
-                    {/* Share */}
-                    <button 
-                      className="lexi-float-action"
-                      onClick={() => {
-                        navigator.clipboard.writeText(window.location.href);
-                        alert("Đã sao chép liên kết video Lexi Shorts!");
-                      }}
-                    >
-                      <Share2 size={22} />
-                      <span>Chia sẻ</span>
-                    </button>
-
-                  </div>
-
-                  {/* Bottom Text Metadata overlay */}
-                  <div className="lexi-shorts-bottom-meta">
-                    <div className="lexi-shorts-meta-header">
-                      <div className="lexi-shorts-author-avatar">L</div>
-                      <div className="lexi-shorts-author-info">
-                        <strong>@{currentVideo.author}</strong>
-                        <span>Chuyên gia Luật học</span>
-                      </div>
-                    </div>
-                    
-                    <h4 className="lexi-shorts-video-title">{currentVideo.title}</h4>
-                    <p className="lexi-shorts-video-desc">{currentVideo.description}</p>
-                    
-                    {/* Spinning vinyl music representation */}
-                    <div className="lexi-music-vinyl-wrapper">
-                      <div className="lexi-vinyl-disc-spin"></div>
-                      <span className="lexi-music-track-text">Lexi Original Sound - Báo Động Pháp Lý</span>
-                    </div>
-                  </div>
-
-                  {/* Dynamic absolute custom thin video progress bar */}
-                  <div className="lexi-video-progress-tracker-line">
-                    <span className="lexi-video-progress-line-active" style={{ width: isPlaying ? "100%" : "30%" }}></span>
-                  </div>
-
-                </div>
-              ) : (
-                <div className="lexi-no-videos-layout">
-                  <Tv size={48} />
-                  <p>Không có video nào trong danh mục này.</p>
-                </div>
-              )}
-
-              {/* Navigation overlay controls for switching feed slides */}
-              <div className="lexi-feed-switches">
-                <button className="lexi-btn-slide-switch" onClick={handlePrevVideo}>
-                  ▲ Video trước
-                </button>
-                <button className="lexi-btn-slide-switch active" onClick={handleNextVideo}>
-                  ▼ Video kế tiếp
-                </button>
-              </div>
-
-            </div>
-
-            {/* 2. Interactive Gamified Quiz & Categories side panel */}
-            <div className="lexi-shorts-right-sidebar-panel">
-              
-              {/* Category switches box */}
+            {/* 1. Left sidebar column: Categories */}
+            <div className="lexi-shorts-left-panel">
               <div className="panel lexi-shorts-categories-box">
                 <h3>Chuyên mục pháp lý</h3>
                 <div className="lexi-shorts-cat-triggers">
@@ -501,6 +452,202 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
                   </button>
                 </div>
               </div>
+            </div>
+
+            {/* 2. vertical Video Player column (Middle) */}
+            <div className="lexi-video-feed-column">
+              
+              {currentVideo ? (
+                <div className="lexi-shorts-player-wrapper">
+                  <div className="lexi-shorts-player-card">
+                    
+                    {/* HTML5 video tag */}
+                    <video
+                      ref={videoRef}
+                      src={currentVideo.videoUrl}
+                      className="lexi-shorts-video-element"
+                      loop
+                      playsInline
+                      onClick={handleTogglePlay}
+                      onTimeUpdate={handleTimeUpdate}
+                      onLoadedMetadata={handleLoadedMetadata}
+                      onWaiting={() => setIsBuffering(true)}
+                      onPlaying={() => setIsBuffering(false)}
+                      onCanPlay={() => setIsBuffering(false)}
+                    />
+
+                    {/* Buffering overlay */}
+                    {isBuffering && (
+                      <div className="lexi-video-buffering-overlay">
+                        <div className="lexi-cyber-spinner"></div>
+                        <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--color-primary)" }}>Đang tải video...</span>
+                      </div>
+                    )}
+
+                    {/* Top action overlays: sound slider & category tag */}
+                    <div className="lexi-shorts-top-overlay">
+                      <div 
+                        className="lexi-volume-control-group"
+                        onMouseEnter={() => setShowVolumeSlider(true)}
+                        onMouseLeave={() => setShowVolumeSlider(false)}
+                      >
+                        <button 
+                          className="lexi-btn-player-control" 
+                          onClick={handleToggleMute}
+                          title={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}
+                        >
+                          {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                        </button>
+                        <div className={`lexi-volume-slider-wrapper ${showVolumeSlider ? "visible" : ""}`}>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            value={volume}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              setVolume(val);
+                              if (val > 0) setIsMuted(false);
+                            }}
+                            className="lexi-volume-slider"
+                          />
+                        </div>
+                      </div>
+                      
+                      <span className="lexi-video-category-tag">
+                        {currentVideo.category === "fraud" ? "🛡️ Lừa Đảo" : currentVideo.category === "civil" ? "🏠 Dân Sự" : "💡 Mẹo Luật"}
+                      </span>
+                    </div>
+
+                    {/* Big Play/Pause indicator overlay */}
+                    {!isPlaying && (
+                      <div className="lexi-player-paused-icon" onClick={handleTogglePlay}>
+                        <Play size={44} className="fill-white stroke-white" />
+                      </div>
+                    )}
+
+                    {/* Absolute Time Badge indicator */}
+                    <div className="lexi-player-time-badge">
+                      <span>{formatTime(currentTime)}</span>
+                      <span style={{ opacity: 0.5 }}>/</span>
+                      <span>{formatTime(duration)}</span>
+                    </div>
+
+                    {/* Dynamic absolute custom thin video progress bar */}
+                    <div 
+                      className="lexi-video-progress-tracker-line"
+                      onClick={handleProgressBarClick}
+                    >
+                      <div 
+                        className="lexi-video-progress-line-active" 
+                        style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                      ></div>
+                      <div 
+                        className="lexi-video-progress-handle"
+                        style={{ left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                      ></div>
+                    </div>
+
+                  </div>
+
+                  {/* Side floating control buttons overlay */}
+                  <div className="lexi-shorts-right-actions">
+                    
+                    {/* Like button */}
+                    <button 
+                      className={`lexi-float-action ${likedVideos[currentVideo.id] ? "liked" : ""}`}
+                      onClick={() => handleToggleLike(currentVideo.id)}
+                      title="Thích video"
+                    >
+                      <Heart size={22} className={likedVideos[currentVideo.id] ? "fill-red stroke-red" : ""} />
+                      <span>{currentVideo.likes + (likedVideos[currentVideo.id] ? 1 : 0)}</span>
+                    </button>
+
+                    {/* Bookmark */}
+                    <button 
+                      className={`lexi-float-action ${bookmarkedVideos[currentVideo.id] ? "bookmarked" : ""}`}
+                      onClick={() => handleToggleBookmark(currentVideo.id)}
+                      title="Lưu video"
+                    >
+                      <Bookmark size={22} className={bookmarkedVideos[currentVideo.id] ? "fill-gold stroke-gold" : ""} />
+                      <span>{currentVideo.bookmarksCount + (bookmarkedVideos[currentVideo.id] ? 1 : 0)}</span>
+                    </button>
+
+                    {/* Comment */}
+                    <button 
+                      className="lexi-float-action"
+                      onClick={() => showShortsNotice("Chức năng bình luận video chưa kết nối trong bản thử nghiệm này.")}
+                      title="Bình luận"
+                    >
+                      <MessageCircle size={22} />
+                      <span>{currentVideo.commentsCount}</span>
+                    </button>
+
+                    {/* Share */}
+                    <button 
+                      className="lexi-float-action"
+                      onClick={handleShareCurrentVideo}
+                      title="Chia sẻ liên kết"
+                    >
+                      <Share2 size={22} />
+                      <span>Chia sẻ</span>
+                    </button>
+
+                  </div>
+                </div>
+              ) : (
+                <div className="lexi-no-videos-layout">
+                  <Tv size={48} />
+                  <p>Không có video nào trong danh mục này.</p>
+                </div>
+              )}
+
+              {/* Navigation overlay controls for switching feed slides */}
+              <div className="lexi-feed-switches">
+                <button className="lexi-btn-slide-switch" onClick={handlePrevVideo}>
+                  ▲ Video trước
+                </button>
+                <button className="lexi-btn-slide-switch active" onClick={handleNextVideo}>
+                  ▼ Video kế tiếp
+                </button>
+              </div>
+
+            </div>
+
+            {/* 3. Interactive Gamified Quiz & Details column (Right) */}
+            <div className="lexi-shorts-right-sidebar-panel">
+              
+              {/* 3.1. Now Playing / Video Info details card */}
+              {currentVideo && (
+                <div className="panel lexi-shorts-info-card">
+                  <div className="lexi-shorts-info-header">
+                    <div className="lexi-shorts-info-avatar">
+                      {currentVideo.author.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="lexi-shorts-info-author">
+                      <div className="lexi-shorts-info-author-name">
+                        <strong>@{currentVideo.author}</strong>
+                        <span className="lexi-verified-badge" title="Tác giả được xác minh">✓</span>
+                      </div>
+                      <span>Chuyên gia Luật học • Cộng tác viên Lexi</span>
+                    </div>
+                    <span className="lexi-video-category-tag-badge">
+                      {currentVideo.category === "fraud" ? "🛡️ Lừa Đảo" : currentVideo.category === "civil" ? "🏠 Dân Sự" : "💡 Mẹo Luật"}
+                    </span>
+                  </div>
+
+                  <h3 className="lexi-shorts-info-title">{currentVideo.title}</h3>
+                  <p className="lexi-shorts-info-desc">{currentVideo.description}</p>
+
+                  <div className="lexi-shorts-info-music">
+                    <div className="lexi-vinyl-disc-spin"></div>
+                    <span className="lexi-music-track-text" title="Lexi Original Sound - Báo Động Pháp Lý">
+                      Lexi Original Sound - Báo Động Pháp Lý
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Gamified Interactive Mini-Quiz Box */}
               {currentVideo && (

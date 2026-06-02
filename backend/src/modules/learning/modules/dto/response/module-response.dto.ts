@@ -7,6 +7,11 @@ export class ModuleLessonResponseDto {
   id: string;
   title: string;
   sortOrder: number;
+  progress: {
+    status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+    lastScore: number | null;
+    completedAt: Date | null;
+  } | null;
 }
 
 export class ModuleResponseDto {

@@ -2,6 +2,7 @@ import type { PropsWithChildren } from "react";
 import { ROUTES } from "../../routes/paths";
 import type { AuthResponse } from "../../types/auth";
 import { Bell, Settings, LogOut } from "lucide-react";
+import { LegalDisclaimer } from "./LegalDisclaimer";
 
 type AppLayoutProps = PropsWithChildren<{
   session: AuthResponse | null;
@@ -59,11 +60,9 @@ export function AppLayout({
                 <span>Khóa học</span>
               </a>
               <a 
-                href="#community" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert("Tính năng Cộng đồng sẽ sớm ra mắt!");
-                }}
+                href={ROUTES.community} 
+                className={currentPath === ROUTES.community ? "active" : ""} 
+                onClick={handleNavigate(ROUTES.community)}
               >
                 <span>Cộng đồng</span>
               </a>
@@ -88,6 +87,13 @@ export function AppLayout({
               >
                 <span>Đấu trường</span>
               </a>
+              <a
+                href={ROUTES.rewards}
+                className={currentPath === ROUTES.rewards ? "active" : ""}
+                onClick={handleNavigate(ROUTES.rewards)}
+              >
+                <span>Rewards</span>
+              </a>
             </>
           ) : (
             <a href={ROUTES.login} className="active" onClick={handleNavigate(ROUTES.login)}>
@@ -100,15 +106,15 @@ export function AppLayout({
           <div className="topbar-right-widgets">
             <button 
               className="btn-upgrade-pro"
-              onClick={() => alert("Chức năng Nâng cấp tài khoản Pro sắp ra mắt!")}
+              onClick={handleNavigate(ROUTES.subscription)}
             >
               Nâng cấp Pro
             </button>
             
             <button 
-              className="icon-btn" 
+              className={`icon-btn ${currentPath === ROUTES.notifications ? "active" : ""}`} 
               title="Thông báo"
-              onClick={() => alert("Bạn chưa có thông báo mới.")}
+              onClick={handleNavigate(ROUTES.notifications)}
             >
               <Bell size={18} />
             </button>
@@ -148,6 +154,15 @@ export function AppLayout({
           </div>
         )}
       </header>
+      <LegalDisclaimer
+        onReportContent={() => {
+          window.sessionStorage.setItem(
+            "lexiFeedbackPath",
+            window.location.pathname
+          );
+          onNavigate(ROUTES.feedback);
+        }}
+      />
       {children}
     </div>
   );

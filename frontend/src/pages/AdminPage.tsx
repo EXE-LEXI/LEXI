@@ -1,14 +1,47 @@
-import type { FormEvent, ReactNode } from "react";
-import { DownloadCloud, RefreshCcw, Sparkles } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import type {
-  AdminCrawlResponse,
   AdminDeliveryLog,
   AdminDraft,
   AdminLesson,
   AdminMediaAsset,
   AdminSource,
+  AdminQuestion
 } from "../api/admin";
-import { formatDate } from "../utils/format";
+import {
+  getAdminQuestions,
+  deleteAdminQuestion
+} from "../api/admin";
+import type { AuthResponse } from "../types/auth";
+
+// Import modularized sub-components
+import { AdminSidebar } from "../components/admin/AdminSidebar";
+import { AdminHeader } from "../components/admin/AdminHeader";
+import { DashboardTab } from "../components/admin/DashboardTab";
+import { LessonsTab } from "../components/admin/LessonsTab";
+import { QuizzesTab } from "../components/admin/QuizzesTab";
+import { UsersTab } from "../components/admin/UsersTab";
+import { MediaTab } from "../components/admin/MediaTab";
+import { LogsTab } from "../components/admin/LogsTab";
+import { SettingsTab } from "../components/admin/SettingsTab";
+import { LessonDrawer } from "../components/admin/LessonDrawer";
+import { QuestionDrawer } from "../components/admin/QuestionDrawer";
+import { SourcesTab } from "../components/admin/SourcesTab";
+import { AiDraftsTab } from "../components/admin/AiDraftsTab";
+import { FeedbackReportsTab } from "../components/admin/FeedbackReportsTab";
+import { VouchersTab } from "../components/admin/VouchersTab";
+
+type AdminTabType =
+  | "dashboard"
+  | "lessons"
+  | "quizzes"
+  | "users"
+  | "media"
+  | "logs"
+  | "settings"
+  | "sources"
+  | "aiDrafts"
+  | "feedback"
+  | "vouchers";
 
 type AdminPageProps = {
   lessons: AdminLesson[];
@@ -18,324 +51,292 @@ type AdminPageProps = {
   deliveryLogs: AdminDeliveryLog[];
   isLoading: boolean;
   error: string | null;
-  crawlResult: AdminCrawlResponse | null;
-  onCrawlLegalSources: (payload: {
-    urls: string[];
-    moduleId?: string | null;
-    generateDrafts?: boolean;
-    questionCount?: number;
-  }) => Promise<void>;
-  onProcessLegalSources: (payload: {
-    moduleId?: string | null;
-    limit?: number;
-    questionCount?: number;
-  }) => Promise<void>;
+  session?: AuthResponse | null;
+  onNavigate?: (path: string) => void;
+  onLogout?: () => void;
 };
 
 export function AdminPage({
-  lessons,
+  lessons: initialLessons,
   sources,
   drafts,
-  mediaAssets,
+  mediaAssets: initialMedia,
   deliveryLogs,
   isLoading,
-  error,
-  crawlResult,
-  onCrawlLegalSources,
-  onProcessLegalSources,
+  error: pageError,
+  session,
+  onNavigate,
+  onLogout,
 }: AdminPageProps) {
-  return (
-    <main className="page">
-      <p className="eyebrow">Admin Forge</p>
-      <h1>Dieu hanh noi dung</h1>
-      {isLoading ? <p className="notice">Loading admin console...</p> : null}
-      {error ? <p className="error-text">{error}</p> : null}
+  // Navigation tabs
+  const [activeTab, setActiveTab] = useState<AdminTabType>("dashboard");
 
-      <section className="admin-action-grid">
-        <ActionCard
-          title="Cao va tao draft"
-          description="Nhap cac URL van ban phap luat, he thong se luu nguon vao MongoDB va tao lesson draft bang AI."
-        >
-          <AdminCrawlForm onSubmit={onCrawlLegalSources} isLoading={isLoading} />
-        </ActionCard>
+  // Local state for interactive updates
+  const [localLessons, setLocalLessons] = useState<AdminLesson[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [questionTypeFilter, setQuestionTypeFilter] = useState("all");
+  const [isQuestionDrawerOpen, setIsQuestionDrawerOpen] = useState(false);
 
-        <ActionCard
-          title="Xu ly nguon da crawl"
-          description="Lay tat ca legal source da crawl ma chua co draft va tao ban nhap AI moi."
-        >
-          <AdminProcessForm onSubmit={onProcessLegalSources} isLoading={isLoading} />
-        </ActionCard>
-      </section>
+  // Drawer edit states
+  const [editingLesson, setEditingLesson] = useState<AdminLesson | null>(null);
 
-      {crawlResult ? (
-        <>
-          <section className="admin-result-strip">
-            <div>
-              <strong>{crawlResult.sources.length}</strong>
-              <span>Sources</span>
-            </div>
-            <div>
-              <strong>{crawlResult.drafts.length}</strong>
-              <span>Drafts</span>
-            </div>
-            <div>
-              <strong>{crawlResult.errors.length}</strong>
-              <span>Errors</span>
-            </div>
-          </section>
-          {crawlResult.errors.length ? (
-            <section className="panel admin-error-panel">
-              <h2>Crawl errors</h2>
-              <ul className="plain-list admin-list">
-                {crawlResult.errors.map((item) => (
-                  <li key={item.url}>
-                    <strong>{item.url}</strong>
-                    <span>{item.message}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-        </>
-      ) : null}
+  // Quiz builder states
+  const [selectedLessonIdForQuiz, setSelectedLessonIdForQuiz] = useState<string>("");
+  const [quizQuestions, setQuizQuestions] = useState<AdminQuestion[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  const [adminNotice, setAdminNotice] = useState<string | null>(null);
+  const [editingQuestion, setEditingQuestion] = useState<{
+    id: string;
+    questionText: string;
+    optionA: string;
+    optionB: string;
+    optionC: string;
+    optionD: string;
+    correctOptionIndex: number;
+    explanation: string;
+  } | null>(null);
 
-      <section className="admin-grid">
-        <AdminPanel title="Lessons">
-          {lessons.map((item) => (
-            <li key={item.id}>
-              <strong>{item.title}</strong>
-              <span>{item.reviewStatus ?? (item.isActive ? "ACTIVE" : "INACTIVE")}</span>
-            </li>
-          ))}
-        </AdminPanel>
+  // Sync initial props to state
+  useEffect(() => {
+    setLocalLessons(initialLessons);
+  }, [initialLessons]);
 
-        <AdminPanel title="Legal Sources">
-          {sources.map((item) => (
-            <li key={item.id}>
-              <strong>{item.title}</strong>
-              <span>{item.documentNo ?? item.crawlStatus ?? "-"}</span>
-            </li>
-          ))}
-        </AdminPanel>
+  // Load questions when selected lesson changes
+  useEffect(() => {
+    if (selectedLessonIdForQuiz && session) {
+      void fetchQuestions(selectedLessonIdForQuiz);
+    } else {
+      setQuizQuestions([]);
+    }
+  }, [selectedLessonIdForQuiz, session]);
 
-        <AdminPanel title="AI Drafts">
-          {drafts.map((item) => (
-            <li key={item.id}>
-              <strong>{item.title}</strong>
-              <span>{item.status ?? "-"}</span>
-            </li>
-          ))}
-        </AdminPanel>
+  const token = session?.accessToken || "";
 
-        <AdminPanel title="Media Assets">
-          {mediaAssets.map((item) => (
-            <li key={item.id}>
-              <strong>{item.title ?? item.id}</strong>
-              <span>{item.status ?? item.type ?? "-"}</span>
-            </li>
-          ))}
-        </AdminPanel>
+  // ── QUIZ QUESTIONS LOGIC ──
+  const fetchQuestions = async (lessonId: string) => {
+    setIsLoadingQuestions(true);
+    try {
+      const data = await getAdminQuestions(token, lessonId);
+      setQuizQuestions(data || []);
+    } catch (err) {
+      console.error("Lỗi lấy danh sách câu hỏi:", err);
+    } finally {
+      setIsLoadingQuestions(false);
+    }
+  };
 
-        <AdminPanel title="Notification Logs">
-          {deliveryLogs.map((item) => (
-            <li key={item.id}>
-              <strong>{item.type ?? item.id}</strong>
-              <span>
-                {item.status ?? "-"} {item.createdAt ? formatDate(item.createdAt) : ""}
-              </span>
-            </li>
-          ))}
-        </AdminPanel>
-      </section>
-    </main>
-  );
-}
-
-function AdminCrawlForm({
-  onSubmit,
-  isLoading,
-}: {
-  onSubmit: (payload: {
-    urls: string[];
-    moduleId?: string | null;
-    generateDrafts?: boolean;
-    questionCount?: number;
-  }) => Promise<void>;
-  isLoading: boolean;
-}) {
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const urls = String(formData.get("urls") ?? "")
-      .split(/\r?\n/)
-      .map((value) => value.trim())
-      .filter(Boolean);
-
-    await onSubmit({
-      urls,
-      moduleId: String(formData.get("moduleId") ?? "").trim() || undefined,
-      generateDrafts: formData.get("generateDrafts") === "on",
-      questionCount: Number.parseInt(String(formData.get("questionCount") ?? "3"), 10),
+  const handleEditQuestion = (q: AdminQuestion) => {
+    setEditingQuestion({
+      id: q.id,
+      questionText: q.text,
+      optionA: q.options[0]?.text || "",
+      optionB: q.options[1]?.text || "",
+      optionC: q.options[2]?.text || "",
+      optionD: q.options[3]?.text || "",
+      correctOptionIndex: q.options.findIndex((o: any) => o.isCorrect) >= 0 ? q.options.findIndex((o: any) => o.isCorrect) : 0,
+      explanation: q.explanation || ""
     });
-    event.currentTarget.reset();
-  }
+    setIsQuestionDrawerOpen(true);
+  };
+
+  const handleDeleteQuestion = async (qId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa câu hỏi này?")) return;
+
+    try {
+      await deleteAdminQuestion(token, qId);
+      setQuizQuestions(prev => prev.filter(q => q.id !== qId));
+      setAdminNotice("Đã xóa câu hỏi.");
+    } catch (err: any) {
+      setAdminNotice("Không thể xóa câu hỏi: " + (err.message || err));
+    }
+  };
+
+  const handleSaveQuestion = (savedQuestion: AdminQuestion, isEdit: boolean) => {
+    if (isEdit) {
+      setQuizQuestions(prev => prev.map(q => q.id === savedQuestion.id ? savedQuestion : q));
+    } else {
+      setQuizQuestions(prev => [...prev, savedQuestion]);
+    }
+  };
+
+  const handleEditLesson = (lesson: AdminLesson) => {
+    setEditingLesson({ ...lesson });
+  };
+
+  const handleSaveLesson = (updatedLesson: AdminLesson) => {
+    setLocalLessons(prev =>
+      prev.map(l => l.id === updatedLesson.id ? updatedLesson : l)
+    );
+  };
+
+  const handleSetQuizForm = (form: any) => {
+    setEditingQuestion(form);
+    setIsQuestionDrawerOpen(true);
+  };
+
+  const handleAddQuestion = () => {
+    setEditingQuestion(null);
+    setIsQuestionDrawerOpen(true);
+  };
 
   return (
-    <form className="admin-action-form" onSubmit={handleSubmit}>
-      <label>
-        URLs
-        <textarea
-          name="urls"
-          rows={5}
-          placeholder={"https://...\\nhttps://..."}
-          required
-          disabled={isLoading}
+    <div className="lexi-cms-root">
+      
+      {/* SIDEBAR NAVIGATION */}
+      <AdminSidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        onLogout={onLogout} 
+      />
+
+      {/* MAIN WORKSPACE CONTENT AREA */}
+      <main className="lexi-cms-main">
+        
+        {/* Top Header Row */}
+        <AdminHeader 
+          activeTab={activeTab} 
+          searchQuery={searchQuery} 
+          setSearchQuery={setSearchQuery} 
+          session={session} 
+          onNavigate={onNavigate} 
         />
-      </label>
-      <div className="admin-form-row">
-        <label>
-          Module ID
-          <input name="moduleId" placeholder="module-1" disabled={isLoading} />
-        </label>
-        <label>
-          Question count
-          <input
-            name="questionCount"
-            type="number"
-            min={1}
-            max={10}
-            defaultValue={3}
-            disabled={isLoading}
+
+        {adminNotice ? (
+          <div className="lexi-inline-notice">
+            <span>{adminNotice}</span>
+          </div>
+        ) : null}
+
+        {/* Dynamic Panel Content based on Active Tab */}
+        {activeTab === "dashboard" && (
+          <DashboardTab 
+            lessons={localLessons} 
+            sources={sources}
+            drafts={drafts}
+            mediaAssets={initialMedia}
+            deliveryLogs={deliveryLogs}
+            setActiveTab={setActiveTab} 
+            setSelectedLessonIdForQuiz={setSelectedLessonIdForQuiz} 
+            setQuizForm={handleSetQuizForm} 
           />
-        </label>
-      </div>
-      <label className="admin-check">
-        <input
-          name="generateDrafts"
-          type="checkbox"
-          defaultChecked
-          disabled={isLoading}
-        />
-        Tao draft ngay
-      </label>
-      <button className="button button-secondary" type="submit" disabled={isLoading}>
-        {isLoading ? (
-          <>
-            <span className="spinner" />
-            Dang tien hanh...
-          </>
-        ) : (
-          <>
-            <DownloadCloud size={16} />
-            Cao noi dung
-          </>
         )}
-      </button>
-    </form>
-  );
-}
 
-function AdminProcessForm({
-  onSubmit,
-  isLoading,
-}: {
-  onSubmit: (payload: {
-    moduleId?: string | null;
-    limit?: number;
-    questionCount?: number;
-  }) => Promise<void>;
-  isLoading: boolean;
-}) {
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    await onSubmit({
-      moduleId: String(formData.get("moduleId") ?? "").trim() || undefined,
-      limit: Number.parseInt(String(formData.get("limit") ?? "20"), 10),
-      questionCount: Number.parseInt(String(formData.get("questionCount") ?? "3"), 10),
-    });
-    event.currentTarget.reset();
-  }
-
-  return (
-    <form className="admin-action-form" onSubmit={handleSubmit}>
-      <div className="admin-form-row">
-        <label>
-          Module ID
-          <input name="moduleId" placeholder="module-1" disabled={isLoading} />
-        </label>
-        <label>
-          Limit
-          <input
-            name="limit"
-            type="number"
-            min={1}
-            max={50}
-            defaultValue={20}
-            disabled={isLoading}
+        {activeTab === "lessons" && (
+          <LessonsTab 
+            lessons={localLessons} 
+            searchQuery={searchQuery} 
+            onEditLesson={handleEditLesson} 
           />
-        </label>
-      </div>
-      <label>
-        Question count
-        <input
-          name="questionCount"
-          type="number"
-          min={1}
-          max={10}
-          defaultValue={3}
-          disabled={isLoading}
-        />
-      </label>
-      <button className="button button-primary" type="submit" disabled={isLoading}>
-        {isLoading ? (
-          <>
-            <span className="spinner" />
-            Dang xu ly...
-          </>
-        ) : (
-          <>
-            <Sparkles size={16} />
-            Xu ly AI
-          </>
         )}
-      </button>
-    </form>
-  );
-}
 
-function ActionCard({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: ReactNode;
-}) {
-  return (
-    <article className="panel admin-action-panel">
-      <h2>
-        <RefreshCcw size={16} />
-        {title}
-      </h2>
-      <p className="admin-action-description">{description}</p>
-      {children}
-    </article>
-  );
-}
+        {activeTab === "quizzes" && (
+          <QuizzesTab 
+            token={token}
+            lessons={localLessons} 
+            quizQuestions={quizQuestions} 
+            selectedLessonIdForQuiz={selectedLessonIdForQuiz} 
+            setSelectedLessonIdForQuiz={setSelectedLessonIdForQuiz} 
+            questionTypeFilter={questionTypeFilter} 
+            setQuestionTypeFilter={setQuestionTypeFilter} 
+            searchQuery={searchQuery} 
+            isLoadingQuestions={isLoadingQuestions} 
+            onEditQuestion={handleEditQuestion} 
+            onDeleteQuestion={handleDeleteQuestion} 
+            onAddQuestion={handleAddQuestion} 
+            onRefreshQuestions={() => fetchQuestions(selectedLessonIdForQuiz)}
+          />
+        )}
 
-function AdminPanel({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <article className="panel">
-      <h2>{title}</h2>
-      <ul className="plain-list admin-list">{children}</ul>
-    </article>
+        {activeTab === "users" && (
+          session ? (
+            <UsersTab
+              token={session.accessToken}
+              searchQuery={searchQuery}
+            />
+          ) : (
+            <p className="form-error">Yêu cầu phiên đăng nhập quản trị viên.</p>
+          )
+        )}
+
+        {activeTab === "media" && (
+          <MediaTab 
+            token={token} 
+            initialMedia={initialMedia} 
+            lessons={localLessons} 
+          />
+        )}
+
+        {activeTab === "feedback" && (
+          session ? (
+            <FeedbackReportsTab
+              token={session.accessToken}
+              searchQuery={searchQuery}
+            />
+          ) : (
+            <p className="form-error">Yêu cầu phiên đăng nhập quản trị viên.</p>
+          )
+        )}
+
+        {activeTab === "vouchers" && (
+          session ? (
+            <VouchersTab token={session.accessToken} />
+          ) : (
+            <p className="form-error">Yêu cầu phiên đăng nhập quản trị viên.</p>
+          )
+        )}
+
+        {activeTab === "logs" && (
+          <LogsTab 
+            deliveryLogs={deliveryLogs} 
+          />
+        )}
+
+        {activeTab === "settings" && (
+          <SettingsTab />
+        )}
+
+        {activeTab === "sources" && (
+          <SourcesTab 
+            token={token} 
+            initialSources={sources} 
+          />
+        )}
+
+        {activeTab === "aiDrafts" && (
+          <AiDraftsTab 
+            token={token} 
+            initialDrafts={drafts} 
+            sources={sources}
+            lessons={localLessons}
+            onLessonCreated={(newLesson) => {
+              setLocalLessons((prev) => [newLesson, ...prev]);
+            }}
+          />
+        )}
+
+      </main>
+
+      {/* Slide-over Side Drawer Question Editor overlay */}
+      {isQuestionDrawerOpen && (
+        <QuestionDrawer 
+          token={token} 
+          selectedLessonIdForQuiz={selectedLessonIdForQuiz} 
+          initialData={editingQuestion} 
+          onClose={() => setIsQuestionDrawerOpen(false)} 
+          onSave={handleSaveQuestion} 
+        />
+      )}
+
+      {/* SLIDE-OVER SIDE DRAWER PANEL (For Lesson Editing) */}
+      {editingLesson && (
+        <LessonDrawer 
+          lesson={editingLesson} 
+          token={token} 
+          onClose={() => setEditingLesson(null)} 
+          onSave={handleSaveLesson} 
+        />
+      )}
+
+    </div>
   );
 }
