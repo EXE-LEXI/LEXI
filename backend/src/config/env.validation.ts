@@ -27,6 +27,30 @@ export function validateEnv(config: EnvConfig) {
     if (!config.CORS_ORIGINS?.trim()) {
       throw new Error("CORS_ORIGINS is required in production");
     }
+
+    const hasGoogleOAuthConfig = [
+      config.GOOGLE_CLIENT_ID,
+      config.GOOGLE_CLIENT_SECRET,
+      config.GOOGLE_CALLBACK_URL,
+      config.FRONTEND_URL,
+    ].some((value) => value?.trim());
+
+    if (hasGoogleOAuthConfig) {
+      const missingGoogleKeys = [
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "GOOGLE_CALLBACK_URL",
+        "FRONTEND_URL",
+      ].filter((key) => !config[key]?.trim());
+
+      if (missingGoogleKeys.length > 0) {
+        throw new Error(
+          `Missing Google OAuth environment variables: ${missingGoogleKeys.join(
+            ", "
+          )}`
+        );
+      }
+    }
   }
 
   return {
@@ -34,6 +58,10 @@ export function validateEnv(config: EnvConfig) {
     NODE_ENV: nodeEnv,
     PORT: port,
     CORS_ORIGINS: config.CORS_ORIGINS ?? "",
+    FRONTEND_URL: config.FRONTEND_URL ?? "",
+    GOOGLE_CLIENT_ID: config.GOOGLE_CLIENT_ID ?? "",
+    GOOGLE_CLIENT_SECRET: config.GOOGLE_CLIENT_SECRET ?? "",
+    GOOGLE_CALLBACK_URL: config.GOOGLE_CALLBACK_URL ?? "",
     LEGAL_SOURCE_CRAWL_ENABLED: config.LEGAL_SOURCE_CRAWL_ENABLED ?? "false",
     LEGAL_SOURCE_CRAWL_CRON: config.LEGAL_SOURCE_CRAWL_CRON ?? "0 2 * * *",
     LEGAL_SOURCE_CRAWL_URLS: config.LEGAL_SOURCE_CRAWL_URLS ?? "",

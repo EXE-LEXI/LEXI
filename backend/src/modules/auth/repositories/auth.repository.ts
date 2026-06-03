@@ -51,6 +51,13 @@ export class AuthRepository {
     });
   }
 
+  findAuthUserByEmail(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email },
+      select: authUserSelect,
+    });
+  }
+
   findActiveUserIdByEmail(email: string) {
     return this.prisma.user.findFirst({
       where: {
@@ -69,6 +76,27 @@ export class AuthRepository {
         profile: {
           create: {
             fullName: dto.fullName,
+          },
+        },
+      },
+      select: authUserSelect,
+    });
+  }
+
+  createOAuthUser(data: {
+    email: string;
+    passwordHash: string;
+    fullName: string;
+    avatarUrl?: string | null;
+  }) {
+    return this.prisma.user.create({
+      data: {
+        email: data.email,
+        passwordHash: data.passwordHash,
+        profile: {
+          create: {
+            fullName: data.fullName,
+            avatarUrl: data.avatarUrl ?? null,
           },
         },
       },

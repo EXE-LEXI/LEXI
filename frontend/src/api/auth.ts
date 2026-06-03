@@ -1,4 +1,5 @@
 import { apiRequest } from "./http";
+import { API_BASE_URL } from "./config";
 import type { AuthResponse, AuthUser } from "../types/auth";
 
 export type LoginPayload = {
@@ -22,6 +23,10 @@ export function login(payload: LoginPayload) {
     method: "POST",
     body: payload,
   });
+}
+
+export function getGoogleLoginUrl() {
+  return `${API_BASE_URL}/auth/google`;
 }
 
 export function register(payload: RegisterPayload) {

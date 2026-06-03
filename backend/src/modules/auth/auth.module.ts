@@ -8,6 +8,7 @@ import { AUTH_TOKEN_EXPIRES_IN } from "./constants/auth.constants";
 import { AuthController } from "./controllers/auth.controller";
 import { AuthRepository } from "./repositories/auth.repository";
 import { AuthService } from "./services/auth.service";
+import { GoogleStrategy } from "./strategies/google.strategy";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 
 @Module({
@@ -24,7 +25,13 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, JwtStrategy, RateLimitGuard],
+  providers: [
+    AuthService,
+    AuthRepository,
+    JwtStrategy,
+    GoogleStrategy,
+    RateLimitGuard,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

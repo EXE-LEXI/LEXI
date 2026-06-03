@@ -30,6 +30,7 @@ import {
   JwtPayload,
   RefreshJwtPayload,
 } from "../interfaces/jwt-payload.interface";
+import { GoogleOAuthUser } from "../interfaces/google-oauth-user.interface";
 import { AuthMapper } from "../mappers/auth.mapper";
 import { AuthRepository } from "../repositories/auth.repository";
 
@@ -83,6 +84,29 @@ export class AuthService {
 
     const authUser = await this.getAuthUserById(user.id);
     return this.buildAuthResponse(authUser);
+  }
+
+  async loginWithGoogle(googleUser: GoogleOAuthUser): Promise<AuthResponseDto> {
+    const email = googleUser.email.trim().toLowerCase();
+    const existingUser = await this.authRepository.findAuthUserByEmail(email);
+
+    if (existingUser) {
+      if (existingUser.status !== UserStatus.ACTIVE) {
+        throw new UnauthorizedException("Account is not active");
+      }
+
+      return this.buildAuthResponse(AuthMapper.toAuthUserDto(existingUser));
+    }
+
+    const passwordHash = await bcrypt.hash(randomUUID(), PASSWORD_SALT_ROUNDS);
+    const user = await this.authRepository.createOAuthUser({
+      email,
+      passwordHash,
+      fullName: googleUser.fullName || email,
+      avatarUrl: googleUser.avatarUrl ?? null,
+    });
+
+    return this.buildAuthResponse(AuthMapper.toAuthUserDto(user));
   }
 
   async getCurrentUser(userId: string): Promise<AuthUserDto> {

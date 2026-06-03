@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import {
+  getGoogleLoginUrl,
   requestPasswordReset,
   resetPassword,
 } from "../api/auth";
@@ -25,12 +26,10 @@ export function LoginPage({
   onModeChange,
 }: AuthPageProps) {
   const isRegister = mode === "register";
-  
-  // local states for passwords and validation
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
-  const [password, setPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
   const [featureNotice, setFeatureNotice] = useState<string | null>(null);
   const [isResetFlowOpen, setIsResetFlowOpen] = useState(false);
@@ -40,8 +39,7 @@ export function LoginPage({
   const [resetNewPassword, setResetNewPassword] = useState("");
   const [resetConfirmPassword, setResetConfirmPassword] = useState("");
 
-  // Clear errors when toggling modes to make transitions feel clean
-  function handleToggleMode(targetMode: "login" | "register") {
+  function resetLocalState() {
     setLocalError(null);
     setFeatureNotice(null);
     setIsResetFlowOpen(false);
@@ -53,6 +51,10 @@ export function LoginPage({
     setShowConfirmPassword(false);
     setPassword("");
     setConfirmPassword("");
+  }
+
+  function handleToggleMode(targetMode: "login" | "register") {
+    resetLocalState();
     onModeChange(targetMode);
   }
 
@@ -67,15 +69,19 @@ export function LoginPage({
     const fullNameValue = String(formData.get("fullName") ?? "");
 
     if (isRegister) {
-      const confirmPasswordValue = String(formData.get("confirmPassword") ?? "");
+      const confirmPasswordValue = String(
+        formData.get("confirmPassword") ?? ""
+      );
+
       if (passwordValue !== confirmPasswordValue) {
-        setLocalError("Mật khẩu và xác nhận mật khẩu không trùng khớp!");
+        setLocalError("Mật khẩu và xác nhận mật khẩu không trùng khớp.");
         return;
       }
-      
-      const agreeValue = formData.get("agreeTerms");
-      if (!agreeValue) {
-        setLocalError("Bạn phải đồng ý với Điều khoản sử dụng và Chính sách bảo mật để tiếp tục!");
+
+      if (!formData.get("agreeTerms")) {
+        setLocalError(
+          "Bạn cần đồng ý với Điều khoản sử dụng và Chính sách bảo mật để tiếp tục."
+        );
         return;
       }
     }
@@ -97,16 +103,18 @@ export function LoginPage({
       if (response.resetToken) {
         setResetToken(response.resetToken);
         setFeatureNotice(
-          "Mã đặt lại mật khẩu đã được tạo cho môi trường thử nghiệm này. Vui lòng kiểm tra và điền mật khẩu mới phía dưới."
+          "Mã đặt lại mật khẩu đã được tạo cho môi trường thử nghiệm. Vui lòng nhập mật khẩu mới bên dưới."
         );
       } else {
         setFeatureNotice(
-          "Nếu email này tồn tại và hệ thống gửi thư được định cấu hình, hướng dẫn đặt lại mật khẩu sẽ được gửi."
+          "Nếu email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu sẽ được gửi đến bạn."
         );
       }
     } catch (err) {
       setLocalError(
-        err instanceof Error ? err.message : "Không thể gửi yêu cầu đặt lại mật khẩu"
+        err instanceof Error
+          ? err.message
+          : "Không thể gửi yêu cầu đặt lại mật khẩu."
       );
     } finally {
       setIsResetSubmitting(false);
@@ -128,7 +136,9 @@ export function LoginPage({
         token: resetToken,
         newPassword: resetNewPassword,
       });
-      setFeatureNotice("Đặt lại mật khẩu thành công. Bây giờ bạn có thể đăng nhập.");
+      setFeatureNotice(
+        "Đặt lại mật khẩu thành công. Bây giờ bạn có thể đăng nhập."
+      );
       setIsResetFlowOpen(false);
       setResetEmail("");
       setResetToken("");
@@ -136,11 +146,17 @@ export function LoginPage({
       setResetConfirmPassword("");
     } catch (err) {
       setLocalError(
-        err instanceof Error ? err.message : "Không thể đặt lại mật khẩu"
+        err instanceof Error ? err.message : "Không thể đặt lại mật khẩu."
       );
     } finally {
       setIsResetSubmitting(false);
     }
+  }
+
+  function handleGoogleLogin() {
+    setLocalError(null);
+    setFeatureNotice(null);
+    window.location.href = getGoogleLoginUrl();
   }
 
   const activeError = localError || error;
@@ -148,164 +164,180 @@ export function LoginPage({
   return (
     <div className="lexi-auth-root">
       <div className="lexi-auth-split-box">
-        
-        {/* ==========================================
-           LEFT SIDEBAR - Identical on both modes for unity
-           ========================================== */}
         <div className="lexi-register-left-panel">
           <div className="lexi-register-left-logo">
             <span>LEXI</span>
           </div>
-          
+
           <div className="lexi-register-left-intro">
-            <h1>Làm Chủ Pháp Luật.<br />Thăng Hạng Bản Thân.</h1>
+            <h1>
+              Làm chủ pháp luật.
+              <br />
+              Thăng hạng bản thân.
+            </h1>
             <p>
-              Tham gia cộng đồng học thuật pháp lý tương tác hàng đầu. Khám phá hàng ngàn bài học được thiết kế chuyên nghiệp, thú vị và hiệu quả.
+              Tham gia cộng đồng học thuật pháp lý tương tác. Khám phá các bài
+              học được thiết kế rõ ràng, thực tế và dễ áp dụng.
             </p>
-            
+
             <div className="lexi-register-left-image-box">
-              <img 
-                src="/lexi_register_gavel.png" 
-                alt="Legal Gavel Mockup" 
+              <img
+                src="/lexi_register_gavel.png"
+                alt="Minh họa học pháp lý cùng LEXI"
                 className="lexi-register-left-image"
               />
             </div>
           </div>
-          
+
           <div style={{ fontSize: "11px", color: "var(--color-muted-text)" }}>
             © 2026 LEXI Legal Resources.
           </div>
         </div>
 
-        {/* ==========================================
-           RIGHT CONTENT PANEL - Smoothly toggles forms
-           ========================================== */}
         <div className="lexi-register-right-panel">
-          
           {isRegister ? (
-            /* REGISTRATION FORM VIEW */
-            <div key="register-view" className="lexi-register-form-container lexi-quiz-feedback-box success lexi-animate-fade" style={{ background: "none", border: "none", padding: 0, color: "inherit", margin: 0 }}>
+            <div
+              key="register-view"
+              className="lexi-register-form-container lexi-quiz-feedback-box success lexi-animate-fade"
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                color: "inherit",
+                margin: 0,
+              }}
+            >
               <h2>Tạo tài khoản</h2>
-              <p className="subtitle">Bắt đầu hành trình chinh phục kiến thức pháp lý.</p>
-              
+              <p className="subtitle">
+                Bắt đầu hành trình chinh phục kiến thức pháp lý.
+              </p>
+
               <form onSubmit={handleSubmit}>
-                {/* Full name field */}
-                <label className="lexi-auth-label">Họ và Tên</label>
+                <label className="lexi-auth-label">Họ và tên</label>
                 <div className="lexi-auth-input-wrapper">
                   <User size={16} className="lexi-auth-input-icon" />
-                  <input 
-                    name="fullName" 
-                    type="text" 
-                    placeholder="Nguyễn Văn A" 
-                    required 
+                  <input
+                    name="fullName"
+                    type="text"
+                    placeholder="Nguyễn Văn A"
+                    required
                   />
                 </div>
 
-                {/* Email field */}
-                <label className="lexi-auth-label">Địa chỉ Email</label>
+                <label className="lexi-auth-label">Địa chỉ email</label>
                 <div className="lexi-auth-input-wrapper">
                   <Mail size={16} className="lexi-auth-input-icon" />
-                  <input 
-                    name="email" 
-                    type="email" 
-                    autoComplete="email" 
-                    placeholder="email@example.com" 
-                    required 
+                  <input
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="email@example.com"
+                    required
                   />
                 </div>
 
-                {/* Password field */}
                 <label className="lexi-auth-label">Mật khẩu</label>
                 <div className="lexi-auth-input-wrapper">
                   <Lock size={16} className="lexi-auth-input-icon" />
-                  <input 
-                    name="password" 
-                    type={showPassword ? "text" : "password"} 
-                    placeholder="••••••••" 
-                    minLength={6} 
+                  <input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    minLength={6}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required 
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
                   />
-                  <div className="lexi-auth-input-eye" onClick={() => setShowPassword(!showPassword)}>
+                  <button
+                    className="lexi-auth-input-eye"
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                  >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </div>
+                  </button>
                 </div>
 
-                {/* Confirm Password field */}
                 <label className="lexi-auth-label">Xác nhận mật khẩu</label>
                 <div className="lexi-auth-input-wrapper">
                   <Lock size={16} className="lexi-auth-input-icon" />
-                  <input 
-                    name="confirmPassword" 
-                    type={showConfirmPassword ? "text" : "password"} 
-                    placeholder="••••••••" 
-                    minLength={6} 
+                  <input
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    minLength={6}
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required 
+                    onChange={(event) =>
+                      setConfirmPassword(event.target.value)
+                    }
+                    required
                   />
-                  <div className="lexi-auth-input-eye" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </div>
+                  <button
+                    className="lexi-auth-input-eye"
+                    type="button"
+                    onClick={() => setShowConfirmPassword((value) => !value)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff size={16} />
+                    ) : (
+                      <Eye size={16} />
+                    )}
+                  </button>
                 </div>
 
-                {/* Checkbox agree terms */}
                 <label className="lexi-auth-checkbox-row">
-                  <input name="agreeTerms" type="checkbox" defaultChecked required />
+                  <input name="agreeTerms" type="checkbox" required />
                   <span>
-                    Tôi đồng ý với các <strong>Điều khoản sử dụng</strong> và <strong>Chính sách bảo mật</strong> của LEXI.
+                    Tôi đồng ý với <strong>Điều khoản sử dụng</strong> và{" "}
+                    <strong>Chính sách bảo mật</strong> của LEXI.
                   </span>
                 </label>
 
-                {activeError ? (
-                  <div className="error-text" style={{ marginBottom: "20px", marginTop: "-8px" }}>
-                    <span>{activeError}</span>
-                  </div>
-                ) : null}
+                <AuthMessages error={activeError} notice={featureNotice} />
 
-                {featureNotice ? (
-                  <div className="lexi-inline-notice" style={{ marginBottom: "20px", marginTop: "-8px" }}>
-                    <span>{featureNotice}</span>
-                  </div>
-                ) : null}
-
-                <button 
-                  className="lexi-auth-btn-primary" 
-                  type="submit" 
+                <button
+                  className="lexi-auth-btn-primary"
+                  type="submit"
                   disabled={isSubmitting}
                 >
-                  <span>{isSubmitting ? "Đang tạo tài khoản..." : "Đăng ký tài khoản"}</span>
+                  <span>
+                    {isSubmitting
+                      ? "Đang tạo tài khoản..."
+                      : "Đăng ký tài khoản"}
+                  </span>
                   {!isSubmitting && <ArrowRight size={16} />}
                 </button>
 
                 <div className="lexi-auth-switch-link">
-                  Đã có tài khoản? 
-                  <strong onClick={() => handleToggleMode("login")}>Đăng nhập ngay</strong>
+                  Đã có tài khoản?
+                  <strong onClick={() => handleToggleMode("login")}>
+                    Đăng nhập ngay
+                  </strong>
                 </div>
               </form>
             </div>
           ) : (
-            /* LOGIN FORM VIEW */
-            <div key="login-view" className="lexi-register-form-container lexi-animate-fade">
+            <div
+              key="login-view"
+              className="lexi-register-form-container lexi-animate-fade"
+            >
               <h2>Đăng nhập</h2>
-              <p className="subtitle">Nhập tài khoản để tiếp tục hành trình vượt ải.</p>
-              
+              <p className="subtitle">
+                Nhập tài khoản để tiếp tục hành trình học pháp lý.
+              </p>
+
               <form onSubmit={handleSubmit}>
-                {/* Email field */}
-                <label className="lexi-auth-label">Địa chỉ Email</label>
+                <label className="lexi-auth-label">Địa chỉ email</label>
                 <div className="lexi-auth-input-wrapper">
                   <Mail size={16} className="lexi-auth-input-icon" />
-                  <input 
-                    name="email" 
-                    type="email" 
-                    autoComplete="email" 
-                    placeholder="Nhập địa chỉ email của bạn" 
-                    required 
+                  <input
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="Nhập địa chỉ email của bạn"
+                    required
                   />
                 </div>
 
-                {/* Password field */}
                 <div className="lexi-auth-label">
                   <span>Mật khẩu</span>
                   <button
@@ -322,19 +354,22 @@ export function LoginPage({
                 </div>
                 <div className="lexi-auth-input-wrapper">
                   <Lock size={16} className="lexi-auth-input-icon" />
-                  <input 
-                    name="password" 
-                    type={showPassword ? "text" : "password"} 
-                    placeholder="Nhập mật khẩu của bạn" 
-                    minLength={6} 
-                    required 
+                  <input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Nhập mật khẩu của bạn"
+                    minLength={6}
+                    required
                   />
-                  <div className="lexi-auth-input-eye" onClick={() => setShowPassword(!showPassword)}>
+                  <button
+                    className="lexi-auth-input-eye"
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                  >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </div>
+                  </button>
                 </div>
 
-                {/* Checkbox Remember Me */}
                 <label className="lexi-auth-checkbox-row">
                   <input name="rememberMe" type="checkbox" />
                   <span>Ghi nhớ đăng nhập</span>
@@ -348,7 +383,7 @@ export function LoginPage({
                       <input
                         type="email"
                         value={resetEmail}
-                        onChange={(e) => setResetEmail(e.target.value)}
+                        onChange={(event) => setResetEmail(event.target.value)}
                         placeholder="Nhập email cần đặt lại mật khẩu"
                       />
                     </div>
@@ -358,17 +393,17 @@ export function LoginPage({
                       disabled={isResetSubmitting || !resetEmail}
                       onClick={handleRequestReset}
                     >
-                      Gửi yêu cầu reset
+                      Gửi yêu cầu đặt lại mật khẩu
                     </button>
 
-                    <label className="lexi-auth-label">Reset token</label>
+                    <label className="lexi-auth-label">Mã đặt lại</label>
                     <div className="lexi-auth-input-wrapper">
                       <Lock size={16} className="lexi-auth-input-icon" />
                       <input
                         type="text"
                         value={resetToken}
-                        onChange={(e) => setResetToken(e.target.value)}
-                        placeholder="Dán token từ email hoặc beta response"
+                        onChange={(event) => setResetToken(event.target.value)}
+                        placeholder="Dán mã từ email hoặc phản hồi thử nghiệm"
                       />
                     </div>
 
@@ -379,19 +414,25 @@ export function LoginPage({
                         type="password"
                         minLength={6}
                         value={resetNewPassword}
-                        onChange={(e) => setResetNewPassword(e.target.value)}
+                        onChange={(event) =>
+                          setResetNewPassword(event.target.value)
+                        }
                         placeholder="Tối thiểu 6 ký tự"
                       />
                     </div>
 
-                    <label className="lexi-auth-label">Xác nhận mật khẩu mới</label>
+                    <label className="lexi-auth-label">
+                      Xác nhận mật khẩu mới
+                    </label>
                     <div className="lexi-auth-input-wrapper">
                       <Lock size={16} className="lexi-auth-input-icon" />
                       <input
                         type="password"
                         minLength={6}
                         value={resetConfirmPassword}
-                        onChange={(e) => setResetConfirmPassword(e.target.value)}
+                        onChange={(event) =>
+                          setResetConfirmPassword(event.target.value)
+                        }
                         placeholder="Nhập lại mật khẩu mới"
                       />
                     </div>
@@ -408,85 +449,105 @@ export function LoginPage({
                       onClick={handleConfirmReset}
                     >
                       <span>
-                        {isResetSubmitting ? "Đang xử lý..." : "Đặt lại mật khẩu"}
+                        {isResetSubmitting
+                          ? "Đang xử lý..."
+                          : "Đặt lại mật khẩu"}
                       </span>
                     </button>
                   </div>
                 ) : null}
 
-                {activeError ? (
-                  <div className="error-text" style={{ marginBottom: "20px", marginTop: "-8px" }}>
-                    <span>{activeError}</span>
-                  </div>
-                ) : null}
+                <AuthMessages error={activeError} notice={featureNotice} />
 
-                {featureNotice ? (
-                  <div className="lexi-inline-notice" style={{ marginBottom: "20px", marginTop: "-8px" }}>
-                    <span>{featureNotice}</span>
-                  </div>
-                ) : null}
-
-                <button 
-                  className="lexi-auth-btn-primary" 
-                  type="submit" 
+                <button
+                  className="lexi-auth-btn-primary"
+                  type="submit"
                   disabled={isSubmitting}
                 >
-                  <span>{isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}</span>
+                  <span>
+                    {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
+                  </span>
                   {!isSubmitting && <ArrowRight size={16} />}
                 </button>
 
-                {/* Social Divider */}
                 <div className="lexi-auth-divider">
                   <span>Hoặc đăng nhập với</span>
                 </div>
 
-                {/* Social Row Buttons */}
                 <div className="lexi-social-btns-row">
-                  <button 
-                    type="button" 
-                    className="lexi-social-btn" 
-                    onClick={() =>
-                      setFeatureNotice(
-                        "Đăng nhập Google chưa kết nối trong bản thử nghiệm này. Vui lòng sử dụng email và mật khẩu."
-                      )
-                    }
+                  <button
+                    type="button"
+                    className="lexi-social-btn"
+                    disabled={isSubmitting}
+                    onClick={handleGoogleLogin}
                   >
-                    <img 
-                      src="https://img.icons8.com/color/48/google-logo.png" 
-                      alt="Google logo icon" 
+                    <img
+                      src="https://img.icons8.com/color/48/google-logo.png"
+                      alt="Biểu tượng Google"
                     />
                     <span>Google</span>
                   </button>
-                  
-                  <button 
-                    type="button" 
-                    className="lexi-social-btn" 
+
+                  <button
+                    type="button"
+                    className="lexi-social-btn"
                     onClick={() =>
                       setFeatureNotice(
-                        "Đăng nhập Facebook chưa kết nối trong bản thử nghiệm này. Vui lòng sử dụng email và mật khẩu."
+                        "Đăng nhập Facebook chưa được kết nối. Vui lòng sử dụng email, mật khẩu hoặc Google."
                       )
                     }
                   >
-                    <img 
-                      src="https://img.icons8.com/color/48/facebook-new.png" 
-                      alt="Facebook logo icon" 
+                    <img
+                      src="https://img.icons8.com/color/48/facebook-new.png"
+                      alt="Biểu tượng Facebook"
                     />
                     <span>Facebook</span>
                   </button>
                 </div>
 
                 <div className="lexi-auth-switch-link">
-                  Chưa có tài khoản? 
-                  <strong onClick={() => handleToggleMode("register")}>Đăng ký ngay</strong>
+                  Chưa có tài khoản?
+                  <strong onClick={() => handleToggleMode("register")}>
+                    Đăng ký ngay
+                  </strong>
                 </div>
               </form>
             </div>
           )}
-
         </div>
-
       </div>
     </div>
   );
 }
+
+function AuthMessages({
+  error,
+  notice,
+}: {
+  error: string | null;
+  notice: string | null;
+}) {
+  return (
+    <>
+      {error ? (
+        <div
+          className="error-text"
+          style={{ marginBottom: "20px", marginTop: "-8px" }}
+        >
+          <span>{error}</span>
+        </div>
+      ) : null}
+
+      {notice ? (
+        <div
+          className="lexi-inline-notice"
+          style={{ marginBottom: "20px", marginTop: "-8px" }}
+        >
+          <span>{notice}</span>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 export default LoginPage;

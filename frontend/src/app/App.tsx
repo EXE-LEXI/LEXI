@@ -38,7 +38,13 @@ import {
   type AdminSource,
 } from "../api/admin";
 import { API_BASE_URL } from "../api/config";
-import { login, logout, refreshAuthSession, register } from "../api/auth";
+import {
+  getCurrentUser,
+  login,
+  logout,
+  refreshAuthSession,
+  register,
+} from "../api/auth";
 import {
   claimDailyChallenge,
   getBadges,
@@ -184,10 +190,79 @@ function App() {
       return;
     }
 
-    if (!session && page.path !== ROUTES.home && page.path !== ROUTES.login && page.path !== ROUTES.register) {
+    if (
+      !session &&
+      page.path !== ROUTES.home &&
+      page.path !== ROUTES.login &&
+      page.path !== ROUTES.register &&
+      page.path !== ROUTES.authCallback
+    ) {
       navigate(ROUTES.login, true);
     }
   }, [isSessionChecking, session, page.path]);
+
+  useEffect(() => {
+    if (page.path !== ROUTES.authCallback || session) {
+      return;
+    }
+
+    const hashParams = new URLSearchParams(
+      window.location.hash.replace(/^#/, "")
+    );
+    const accessToken = hashParams.get("accessToken");
+    const refreshToken = hashParams.get("refreshToken");
+
+    if (!accessToken || !refreshToken) {
+      setAuthError("Không thể hoàn tất đăng nhập Google. Vui lòng thử lại.");
+      navigate(ROUTES.login, true);
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function completeGoogleLogin() {
+      setIsAuthSubmitting(true);
+      setAuthError(null);
+
+      try {
+        const user = await getCurrentUser(accessToken as string);
+        const auth: AuthResponse = {
+          accessToken: accessToken as string,
+          refreshToken: refreshToken as string,
+          user,
+        };
+
+        if (isCancelled) {
+          return;
+        }
+
+        saveAuthSession(auth);
+        setSession(auth);
+        navigate(
+          auth.user.role === "ADMIN" ? ROUTES.admin : ROUTES.dashboard,
+          true
+        );
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
+        clearAuthSession();
+        setAuthError(getErrorMessage(error));
+        navigate(ROUTES.login, true);
+      } finally {
+        if (!isCancelled) {
+          setIsAuthSubmitting(false);
+        }
+      }
+    }
+
+    void completeGoogleLogin();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [page.path, session]);
 
   useEffect(() => {
     if (!session || isSessionChecking) {
@@ -520,6 +595,18 @@ function App() {
   if (!session) {
     if (page.path === ROUTES.home) {
       return <LandingPage onNavigate={navigate} />;
+    }
+    if (page.path === ROUTES.authCallback) {
+      return (
+        <div className="lexi-auth-root">
+          <div className="lexi-register-form-container">
+            <h2>Đang hoàn tất đăng nhập Google</h2>
+            <p className="subtitle">
+              Vui lòng chờ trong giây lát để LEXI thiết lập phiên đăng nhập.
+            </p>
+          </div>
+        </div>
+      );
     }
     return (
       <LoginPage

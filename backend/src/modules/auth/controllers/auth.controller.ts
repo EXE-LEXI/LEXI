@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -6,6 +7,7 @@ import {
   ApiOperation,
   ApiTags,
 } from "@nestjs/swagger";
+import { Request, Response } from "express";
 import { RateLimit } from "../../../common/decorators/rate-limit.decorator";
 import { RateLimitGuard } from "../../../common/guards/rate-limit.guard";
 import { AUTH_RATE_LIMITS } from "../constants/auth.constants";
@@ -22,13 +24,18 @@ import {
   PasswordResetRequestResponseDto,
   PasswordResetResponseDto,
 } from "../dto/response/password-reset-response.dto";
+import { GoogleAuthGuard } from "../guards/google-auth.guard";
 import { JwtAuthGuard } from "../guards/jwt-auth.guard";
+import { GoogleOAuthUser } from "../interfaces/google-oauth-user.interface";
 import { AuthService } from "../services/auth.service";
 
 @ApiTags("auth")
 @Controller("auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService
+  ) {}
 
   @Post("register")
   @UseGuards(RateLimitGuard)
@@ -46,6 +53,33 @@ export class AuthController {
   @ApiOkResponse({ type: AuthResponseDto })
   async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(dto);
+  }
+
+  @Get("google")
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: "Start Google OAuth login" })
+  async googleLogin(): Promise<void> {
+    // Passport redirects the browser to Google.
+  }
+
+  @Get("google/callback")
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: "Handle Google OAuth callback" })
+  async googleCallback(
+    @Req() request: Request & { user: GoogleOAuthUser },
+    @Res() response: Response
+  ): Promise<void> {
+    const auth = await this.authService.loginWithGoogle(request.user);
+    const redirectUrl = new URL(
+      "/auth/callback",
+      this.getFrontendUrl()
+    );
+    redirectUrl.hash = new URLSearchParams({
+      accessToken: auth.accessToken,
+      refreshToken: auth.refreshToken,
+    }).toString();
+
+    response.redirect(redirectUrl.toString());
   }
 
   @Post("refresh")
@@ -95,5 +129,21 @@ export class AuthController {
   @ApiOkResponse({ type: AuthUserDto })
   async getMe(@CurrentUser() user: AuthUserDto): Promise<AuthUserDto> {
     return this.authService.getCurrentUser(user.id);
+  }
+
+  private getFrontendUrl(): string {
+    const configuredFrontendUrl = this.configService.get<string>("FRONTEND_URL");
+
+    if (configuredFrontendUrl) {
+      return configuredFrontendUrl.replace(/\/$/, "");
+    }
+
+    const corsOrigins = this.configService.get<string>("CORS_ORIGINS", "");
+    const firstOrigin = corsOrigins
+      .split(",")
+      .map((origin) => origin.trim())
+      .find(Boolean);
+
+    return firstOrigin ?? "http://localhost:5173";
   }
 }
