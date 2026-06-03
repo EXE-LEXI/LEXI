@@ -45,7 +45,10 @@ test("auth and quiz submission smoke flow", async () => {
     new QuizGradingService(),
     new LessonProgressService(),
     new RewardService(),
-    { awardEarnedBadges: async () => {} }
+    {
+      ensureDefaultBadges: async () => {},
+      awardEarnedBadges: async () => {},
+    }
   );
 
   const quizResponse = await quizService.submitQuiz(

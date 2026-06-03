@@ -36,76 +36,84 @@ export class QuizSubmissionService {
     );
     const now = new Date();
 
-    const submission = await this.prisma.$transaction(async (tx) => {
-      const previousBestAttempt = await tx.lessonAttempt.aggregate({
-        where: {
-          userId,
-          lessonId,
-        },
-        _max: {
-          score: true,
-        },
-      });
+    await this.badgesService.ensureDefaultBadges();
 
-      const previousBestScore = previousBestAttempt._max.score ?? 0;
-      const xpAwarded = this.rewardService.calculateQuizXpAward(
-        evaluation.score,
-        previousBestScore
-      );
-
-      const createdAttempt = await tx.lessonAttempt.create({
-        data: {
-          userId,
-          lessonId,
-          score: evaluation.score,
-          totalQuestions: evaluation.totalQuestions,
-          correctAnswers: evaluation.correctCount,
-          finishedAt: now,
-          answers: {
-            create: evaluation.normalizedAnswers.map((answer) => ({
-              questionId: answer.questionId,
-              selectedOptionId: answer.selectedOptionId,
-              isCorrect: answer.isCorrect,
-            })),
+    const submission = await this.prisma.$transaction(
+      async (tx) => {
+        const previousBestAttempt = await tx.lessonAttempt.aggregate({
+          where: {
+            userId,
+            lessonId,
           },
-        },
-      });
+          _max: {
+            score: true,
+          },
+        });
 
-      const completedAt =
-        await this.lessonProgressService.upsertLessonCompletion(
+        const previousBestScore = previousBestAttempt._max.score ?? 0;
+        const xpAwarded = this.rewardService.calculateQuizXpAward(
+          evaluation.score,
+          previousBestScore
+        );
+
+        const createdAttempt = await tx.lessonAttempt.create({
+          data: {
+            userId,
+            lessonId,
+            score: evaluation.score,
+            totalQuestions: evaluation.totalQuestions,
+            correctAnswers: evaluation.correctCount,
+            finishedAt: now,
+            answers: {
+              create: evaluation.normalizedAnswers.map((answer) => ({
+                questionId: answer.questionId,
+                selectedOptionId: answer.selectedOptionId,
+                isCorrect: answer.isCorrect,
+              })),
+            },
+          },
+        });
+
+        const completedAt =
+          await this.lessonProgressService.upsertLessonCompletion(
+            tx,
+            userId,
+            lessonId,
+            evaluation.score,
+            now
+          );
+
+        await this.rewardService.applyXpAward(tx, userId, xpAwarded);
+        const coinReward = this.rewardsService
+          ? await this.rewardsService.awardQuizAttempt(tx, {
+              userId,
+              attemptId: createdAttempt.id,
+              score: evaluation.score,
+              previousBestScore,
+              now,
+            })
+          : { coinsAwarded: 0, coinBalance: 0 };
+        const newBadges = await this.badgesService.awardEarnedBadges(
           tx,
           userId,
-          lessonId,
-          evaluation.score,
           now
         );
 
-      await this.rewardService.applyXpAward(tx, userId, xpAwarded);
-      const coinReward = this.rewardsService
-        ? await this.rewardsService.awardQuizAttempt(tx, {
-            userId,
-            attemptId: createdAttempt.id,
-            score: evaluation.score,
-            previousBestScore,
-            now,
-          })
-        : { coinsAwarded: 0, coinBalance: 0 };
-      const newBadges = await this.badgesService.awardEarnedBadges(
-        tx,
-        userId,
-        now
-      );
-
-      return {
-        attemptId: createdAttempt.id,
-        xpAwarded,
-        coinsAwarded: coinReward.coinsAwarded,
-        coinBalance: coinReward.coinBalance,
-        bestScore: Math.max(previousBestScore, evaluation.score),
-        completedAt,
-        newBadges,
-      };
-    });
+        return {
+          attemptId: createdAttempt.id,
+          xpAwarded,
+          coinsAwarded: coinReward.coinsAwarded,
+          coinBalance: coinReward.coinBalance,
+          bestScore: Math.max(previousBestScore, evaluation.score),
+          completedAt,
+          newBadges,
+        };
+      },
+      {
+        maxWait: 10_000,
+        timeout: 20_000,
+      }
+    );
 
     return LessonsMapper.toQuizSubmissionResponse({
       attemptId: submission.attemptId,

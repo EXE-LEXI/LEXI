@@ -13,6 +13,10 @@ export class BadgesService {
     return BadgesMapper.toResponse(badges);
   }
 
+  ensureDefaultBadges(): Promise<void> {
+    return this.badgesRepository.ensureDefaultBadges();
+  }
+
   async awardEarnedBadges(
     tx: Prisma.TransactionClient,
     userId: string,

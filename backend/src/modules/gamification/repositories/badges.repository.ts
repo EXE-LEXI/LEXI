@@ -43,8 +43,6 @@ export class BadgesRepository {
     userId: string,
     now: Date
   ): Promise<any[]> {
-    await this.ensureDefaultBadges(tx);
-
     const badges = await tx.badge.findMany({
       where: { isActive: true },
       select: {
@@ -109,10 +107,10 @@ export class BadgesRepository {
     }));
   }
 
-  private async ensureDefaultBadges(
+  ensureDefaultBadges(
     tx: Prisma.TransactionClient | PrismaService = this.prisma
   ): Promise<void> {
-    await Promise.all(
+    return Promise.all(
       DEFAULT_BADGES.map((badge) =>
         tx.badge.upsert({
           where: { code: badge.code },
@@ -134,7 +132,7 @@ export class BadgesRepository {
           },
         })
       )
-    );
+    ).then(() => undefined);
   }
 
   private async getEarnedCriteria(
