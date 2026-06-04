@@ -103,7 +103,7 @@ Quy tắc trả lời:
               temperature: 0.55,
               topK: 40,
               topP: 0.9,
-              maxOutputTokens: 700,
+              maxOutputTokens: 4096,
             },
           }),
         }
