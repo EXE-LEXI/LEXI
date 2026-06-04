@@ -4,6 +4,8 @@ import { AiGenerationStatus, AiGenerationType } from "@prisma/client";
 import { PrismaService } from "../../../core/prisma.service";
 import { AdminContentService } from "./admin-content.service";
 
+const DEFAULT_LESSON_QUESTION_COUNT = 10;
+
 /**
  * Background job processor for async AI generation tasks
  * Handles lesson draft generation, video script creation, and quiz enhancement
@@ -130,7 +132,8 @@ export class AiJobProcessor {
       throw new Error("Source document not found");
     }
 
-    const questionCount = job.inputSnapshot?.questionCount || 3;
+    const questionCount =
+      job.inputSnapshot?.questionCount || DEFAULT_LESSON_QUESTION_COUNT;
 
     // Call AI to generate questions
     const questions = await this.generateQuestionsWithAi({
@@ -199,7 +202,8 @@ export class AiJobProcessor {
       throw new Error("Source document not found");
     }
 
-    const questionCount = job.inputSnapshot?.questionCount || 3;
+    const questionCount =
+      job.inputSnapshot?.questionCount || DEFAULT_LESSON_QUESTION_COUNT;
 
     // Call AI to generate complete package
     const output = await this.generateFullPackageWithAi({
@@ -222,7 +226,7 @@ export class AiJobProcessor {
   async batchGenerateLessonDrafts(
     sourceIds: string[],
     moduleId?: string,
-    questionCount: number = 3
+    questionCount: number = DEFAULT_LESSON_QUESTION_COUNT
   ): Promise<string[]> {
     const jobIds: string[] = [];
 

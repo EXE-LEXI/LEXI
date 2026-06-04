@@ -31,11 +31,15 @@ type ShortsPageProps = {
 
 type LegalShortVideo = {
   id: string;
-  category: "fraud" | "civil" | "trivia";
+  category: "fraud" | "civil" | "labor" | "traffic" | "family" | "criminal" | "trivia";
   title: string;
   author: string;
   description: string;
   videoUrl: string;
+  lesson?: {
+    id: string;
+    title: string;
+  } | null;
   likes: number;
   commentsCount: number;
   bookmarksCount: number;
@@ -142,13 +146,19 @@ function toShortVideo(asset: ResourceMediaAsset): LegalShortVideo {
   return {
     id: asset.id,
     category: normalizeShortCategory(shorts.category),
-    title: asset.title || "Video ngan Lexi",
+    title: asset.title || "Video ngắn LEXI",
     author: typeof shorts.author === "string" ? shorts.author : "Lexi",
     description:
       typeof shorts.description === "string"
         ? shorts.description
-        : "Video ngan phap ly duoc tai len tu khu quan tri Lexi.",
+        : "Video ngắn pháp lý được tải lên từ khu quản trị LEXI.",
     videoUrl: asset.url,
+    lesson: asset.lesson
+      ? {
+          id: asset.lesson.id,
+          title: asset.lesson.title,
+        }
+      : null,
     likes: toNumber(shorts.likes, 0),
     commentsCount: toNumber(shorts.commentsCount, 0),
     bookmarksCount: toNumber(shorts.bookmarksCount, 0),
@@ -156,18 +166,29 @@ function toShortVideo(asset: ResourceMediaAsset): LegalShortVideo {
       quiz && Array.isArray(quiz.options)
         ? quiz
         : {
-            question: "Video nay dang duoc xuat ban len Lexi Shorts. Ban co muon luu lai de xem lai sau khong?",
-            options: ["Co", "Khong", "De sau"],
+            question: "Video này thuộc chuyên mục pháp lý nào?",
+            options: ["Lừa đảo công nghệ", "Dân sự và đời sống", "Mẹo luật"],
             correctIndex: 0,
-            explanation: "Lexi se bo sung cau hoi tuong tac rieng cho tung video trong buoc bien tap tiep theo.",
+            explanation: "Admin có thể bổ sung câu hỏi tương tác riêng cho từng video trong bước biên tập.",
           },
   };
 }
 
 function normalizeShortCategory(value: unknown): LegalShortVideo["category"] {
-  return value === "fraud" || value === "civil" || value === "trivia"
-    ? value
+  const valid = new Set(["fraud", "civil", "labor", "traffic", "family", "criminal", "trivia"]);
+  return typeof value === "string" && valid.has(value)
+    ? (value as LegalShortVideo["category"])
     : "trivia";
+}
+
+function getCategoryLabel(category: string): string {
+  if (category === "fraud") return "🛡️ Lừa đảo công nghệ";
+  if (category === "civil") return "🏠 Dân sự & Đời sống";
+  if (category === "labor") return "💼 Lao động";
+  if (category === "traffic") return "🚗 Giao thông";
+  if (category === "family") return "👨‍👩‍👧 Hôn nhân gia đình";
+  if (category === "criminal") return "⚖️ Hình sự cơ bản";
+  return "💡 Mẹo luật";
 }
 
 function toNumber(value: unknown, fallback: number): number {
@@ -175,7 +196,7 @@ function toNumber(value: unknown, fallback: number): number {
 }
 
 export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) => {
-  const [activeCategory, setActiveCategory] = useState<"all" | "fraud" | "civil" | "trivia">("all");
+  const [activeCategory, setActiveCategory] = useState<"all" | LegalShortVideo["category"]>("all");
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -183,6 +204,7 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
   const [bookmarkedVideos, setBookmarkedVideos] = useState<Record<string, boolean>>({});
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
+  const [showQuizPopup, setShowQuizPopup] = useState(false);
   const [userCoins, setUserCoins] = useState(session?.user?.profile?.xp ? Math.floor(session.user.profile.xp / 3) : 450);
   const [userXp, setUserXp] = useState(session?.user?.profile?.xp || 1200);
   const [showRewardToast, setShowRewardToast] = useState(false);
@@ -259,6 +281,7 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
     setCurrentTime(0);
     setDuration(0);
     setIsBuffering(true);
+    setShowQuizPopup(false);
   }, [currentVideoIndex, activeCategory]);
 
   const handleTimeUpdate = () => {
@@ -442,13 +465,37 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
                     className={`lexi-shorts-cat-btn ${activeCategory === "civil" ? "active" : ""}`}
                     onClick={() => { setActiveCategory("civil"); setCurrentVideoIndex(0); }}
                   >
-                    🏠 Luật Dân sự & Đời sống
+                    🏠 Dân sự & Đời sống
+                  </button>
+                  <button 
+                    className={`lexi-shorts-cat-btn ${activeCategory === "labor" ? "active" : ""}`}
+                    onClick={() => { setActiveCategory("labor"); setCurrentVideoIndex(0); }}
+                  >
+                    💼 Lao động
+                  </button>
+                  <button 
+                    className={`lexi-shorts-cat-btn ${activeCategory === "traffic" ? "active" : ""}`}
+                    onClick={() => { setActiveCategory("traffic"); setCurrentVideoIndex(0); }}
+                  >
+                    🚗 Giao thông
+                  </button>
+                  <button 
+                    className={`lexi-shorts-cat-btn ${activeCategory === "family" ? "active" : ""}`}
+                    onClick={() => { setActiveCategory("family"); setCurrentVideoIndex(0); }}
+                  >
+                    👨‍👩‍👧 Hôn nhân gia đình
+                  </button>
+                  <button 
+                    className={`lexi-shorts-cat-btn ${activeCategory === "criminal" ? "active" : ""}`}
+                    onClick={() => { setActiveCategory("criminal"); setCurrentVideoIndex(0); }}
+                  >
+                    ⚖️ Hình sự cơ bản
                   </button>
                   <button 
                     className={`lexi-shorts-cat-btn ${activeCategory === "trivia" ? "active" : ""}`}
                     onClick={() => { setActiveCategory("trivia"); setCurrentVideoIndex(0); }}
                   >
-                    💡 Trivia & Chuyện vặt
+                    💡 Mẹo luật
                   </button>
                 </div>
               </div>
@@ -466,7 +513,6 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
                       ref={videoRef}
                       src={currentVideo.videoUrl}
                       className="lexi-shorts-video-element"
-                      loop
                       playsInline
                       onClick={handleTogglePlay}
                       onTimeUpdate={handleTimeUpdate}
@@ -474,6 +520,10 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
                       onWaiting={() => setIsBuffering(true)}
                       onPlaying={() => setIsBuffering(false)}
                       onCanPlay={() => setIsBuffering(false)}
+                      onEnded={() => {
+                        setIsPlaying(false);
+                        setShowQuizPopup(true);
+                      }}
                     />
 
                     {/* Buffering overlay */}
@@ -516,12 +566,12 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
                       </div>
                       
                       <span className="lexi-video-category-tag">
-                        {currentVideo.category === "fraud" ? "🛡️ Lừa Đảo" : currentVideo.category === "civil" ? "🏠 Dân Sự" : "💡 Mẹo Luật"}
+                        {getCategoryLabel(currentVideo.category)}
                       </span>
                     </div>
 
                     {/* Big Play/Pause indicator overlay */}
-                    {!isPlaying && (
+                    {!isPlaying && !showQuizPopup && (
                       <div className="lexi-player-paused-icon" onClick={handleTogglePlay}>
                         <Play size={44} className="fill-white stroke-white" />
                       </div>
@@ -548,6 +598,119 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
                         style={{ left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
                       ></div>
                     </div>
+
+                    {/* Floating manual quiz trigger button */}
+                    {!showQuizPopup && (
+                      <button
+                        type="button"
+                        className="lexi-shorts-btn-open-quiz-trigger"
+                        onClick={() => {
+                          setIsPlaying(false);
+                          setShowQuizPopup(true);
+                        }}
+                        title="Trả lời câu hỏi trắc nghiệm tương tác"
+                      >
+                        <HelpCircle size={14} />
+                        <span>Làm Quiz (+5 LC)</span>
+                      </button>
+                    )}
+
+                    {/* Interactive Quiz Popup Modal */}
+                    {showQuizPopup && (
+                      <div className="lexi-shorts-quiz-popup-overlay">
+                        <div className="lexi-shorts-quiz-popup-card">
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <h4>Hỏi nhanh đáp gọn</h4>
+                            <button
+                              type="button"
+                              style={{ background: "transparent", border: "none", color: "#94a3b8", fontSize: "20px", cursor: "pointer", padding: "0 4px" }}
+                              onClick={() => {
+                                setShowQuizPopup(false);
+                                setIsPlaying(true);
+                              }}
+                            >
+                              &times;
+                            </button>
+                          </div>
+                          
+                          <p className="lexi-shorts-quiz-question">
+                            {currentVideo.quiz.question}
+                          </p>
+
+                          <div className="lexi-shorts-quiz-options">
+                            {currentVideo.quiz.options.map((opt, idx) => {
+                              let btnClass = "";
+                              if (isQuizSubmitted) {
+                                if (idx === currentVideo.quiz.correctIndex) {
+                                  btnClass = "correct";
+                                } else if (idx === selectedAnswer) {
+                                  btnClass = "wrong";
+                                } else {
+                                  btnClass = "disabled";
+                                }
+                              } else if (idx === selectedAnswer) {
+                                btnClass = "selected";
+                              }
+
+                              return (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  className={`lexi-quiz-option-btn ${btnClass}`}
+                                  onClick={() => handleAnswerSelect(idx)}
+                                  disabled={isQuizSubmitted}
+                                >
+                                  <span className="lexi-opt-bullet">{String.fromCharCode(65 + idx)}</span>
+                                  <span className="lexi-opt-label-text">{opt}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {!isQuizSubmitted ? (
+                            <button
+                              className="lexi-btn-submit-shorts-quiz"
+                              disabled={selectedAnswer === null}
+                              onClick={handleSubmitQuiz}
+                            >
+                              Kiểm tra câu trả lời (+5 LC)
+                            </button>
+                          ) : (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                              <div className={`lexi-shorts-result-banner ${selectedAnswer === currentVideo.quiz.correctIndex ? "success" : "failure"}`}>
+                                <div className="lexi-result-banner-header" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                  {selectedAnswer === currentVideo.quiz.correctIndex ? (
+                                    <>
+                                      <CheckCircle size={16} style={{ color: "#34d399" }} />
+                                      <strong>Chính xác! (+5 LC & +10 XP)</strong>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <AlertCircle size={16} style={{ color: "#f87171" }} />
+                                      <strong>Chưa đúng rồi!</strong>
+                                    </>
+                                  )}
+                                </div>
+                                <p className="lexi-result-explain-text" style={{ fontSize: "12px", marginTop: "8px", color: "#cbd5e1", margin: "8px 0 0 0" }}>
+                                  <strong>Giải thích:</strong> {currentVideo.quiz.explanation}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                className="lexi-btn-submit-shorts-quiz"
+                                style={{ background: "#475569" }}
+                                onClick={() => {
+                                  setShowQuizPopup(false);
+                                  setIsPlaying(true);
+                                }}
+                              >
+                                Đóng và Xem tiếp
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                   </div>
 
@@ -633,94 +796,29 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
                       <span>Chuyên gia Luật học • Cộng tác viên Lexi</span>
                     </div>
                     <span className="lexi-video-category-tag-badge">
-                      {currentVideo.category === "fraud" ? "🛡️ Lừa Đảo" : currentVideo.category === "civil" ? "🏠 Dân Sự" : "💡 Mẹo Luật"}
+                      {getCategoryLabel(currentVideo.category)}
                     </span>
                   </div>
 
                   <h3 className="lexi-shorts-info-title">{currentVideo.title}</h3>
                   <p className="lexi-shorts-info-desc">{currentVideo.description}</p>
 
+                  {currentVideo.lesson ? (
+                    <button
+                      type="button"
+                      className="lexi-btn-submit-shorts-quiz"
+                      style={{ margin: "12px 0", width: "100%" }}
+                      onClick={() => onNavigate(`/lessons/${currentVideo.lesson?.id}`)}
+                    >
+                      Mở bài học liên quan: {currentVideo.lesson.title}
+                    </button>
+                  ) : null}
+
                   <div className="lexi-shorts-info-music">
-                    <div className="lexi-vinyl-disc-spin"></div>
-                    <span className="lexi-music-track-text" title="Lexi Original Sound - Báo Động Pháp Lý">
-                      Lexi Original Sound - Báo Động Pháp Lý
+                    <span className="lexi-music-track-text" style={{ paddingLeft: 0 }}>
+                      ⚡ Học tập tương tác • Lexi Việt Nam
                     </span>
                   </div>
-                </div>
-              )}
-
-              {/* Gamified Interactive Mini-Quiz Box */}
-              {currentVideo && (
-                <div className="panel lexi-shorts-quiz-card">
-                  <div className="lexi-shorts-quiz-header">
-                    <HelpCircle size={20} className="text-emerald" />
-                    <h4>Hỏi nhanh đáp gọn</h4>
-                  </div>
-                  
-                  <p className="lexi-shorts-quiz-question">
-                    {currentVideo.quiz.question}
-                  </p>
-
-                  <div className="lexi-shorts-quiz-options">
-                    {currentVideo.quiz.options.map((opt, idx) => {
-                      let btnClass = "";
-                      if (isQuizSubmitted) {
-                        if (idx === currentVideo.quiz.correctIndex) {
-                          btnClass = "correct";
-                        } else if (idx === selectedAnswer) {
-                          btnClass = "wrong";
-                        } else {
-                          btnClass = "disabled";
-                        }
-                      } else if (idx === selectedAnswer) {
-                        btnClass = "selected";
-                      }
-
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          className={`lexi-quiz-option-btn ${btnClass}`}
-                          onClick={() => handleAnswerSelect(idx)}
-                          disabled={isQuizSubmitted}
-                        >
-                          <span className="lexi-opt-bullet">{String.fromCharCode(65 + idx)}</span>
-                          <span className="lexi-opt-label-text">{opt}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Submission and results banner triggers */}
-                  {!isQuizSubmitted ? (
-                    <button
-                      className="lexi-btn-submit-shorts-quiz"
-                      disabled={selectedAnswer === null}
-                      onClick={handleSubmitQuiz}
-                    >
-                      Kiểm tra câu trả lời (+5 LC)
-                    </button>
-                  ) : (
-                    <div className={`lexi-shorts-result-banner ${selectedAnswer === currentVideo.quiz.correctIndex ? "success" : "failure"}`}>
-                      <div className="lexi-result-banner-header">
-                        {selectedAnswer === currentVideo.quiz.correctIndex ? (
-                          <>
-                            <CheckCircle size={16} />
-                            <strong>Chính xác! (+5 LC & +10 XP)</strong>
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle size={16} />
-                            <strong>Chưa đúng rồi!</strong>
-                          </>
-                        )}
-                      </div>
-                      <p className="lexi-result-explain-text">
-                        <strong>Giải thích chuyên gia:</strong> {currentVideo.quiz.explanation}
-                      </p>
-                    </div>
-                  )}
-
                 </div>
               )}
 

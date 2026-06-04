@@ -319,7 +319,7 @@ export const ModulesPage: React.FC<ModulesPageProps> = ({
                             {/* Label overlay below or beside active node */}
                             {lesson.state === "active" && (
                               <div className="lexi-node-active-tooltip">
-                                <span>Bài {lesson.sortOrder + 1}: {lesson.title}</span>
+                                <span>Bài {lesson.sortOrder}: {lesson.title}</span>
                               </div>
                             )}
                           </div>

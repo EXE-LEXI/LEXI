@@ -73,6 +73,7 @@ export type AdminLesson = {
   reviewStatus?: LessonReviewStatus | string;
   isActive?: boolean;
   questions?: AdminQuestion[];
+  questionsCount?: number;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -123,6 +124,15 @@ export type AdminDraft = {
 
 export type AdminMediaAsset = {
   id: string;
+  lesson?: {
+    id: string;
+    slug: string;
+    title: string;
+  } | null;
+  draft?: {
+    id: string;
+    title: string;
+  } | null;
   title?: string;
   type?: string;
   assetType?: string;
@@ -132,6 +142,9 @@ export type AdminMediaAsset = {
   url?: string | null;
   mimeType?: string | null;
   provider?: string | null;
+  renderPrompt?: string | null;
+  metadata?: unknown;
+  createdAt?: string;
   updatedAt?: string;
 };
 
@@ -556,12 +569,44 @@ export async function uploadAdminMediaFile(
   token: string,
   file: File,
   title?: string,
-  placement: "SHORTS" | "LESSON_RESOURCE" = "SHORTS"
+  placement: "SHORTS" | "LESSON_RESOURCE" = "SHORTS",
+  options: {
+    lessonId?: string | null;
+    shortsCategory?: string;
+    shortsDescription?: string;
+    shortsAuthor?: string;
+    quizQuestion?: string;
+    quizOptions?: string[];
+    quizCorrectIndex?: number;
+    quizExplanation?: string;
+  } = {}
 ) {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("placement", placement);
   if (title?.trim()) formData.append("title", title.trim());
+  if (options.lessonId) formData.append("lessonId", options.lessonId);
+  if (options.shortsCategory) formData.append("shortsCategory", options.shortsCategory);
+  if (options.shortsDescription?.trim()) {
+    formData.append("shortsDescription", options.shortsDescription.trim());
+  }
+  if (options.shortsAuthor?.trim()) {
+    formData.append("shortsAuthor", options.shortsAuthor.trim());
+  }
+  if (options.quizQuestion?.trim()) {
+    formData.append("quizQuestion", options.quizQuestion.trim());
+  }
+  options.quizOptions?.forEach((option, index) => {
+    if (option.trim()) {
+      formData.append(`quizOption${index + 1}`, option.trim());
+    }
+  });
+  if (options.quizCorrectIndex !== undefined) {
+    formData.append("quizCorrectIndex", String(options.quizCorrectIndex));
+  }
+  if (options.quizExplanation?.trim()) {
+    formData.append("quizExplanation", options.quizExplanation.trim());
+  }
 
   const response = await fetch(`${API_BASE_URL}/admin/media-assets/upload`, {
     method: "POST",

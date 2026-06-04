@@ -75,6 +75,8 @@ import {
 import { AdminContentMapper } from "../mappers/admin-content.mapper";
 import { AdminContentRepository } from "../repositories/admin-content.repository";
 
+const MIN_PUBLISHED_LESSON_QUESTIONS = 10;
+
 @Injectable()
 export class AdminContentService {
   constructor(
@@ -324,7 +326,7 @@ export class AdminContentService {
           sourceDocumentId: source.id,
           legalDocumentNo: source.legalDocumentNo,
           titleHint: dto.titleHint ?? null,
-          questionCount: dto.questionCount ?? 3,
+          questionCount: dto.questionCount ?? MIN_PUBLISHED_LESSON_QUESTIONS,
         },
       },
       draftData: {
@@ -507,12 +509,17 @@ export class AdminContentService {
     }
 
     this.assertDraftQuestionsPublishable(draft.questions);
+    if (!dto.videoUrl?.trim()) {
+      throw new BadRequestException(
+        "Lessons converted from drafts require a video URL before review"
+      );
+    }
 
     const lesson = await this.adminContentRepository.createLessonFromDraft({
       draft,
       moduleId,
       slug: dto.slug?.trim() || this.buildDraftLessonSlug(draft),
-      videoUrl: dto.videoUrl,
+      videoUrl: dto.videoUrl.trim(),
       sortOrder: dto.sortOrder ?? 0,
     });
 
@@ -1242,7 +1249,8 @@ export class AdminContentService {
     const title =
       dto.titleHint?.trim() ||
       this.truncateText(source.title.replace(/\s+/g, " "), 90);
-    const questionCount = dto.questionCount ?? 3;
+    const questionCount =
+      dto.questionCount ?? MIN_PUBLISHED_LESSON_QUESTIONS;
     const legalRef = source.legalDocumentNo
       ? ` (${source.legalDocumentNo})`
       : "";
@@ -1287,7 +1295,8 @@ export class AdminContentService {
       );
     }
 
-    const questionCount = dto.questionCount ?? 3;
+    const questionCount =
+      dto.questionCount ?? MIN_PUBLISHED_LESSON_QUESTIONS;
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
@@ -1615,9 +1624,16 @@ export class AdminContentService {
       );
     }
 
-    if (!lesson.questions || lesson.questions.length === 0) {
+    if (!lesson.videoUrl?.trim()) {
+      throw new BadRequestException("Published lessons require a video");
+    }
+
+    if (
+      !lesson.questions ||
+      lesson.questions.length < MIN_PUBLISHED_LESSON_QUESTIONS
+    ) {
       throw new BadRequestException(
-        "Published lessons require at least one quiz question"
+        `Published lessons require at least ${MIN_PUBLISHED_LESSON_QUESTIONS} quiz questions`
       );
     }
 
@@ -1671,9 +1687,9 @@ export class AdminContentService {
   }
 
   private assertDraftQuestionsPublishable(questions: any[]): void {
-    if (!questions || questions.length === 0) {
+    if (!questions || questions.length < MIN_PUBLISHED_LESSON_QUESTIONS) {
       throw new BadRequestException(
-        "Lesson drafts require at least one quiz question before conversion"
+        `Lesson drafts require at least ${MIN_PUBLISHED_LESSON_QUESTIONS} quiz questions before conversion`
       );
     }
 

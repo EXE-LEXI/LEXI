@@ -51,39 +51,115 @@ type TriviaQuestion = {
 const DUEL_QUESTIONS: TriviaQuestion[] = [
   {
     id: "q-1",
-    question: "Hành vi sử dụng hình ảnh của người khác trên mạng xã hội làm ảnh chế giễu bôi nhọ danh dự cấu thành hành vi vi phạm gì?",
+    question: "Sử dụng hình ảnh của người khác để chế giễu, bôi nhọ trên mạng xã hội thường xâm phạm quyền nào?",
     options: [
-      "Xâm phạm quyền hình ảnh & danh dự cá nhân (Dân sự)",
-      "Quyền tự do ngôn luận hợp pháp",
-      "Chỉ vi phạm quy chế cộng đồng của mạng xã hội"
+      "Quyền hình ảnh, danh dự và nhân phẩm",
+      "Quyền tự do ngôn luận tuyệt đối",
+      "Chỉ là vi phạm nội quy nền tảng"
     ],
     correctIndex: 0,
-    explanation: "Điều 32 Bộ luật Dân sự 2015 quy định việc sử dụng hình ảnh của cá nhân phải được người đó đồng ý. Xử lý ảnh bôi nhọ xâm phạm nghiêm trọng danh dự nhân phẩm."
+    explanation: "Bộ luật Dân sự bảo vệ quyền về hình ảnh, danh dự và nhân phẩm của cá nhân."
   },
   {
     id: "q-2",
-    question: "Mua bán tài khoản ngân hàng của người khác trái phép nhằm trục lợi từ bao nhiêu tài khoản sẽ bị truy cứu trách nhiệm hình sự?",
+    question: "Mua bán trái phép thông tin tài khoản ngân hàng của người khác có thể bị xử lý theo nhóm hành vi nào?",
     options: [
-      "Từ 1 tài khoản trở lên",
-      "Từ 2 đến dưới 20 tài khoản trở lên (hoặc thu lợi bất chính từ 20 triệu đồng)",
-      "Từ 100 tài khoản trở lên"
+      "Vi phạm trật tự xây dựng",
+      "Thu thập, tàng trữ, trao đổi, mua bán trái phép thông tin tài khoản",
+      "Chỉ là tranh chấp dân sự"
     ],
     correctIndex: 1,
-    explanation: "Điều 291 BLHS 2015 quy định hành vi thu thập, tàng trữ, mua bán trái phép thông tin tài khoản ngân hàng từ 2 đến dưới 20 tài khoản sẽ bị khởi tố hình sự."
+    explanation: "Đây là nhóm hành vi liên quan đến thông tin tài khoản ngân hàng và có thể bị xử lý hình sự nếu đủ điều kiện."
   },
   {
     id: "q-3",
-    question: "Shipper tự ý mở gói hàng kiểm tra sản phẩm bên trong của khách hàng mà không được đồng ý cấu thành vi phạm gì?",
+    question: "Người giao hàng tự ý mở gói hàng của khách khi chưa được đồng ý có thể xâm phạm quyền nào?",
     options: [
-      "Quyền bí mật thư tín, điện thoại, điện tín, an toàn thông tin cá nhân",
-      "Hành vi cạnh tranh thương mại thông thường",
-      "Không vi phạm vì shipper có nghĩa vụ kiểm tra chất lượng hàng"
+      "Quyền bí mật đời tư, thư tín và thông tin cá nhân",
+      "Quyền sở hữu trí tuệ",
+      "Không vi phạm vì người giao hàng luôn được kiểm tra"
     ],
     correctIndex: 0,
-    explanation: "Điều 38 Bộ luật Dân sự 2015 bảo đảm an toàn, bí mật đời tư thư tín. Tự ý khui kiểm tra hàng hóa khi chưa được phép là vi phạm nghĩa vụ dân sự."
+    explanation: "Tự ý mở gói hàng có thể xâm phạm bí mật đời tư, thư tín và thông tin cá nhân."
+  },
+  {
+    id: "q-4",
+    question: "Khi nhận được cuộc gọi yêu cầu chuyển tiền để xác minh tài khoản, cách xử lý an toàn nhất là gì?",
+    options: [
+      "Chuyển một khoản nhỏ để kiểm tra",
+      "Cung cấp mã OTP nếu người gọi nói là ngân hàng",
+      "Dừng cuộc gọi và liên hệ kênh chính thức của ngân hàng"
+    ],
+    correctIndex: 2,
+    explanation: "Không cung cấp OTP hoặc chuyển tiền theo yêu cầu qua cuộc gọi lạ; hãy xác minh qua kênh chính thức."
+  },
+  {
+    id: "q-5",
+    question: "Một hợp đồng điện tử có thể có giá trị pháp lý khi nào?",
+    options: [
+      "Khi các bên có thỏa thuận rõ ràng và dữ liệu có thể xác định nội dung giao dịch",
+      "Chỉ khi được in ra giấy",
+      "Chỉ khi gửi qua mạng xã hội"
+    ],
+    correctIndex: 0,
+    explanation: "Giao dịch điện tử có thể có giá trị nếu đáp ứng điều kiện về ý chí, nội dung và khả năng xác thực."
+  },
+  {
+    id: "q-6",
+    question: "Đăng thông tin cá nhân của người khác lên mạng khi chưa được đồng ý có rủi ro gì?",
+    options: [
+      "Có thể xâm phạm quyền riêng tư và dữ liệu cá nhân",
+      "Luôn được phép nếu thông tin đã từng xuất hiện trên mạng",
+      "Không có rủi ro nếu không thu tiền"
+    ],
+    correctIndex: 0,
+    explanation: "Thông tin cá nhân vẫn được bảo vệ; việc công khai trái phép có thể phát sinh trách nhiệm pháp lý."
+  },
+  {
+    id: "q-7",
+    question: "Khi mua hàng online, bằng chứng nào nên lưu lại để xử lý tranh chấp?",
+    options: [
+      "Ảnh chụp đơn hàng, tin nhắn, hóa đơn và thông tin thanh toán",
+      "Chỉ cần nhớ tên shop",
+      "Không cần lưu vì sàn luôn tự xử lý"
+    ],
+    correctIndex: 0,
+    explanation: "Bằng chứng giao dịch giúp chứng minh nội dung thỏa thuận và yêu cầu khiếu nại."
+  },
+  {
+    id: "q-8",
+    question: "Người lao động nên làm gì khi chưa được trả lương đúng hạn?",
+    options: [
+      "Tự ý lấy tài sản công ty để bù lương",
+      "Kiểm tra hợp đồng, bảng công và gửi yêu cầu thanh toán bằng văn bản",
+      "Im lặng vì công ty có toàn quyền quyết định"
+    ],
+    correctIndex: 1,
+    explanation: "Nên lưu chứng cứ và yêu cầu bằng văn bản trước khi khiếu nại hoặc yêu cầu cơ quan có thẩm quyền hỗ trợ."
+  },
+  {
+    id: "q-9",
+    question: "Khi thuê nhà, điều khoản nào nên được ghi rõ trong hợp đồng?",
+    options: [
+      "Tiền thuê, tiền cọc, thời hạn thuê, trách nhiệm sửa chữa và điều kiện chấm dứt",
+      "Chỉ cần ghi tên chủ nhà",
+      "Chỉ cần thỏa thuận miệng để linh hoạt"
+    ],
+    correctIndex: 0,
+    explanation: "Các điều khoản rõ ràng giúp giảm tranh chấp về tiền cọc, nghĩa vụ sửa chữa và thời hạn thuê."
+  },
+  {
+    id: "q-10",
+    question: "Nếu phát hiện nội dung lừa đảo trên mạng, bước phù hợp đầu tiên là gì?",
+    options: [
+      "Chia sẻ lại để cảnh báo nhưng không kiểm chứng",
+      "Lưu bằng chứng, báo cáo nền tảng và thông báo cơ quan/kênh hỗ trợ phù hợp",
+      "Nhắn tin thỏa thuận riêng với đối tượng lừa đảo"
+    ],
+    correctIndex: 1,
+    explanation: "Cần giữ bằng chứng và báo cáo qua kênh phù hợp để giảm thiệt hại và hỗ trợ xử lý."
   }
 ];
-
 export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
   const [activeMode, setActiveMode] = useState<null | "duel" | "court" | "fraud-scan" | "law-match" | "detective" | "penalty">(null);
   
@@ -99,7 +175,7 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
   const [activeQIdx, setActiveQIdx] = useState(0);
   const [selectedOpt, setSelectedOpt] = useState<number | null>(null);
   const [isDuelAnswered, setIsDuelAnswered] = useState(false);
-  const [duelCombatLog, setDuelCombatLog] = useState("Trận đấu bắt đầu! Bạn đối đầu với Robot LexiBot 9000!");
+  const [duelCombatLog, setDuelCombatLog] = useState("Trận đấu bắt đầu! Bạn đối đầu với LexiBot.");
   const [duelOutcome, setDuelOutcome] = useState<null | "victory" | "defeat">(null);
   const [speedBonus, setSpeedBonus] = useState(3); // 3x multiplier
   const [timerProgress, setTimerProgress] = useState(100);
@@ -144,7 +220,7 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
     setActiveQIdx(0);
     setSelectedOpt(null);
     setIsDuelAnswered(false);
-    setDuelCombatLog("Trận đấu bắt đầu! Hãy trả lời thật nhanh để nhận Speed multiplier!");
+    setDuelCombatLog("Trận đấu bắt đầu! Hãy trả lời nhanh để nhận hệ số tốc độ.");
     setDuelOutcome(null);
     setTimerProgress(100);
     setSpeedBonus(3);
@@ -163,7 +239,7 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
       const damage = Math.round(25 * (timerProgress > 50 ? 1.5 : 1));
       const nextEnemyHp = Math.max(enemyHp - damage, 0);
       setEnemyHp(nextEnemyHp);
-      setDuelCombatLog(`Chính xác! Bạn ra đòn chí mạng gây -${damage} HP lên Robot LexiBot! (Tốc độ: ${timerProgress > 50 ? "Sấm chớp 1.5x" : "Bình thường"})`);
+      setDuelCombatLog(`Chính xác! Bạn gây -${damage} HP lên LexiBot. Tốc độ: ${timerProgress > 50 ? "nhanh 1.5x" : "bình thường"}.`);
 
       if (nextEnemyHp <= 0) {
         setTimeout(() => {
@@ -177,8 +253,8 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
       const nextPlayerHp = Math.max(playerHp - damage, 0);
       setPlayerHp(nextPlayerHp);
       setDuelCombatLog(optIdx === -1 
-        ? `Quá thời gian! Bạn bị LexiBot phản công gây -${damage} HP!`
-        : `Chưa đúng! Bạn bị LexiBot phản công gây -${damage} HP! Đáp án đúng là ${String.fromCharCode(65 + question.correctIndex)}.`
+        ? `Quá thời gian! Bạn bị LexiBot phản công gây -${damage} HP.`
+        : `Chưa đúng! Bạn bị LexiBot phản công gây -${damage} HP. Đáp án đúng là ${String.fromCharCode(65 + question.correctIndex)}.`
       );
 
       if (nextPlayerHp <= 0) {
@@ -195,7 +271,7 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
       setSelectedOpt(null);
       setIsDuelAnswered(false);
       setTimerProgress(100);
-      setDuelCombatLog("Lượt đấu tiếp theo! Hãy chuẩn bị phản xạ!");
+      setDuelCombatLog("Lượt đấu tiếp theo! Hãy chuẩn bị phản xạ.");
     } else {
       // Out of questions but no one died: compare HPs
       if (enemyHp < playerHp) {
@@ -249,15 +325,15 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
       setUserCoins(reward.coinBalance);
       setRewardNotice(
         reward.coinsAwarded > 0
-          ? `+${reward.coinsAwarded} LC da duoc ghi vao vi diem.`
-          : "Ban da cham gioi han diem game trong ngay."
+          ? `+${reward.coinsAwarded} LC đã được ghi vào ví điểm.`
+          : "Bạn đã chạm giới hạn điểm game trong ngày."
       );
     } catch (err) {
       setUserCoins((prev) => prev + coins);
       setRewardNotice(
         err instanceof Error
-          ? `Chua dong bo duoc diem game: ${err.message}`
-          : "Chua dong bo duoc diem game."
+          ? `Chưa đồng bộ được điểm game: ${err.message}`
+          : "Chưa đồng bộ được điểm game."
       );
     }
   }
@@ -387,7 +463,7 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
                 <ul className="lexi-game-rewards-bullets">
                   <li>⚡ Nhận thưởng: <strong>+20 Lexi Coins</strong></li>
                   <li>⚖️ Đo lường Công lý, Bồi thẩm đoàn & Dư luận</li>
-                  <li>📂 Đọc hồ sơ & Xét hỏi nhân chứng</li>
+                  <li>📁 Đọc hồ sơ & Xét hỏi nhân chứng</li>
                 </ul>
                 <button className="lexi-btn-start-game-mode special" onClick={handleStartCourt}>
                   MỞ PHIÊN TÒA
@@ -458,7 +534,7 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
                   <li>⚖️ Rèn luyện khả năng lượng hình chuẩn xác</li>
                 </ul>
                 <button className="lexi-btn-start-game-mode" onClick={() => setActiveMode("penalty")}>
-                  UỚC LƯỢNG HÌNH PHẠT
+                  ƯỚC LƯỢNG HÌNH PHẠT
                 </button>
               </div>
 
@@ -881,3 +957,4 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
     </div>
   );
 };
+

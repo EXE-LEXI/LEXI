@@ -568,6 +568,11 @@ export class AdminContentRepository {
           },
         },
       },
+      _count: {
+        select: {
+          questions: true,
+        },
+      },
     } satisfies Prisma.LessonInclude;
   }
 

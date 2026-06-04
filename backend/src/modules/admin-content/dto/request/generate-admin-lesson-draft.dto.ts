@@ -18,7 +18,7 @@ export class GenerateAdminLessonDraftDto {
     value === undefined || value === "" ? undefined : Number.parseInt(value, 10)
   )
   @IsInt()
-  @Min(1)
-  @Max(10)
+  @Min(10)
+  @Max(20)
   questionCount?: number;
 }

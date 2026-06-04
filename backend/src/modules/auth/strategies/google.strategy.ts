@@ -17,13 +17,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, "google") {
 
     super({
       clientID:
-        configService.get<string>("GOOGLE_CLIENT_ID") ??
+        configService.get<string>("GOOGLE_CLIENT_ID") ||
         "missing-google-client-id",
       clientSecret:
-        configService.get<string>("GOOGLE_CLIENT_SECRET") ??
+        configService.get<string>("GOOGLE_CLIENT_SECRET") ||
         "missing-google-client-secret",
       callbackURL:
-        configService.get<string>("GOOGLE_CALLBACK_URL") ??
+        configService.get<string>("GOOGLE_CALLBACK_URL") ||
         `${publicApiUrl}/auth/google/callback`,
       scope: ["email", "profile"],
     });

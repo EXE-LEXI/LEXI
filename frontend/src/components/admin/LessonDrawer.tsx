@@ -73,6 +73,7 @@ export function LessonDrawer({
   const [sortOrder, setSortOrder] = useState(lesson?.sortOrder ?? 0);
   const [reviewStatus, setReviewStatus] = useState(lesson?.reviewStatus || "DRAFT");
   const [isActive, setIsActive] = useState(Boolean(lesson?.isActive));
+  const [questionsCount, setQuestionsCount] = useState(lesson?.questionsCount ?? lesson?.questions?.length ?? 0);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +105,7 @@ export function LessonDrawer({
         setSortOrder(detail.sortOrder ?? 0);
         setReviewStatus(detail.reviewStatus || "DRAFT");
         setIsActive(Boolean(detail.isActive));
+        setQuestionsCount(detail.questionsCount ?? detail.questions?.length ?? 0);
       })
       .catch((err: any) => setError("Không tải được chi tiết bài học: " + (err.message || err)))
       .finally(() => setIsLoadingDetail(false));
@@ -123,6 +125,24 @@ export function LessonDrawer({
     if (!title.trim()) {
       setError("Vui lòng nhập tiêu đề bài học.");
       return;
+    }
+    if (reviewStatus === "PUBLISHED") {
+      if (!isActive) {
+        setError("Bài giảng ở trạng thái 'Đã publish' phải được thiết lập là 'Hiển thị'.");
+        return;
+      }
+      if (!videoUrl.trim()) {
+        setError("Không thể publish: Bài học yêu cầu đường dẫn Video bài giảng.");
+        return;
+      }
+      if (questionsCount < 10) {
+        setError(`Không thể publish: Bài học yêu cầu tối thiểu 10 câu hỏi trắc nghiệm (hiện có: ${questionsCount}).`);
+        return;
+      }
+      if (!sourceTitle.trim() || !sourceUrl.trim() || !legalDocumentNo.trim() || !reviewedAt) {
+        setError("Không thể publish: Bài học yêu cầu đầy đủ thông tin nguồn pháp lý (Tên nguồn, đường dẫn nguồn, số hiệu và ngày duyệt).");
+        return;
+      }
     }
     setIsSaving(true);
     setError(null);
@@ -317,6 +337,37 @@ export function LessonDrawer({
                     </button>
                   </div>
                 </div>
+
+                {reviewStatus === "PUBLISHED" && (
+                  <div style={{
+                    marginTop: "12px",
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    background: (questionsCount >= 10 && !!videoUrl.trim() && !!sourceTitle.trim() && !!sourceUrl.trim() && !!legalDocumentNo.trim() && !!reviewedAt && isActive) ? "#f0fdf4" : "#fff7ed",
+                    border: (questionsCount >= 10 && !!videoUrl.trim() && !!sourceTitle.trim() && !!sourceUrl.trim() && !!legalDocumentNo.trim() && !!reviewedAt && isActive) ? "1px solid #bbf7d0" : "1px solid #fed7aa",
+                    color: (questionsCount >= 10 && !!videoUrl.trim() && !!sourceTitle.trim() && !!sourceUrl.trim() && !!legalDocumentNo.trim() && !!reviewedAt && isActive) ? "#15803d" : "#c2410c",
+                    fontSize: "12.5px",
+                    lineHeight: "1.5"
+                  }}>
+                    <strong style={{ display: "block", marginBottom: "4px" }}>
+                      {(questionsCount >= 10 && !!videoUrl.trim() && !!sourceTitle.trim() && !!sourceUrl.trim() && !!legalDocumentNo.trim() && !!reviewedAt && isActive) ? "✓ Đủ điều kiện Publish:" : "⚠️ Chưa đủ điều kiện Publish:"}
+                    </strong>
+                    <ul style={{ margin: 0, paddingLeft: "16px", listStyleType: "disc" }}>
+                      <li style={{ color: isActive ? "inherit" : "#dc2626", fontWeight: isActive ? 500 : 700 }}>
+                        Hiển thị cho học viên: {isActive ? "Đã hiển thị" : "Bị ẩn (Yêu cầu hiển thị khi publish)"}
+                      </li>
+                      <li style={{ color: !!videoUrl.trim() ? "inherit" : "#dc2626", fontWeight: !!videoUrl.trim() ? 500 : 700 }}>
+                        Đường dẫn video: {!!videoUrl.trim() ? "Đã có" : "Chưa có"}
+                      </li>
+                      <li style={{ color: questionsCount >= 10 ? "inherit" : "#dc2626", fontWeight: questionsCount >= 10 ? 500 : 700 }}>
+                        Số lượng câu hỏi trắc nghiệm: {questionsCount}/10 câu {questionsCount >= 10 ? "(Đạt)" : "(Chưa đạt)"}
+                      </li>
+                      <li style={{ color: (!!sourceTitle.trim() && !!sourceUrl.trim() && !!legalDocumentNo.trim() && !!reviewedAt) ? "inherit" : "#dc2626", fontWeight: (!!sourceTitle.trim() && !!sourceUrl.trim() && !!legalDocumentNo.trim() && !!reviewedAt) ? 500 : 700 }}>
+                        Thông tin nguồn pháp lý: {(!!sourceTitle.trim() && !!sourceUrl.trim() && !!legalDocumentNo.trim() && !!reviewedAt) ? "Đầy đủ" : "Còn thiếu"}
+                      </li>
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 

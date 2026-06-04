@@ -89,6 +89,12 @@ export class AdminLessonSummaryResponseDto {
   @ApiProperty({ type: AdminContentModuleDto })
   module: AdminContentModuleDto;
 
+  @ApiProperty({ nullable: true })
+  videoUrl: string | null;
+
+  @ApiProperty({ default: 0 })
+  questionsCount: number;
+
   @ApiProperty()
   createdAt: Date;
 

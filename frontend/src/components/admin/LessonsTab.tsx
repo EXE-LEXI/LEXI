@@ -109,6 +109,11 @@ export function LessonsTab({
           {filteredLessons.map((lesson) => {
             const published = isPublished(lesson);
             const categoryLabel = (lesson.module?.category?.title || lesson.category?.title || lesson.module?.title || "LEXI").toUpperCase();
+            
+            const qCount = lesson.questionsCount ?? lesson.questions?.length ?? 0;
+            const hasVideo = !!lesson.videoUrl?.trim();
+            const hasEnoughQuiz = qCount >= 10;
+            const isReady = hasVideo && hasEnoughQuiz;
 
             return (
               <div key={lesson.id} className="lexi-cms-lesson-card">
@@ -122,11 +127,38 @@ export function LessonsTab({
                 </div>
 
                 <div className="lexi-cms-lesson-card-body">
-                  <span className="lexi-cms-lesson-card-category">{categoryLabel}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                    <span className="lexi-cms-lesson-card-category">{categoryLabel}</span>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#64748b" }}>
+                      {qCount} câu hỏi
+                    </span>
+                  </div>
                   <h3 className="lexi-cms-lesson-card-title" title={lesson.title}>{lesson.title}</h3>
-                  <p className="lexi-cms-lesson-card-desc">
+                  <p className="lexi-cms-lesson-card-desc" style={{ marginBottom: "12px" }}>
                     {lesson.module?.title || "Chưa gán module"} - {getReviewStatusLabel(lesson.reviewStatus)}
                   </p>
+
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "4px" }}>
+                    {isReady ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10.5px", fontWeight: 700, padding: "2px 8px", borderRadius: "99px", background: "#dcfce7", color: "#15803d", border: "1px solid #bbf7d0" }}>
+                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#22c55e" }}></span>
+                        Sẵn sàng
+                      </span>
+                    ) : (
+                      <>
+                        {!hasVideo && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10.5px", fontWeight: 700, padding: "2px 8px", borderRadius: "99px", background: "#fee2e2", color: "#b91c1c", border: "1px solid #fca5a5" }}>
+                            ⚠️ Thiếu video
+                          </span>
+                        )}
+                        {!hasEnoughQuiz && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10.5px", fontWeight: 700, padding: "2px 8px", borderRadius: "99px", background: "#fef3c7", color: "#d97706", border: "1px solid #fde68a" }}>
+                            ⚠️ Thiếu quiz ({qCount}/10)
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <div className="lexi-cms-lesson-card-footer">

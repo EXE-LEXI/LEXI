@@ -88,7 +88,17 @@ export class AdminMediaController {
   async uploadMediaAsset(
     @UploadedFile() file: any,
     @Body("title") title?: string,
-    @Body("placement") placement?: string
+    @Body("placement") placement?: string,
+    @Body("lessonId") lessonId?: string,
+    @Body("shortsCategory") shortsCategory?: string,
+    @Body("shortsDescription") shortsDescription?: string,
+    @Body("shortsAuthor") shortsAuthor?: string,
+    @Body("quizQuestion") quizQuestion?: string,
+    @Body("quizOption1") quizOption1?: string,
+    @Body("quizOption2") quizOption2?: string,
+    @Body("quizOption3") quizOption3?: string,
+    @Body("quizCorrectIndex") quizCorrectIndex?: string,
+    @Body("quizExplanation") quizExplanation?: string
   ): Promise<AdminMediaAssetResponseDto> {
     if (!file) {
       throw new BadRequestException("Video file is required");
@@ -121,9 +131,31 @@ export class AdminMediaController {
         .replace(/^-+|-+$/g, "")
         .slice(0, 80) || "video";
     const mediaPlacement = this.resolveMediaPlacement(placement);
+
+    // Validate Shorts metadata and quiz details
+    if (mediaPlacement === MediaAssetPlacement.SHORTS) {
+      if (!shortsDescription?.trim()) {
+        throw new BadRequestException("Mô tả video ngắn là bắt buộc");
+      }
+      if (!quizQuestion?.trim()) {
+        throw new BadRequestException("Câu hỏi quiz là bắt buộc đối với video ngắn");
+      }
+      if (!quizOption1?.trim() || !quizOption2?.trim() || !quizOption3?.trim()) {
+        throw new BadRequestException("Tất cả 3 đáp án trắc nghiệm là bắt buộc đối với video ngắn");
+      }
+      const correctIdx = Number.parseInt(quizCorrectIndex ?? "", 10);
+      if (Number.isNaN(correctIdx) || correctIdx < 0 || correctIdx > 2) {
+        throw new BadRequestException("Chỉ số đáp án đúng phải từ 1 đến 3");
+      }
+      if (!quizExplanation?.trim()) {
+        throw new BadRequestException("Giải thích đáp án là bắt buộc đối với video ngắn");
+      }
+    }
+
     const uploadResult = await this.uploadVideoFile(file, baseName, extension);
 
     return this.adminContentService.createMediaAsset({
+      lessonId: lessonId?.trim() || null,
       title: title?.trim() || basename(originalName, extension),
       assetType: MediaAssetType.VIDEO,
       sourceType: MediaAssetSourceType.EXTERNAL_URL,
@@ -137,17 +169,15 @@ export class AdminMediaController {
         size: file.size,
         storage: uploadResult.metadata,
         ...(mediaPlacement === MediaAssetPlacement.SHORTS
-          ? {
-              shorts: {
-                category: "trivia",
-                author: "Lexi",
-                description:
-                  "Video ngan phap ly duoc tai len tu khu quan tri Lexi.",
-                likes: 0,
-                commentsCount: 0,
-                bookmarksCount: 0,
-              },
-            }
+          ? this.buildShortsMetadata({
+              category: shortsCategory,
+              description: shortsDescription,
+              author: shortsAuthor,
+              quizQuestion,
+              quizOptions: [quizOption1, quizOption2, quizOption3],
+              quizCorrectIndex,
+              quizExplanation,
+            })
           : {}),
       },
     });
@@ -209,6 +239,77 @@ export class AdminMediaController {
     }
 
     throw new BadRequestException("Invalid media placement");
+  }
+
+  private buildShortsMetadata(params: {
+    category?: string;
+    description?: string;
+    author?: string;
+    quizQuestion?: string;
+    quizOptions: Array<string | undefined>;
+    quizCorrectIndex?: string;
+    quizExplanation?: string;
+  }): Record<string, unknown> {
+    const category = this.resolveShortsCategory(params.category);
+    const options = params.quizOptions.map((option) => option?.trim() ?? "");
+    const hasCompleteQuiz =
+      Boolean(params.quizQuestion?.trim()) &&
+      options.every((option) => option.length > 0);
+    const correctIndex = Number.parseInt(params.quizCorrectIndex ?? "0", 10);
+
+    return {
+      shorts: {
+        category,
+        author: params.author?.trim() || "Lexi",
+        description:
+          params.description?.trim() ||
+          "Video ngắn pháp lý được tải lên từ khu quản trị LEXI.",
+        likes: 0,
+        commentsCount: 0,
+        bookmarksCount: 0,
+        quiz: hasCompleteQuiz
+          ? {
+              question: params.quizQuestion?.trim(),
+              options,
+              correctIndex:
+                Number.isInteger(correctIndex) && correctIndex >= 0 && correctIndex <= 2
+                  ? correctIndex
+                  : 0,
+              explanation: params.quizExplanation?.trim() || "",
+            }
+          : {
+              question:
+                "Video này đang nói về chuyên mục pháp lý nào?",
+              options: [
+                "Lừa đảo công nghệ",
+                "Dân sự và đời sống",
+                "Mẹo luật thường gặp",
+              ],
+              correctIndex:
+                category === "fraud" ? 0 : category === "civil" ? 1 : 2,
+              explanation:
+                "Đây là câu hỏi mặc định. Admin có thể bổ sung quiz riêng cho từng video trong bước biên tập.",
+            },
+      },
+    };
+  }
+
+  private resolveShortsCategory(category?: string): string {
+    const validCategories = new Set([
+      "fraud",
+      "civil",
+      "labor",
+      "traffic",
+      "family",
+      "criminal",
+      "trivia",
+    ]);
+
+    if (category && validCategories.has(category)) {
+      return category;
+    }
+
+    return "trivia";
   }
 
   private async uploadVideoFile(

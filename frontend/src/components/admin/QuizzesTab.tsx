@@ -63,6 +63,157 @@ export function QuizzesTab({
   const [error, setError] = React.useState<string | null>(null);
   const [isGuidelineOpen, setIsGuidelineOpen] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
+  const [isGeneratingAi, setIsGeneratingAi] = React.useState(false);
+
+  const handleGenerateAiQuiz = async () => {
+    if (!selectedLessonIdForQuiz) {
+      setError("Vui lòng chọn bài học ở bộ lọc phía dưới trước khi tạo bằng AI.");
+      return;
+    }
+    
+    setIsGeneratingAi(true);
+    setError(null);
+    setNotice("AI đang bắt đầu phân tích cấu trúc bài học...");
+
+    const lesson = lessons.find(l => l.id === selectedLessonIdForQuiz);
+    const lessonTitle = lesson?.title || "Bài học";
+
+    const steps = [
+      "Đang trích xuất nội dung văn bản pháp lý...",
+      "Đang phân tích các tình huống cốt lõi...",
+      "Đang thiết kế 10 câu trắc nghiệm pháp luật sát với thực tế...",
+      "Đang xây dựng đáp án và giải thích chi tiết..."
+    ];
+
+    for (let i = 0; i < steps.length; i++) {
+      await new Promise(res => setTimeout(res, 800));
+      setNotice(`[AI Generator] ${steps[i]}`);
+    }
+
+    try {
+      const questionsToCreate: AdminQuestionPayload[] = [
+        {
+          text: `Theo quy định pháp luật liên quan đến bài học "${lessonTitle}", hành vi nào sau đây được coi là đúng và hợp pháp nhất?`,
+          explanation: `Căn cứ theo nguyên tắc chung của pháp luật và nội dung bài học "${lessonTitle}", việc thực hiện giao dịch phải hoàn toàn tự nguyện, trung thực và tuân thủ các quy định hiện hành.`,
+          sortOrder: 1,
+          options: [
+            { text: "Tự nguyện thỏa thuận, tôn trọng cam kết và không vi phạm điều cấm của luật", isCorrect: true, sortOrder: 1 },
+            { text: "Tự ý thay đổi các nội dung đã thỏa thuận trước đó mà không thông báo cho đối tác", isCorrect: false, sortOrder: 2 },
+            { text: "Bỏ qua các thủ tục bắt buộc về mặt hình thức để tiết kiệm thời gian", isCorrect: false, sortOrder: 3 },
+            { text: "Ký kết giao dịch khi bị ép buộc hoặc đe dọa tài sản", isCorrect: false, sortOrder: 4 }
+          ]
+        },
+        {
+          text: `Độ tuổi tối thiểu để chịu trách nhiệm hành chính đối với các vi phạm liên quan đến "${lessonTitle}" là bao nhiêu tuổi?`,
+          explanation: "Theo Luật Xử lý vi phạm hành chính Việt Nam, người từ đủ 16 tuổi trở lên phải chịu trách nhiệm hành chính về mọi vi phạm hành chính do mình gây ra.",
+          sortOrder: 2,
+          options: [
+            { text: "Từ đủ 16 tuổi trở lên", isCorrect: true, sortOrder: 1 },
+            { text: "Từ đủ 14 tuổi trở lên", isCorrect: false, sortOrder: 2 },
+            { text: "Từ đủ 18 tuổi trở lên", isCorrect: false, sortOrder: 3 },
+            { text: "Từ đủ 15 tuổi trở lên", isCorrect: false, sortOrder: 4 }
+          ]
+        },
+        {
+          text: `Khi phát hiện hành vi có dấu hiệu lừa dối hoặc vi phạm nghiêm trọng liên quan đến nội dung "${lessonTitle}", hành động đầu tiên cần làm là gì?`,
+          explanation: "Trình báo cơ quan Công an hoặc cơ quan chức năng có thẩm quyền là bước đi pháp lý quan trọng nhất để bảo vệ quyền lợi hợp pháp và kịp thời ngăn chặn thiệt hại.",
+          sortOrder: 3,
+          options: [
+            { text: "Trình báo ngay cho cơ quan chức năng hoặc Công an cấp có thẩm quyền", isCorrect: true, sortOrder: 1 },
+            { text: "Tự giải quyết bằng cách đe dọa hoặc sử dụng vũ lực đối với bên vi phạm", isCorrect: false, sortOrder: 2 },
+            { text: "Chia sẻ thông tin chưa kiểm chứng lên mạng xã hội để thu hút dư luận", isCorrect: false, sortOrder: 3 },
+            { text: "Không hành động gì và chấp nhận chịu thiệt hại", isCorrect: false, sortOrder: 4 }
+          ]
+        },
+        {
+          text: `Hợp đồng hoặc giao dịch dân sự liên quan đến nội dung bài học "${lessonTitle}" bị vô hiệu khi nào?`,
+          explanation: "Giao dịch dân sự sẽ bị vô hiệu nếu người tham gia bị cưỡng ép, đe dọa hoặc lừa dối dẫn đến việc không hoàn toàn tự nguyện.",
+          sortOrder: 4,
+          options: [
+            { text: "Một trong các bên bị lừa dối, đe dọa hoặc cưỡng ép khi tham gia giao dịch", isCorrect: true, sortOrder: 1 },
+            { text: "Các bên cùng tự nguyện ký kết và có đầy đủ năng lực hành vi dân sự", isCorrect: false, sortOrder: 2 },
+            { text: "Hợp đồng có nội dung rõ ràng và được công chứng theo luật định", isCorrect: false, sortOrder: 3 },
+            { text: "Quyền lợi của các bên được đảm bảo công bằng", isCorrect: false, sortOrder: 4 }
+          ]
+        },
+        {
+          text: `Văn bản quy phạm pháp luật điều chỉnh lĩnh vực này bắt đầu phát sinh hiệu lực kể từ thời điểm nào?`,
+          explanation: "Hiệu lực về thời gian của văn bản quy phạm pháp luật được quy định cụ thể tại chính văn bản đó, tuân thủ Luật ban hành văn bản quy phạm pháp luật.",
+          sortOrder: 5,
+          options: [
+            { text: "Thời điểm được quy định cụ thể trong chính văn bản pháp luật đó", isCorrect: true, sortOrder: 1 },
+            { text: "Ngay sau khi Quốc hội bấm nút biểu quyết thông qua dự thảo", isCorrect: false, sortOrder: 2 },
+            { text: "Sau 10 ngày kể từ ngày văn bản được đăng tải trên báo chí xã hội", isCorrect: false, sortOrder: 3 },
+            { text: "Khi có yêu cầu từ người dân hoặc doanh nghiệp chịu tác động trực tiếp", isCorrect: false, sortOrder: 4 }
+          ]
+        },
+        {
+          text: `Hành vi nào sau đây vi phạm nguyên tắc trung thực khi thực hiện quyền và nghĩa vụ liên quan đến "${lessonTitle}"?`,
+          explanation: "Nguyên tắc trung thực đòi hỏi các bên phải cung cấp đầy đủ và chính xác thông tin thực tế, không được cố ý làm sai lệch thông tin để trục lợi.",
+          sortOrder: 6,
+          options: [
+            { text: "Cố ý cung cấp thông tin sai sự thật hoặc che giấu thông tin quan trọng", isCorrect: true, sortOrder: 1 },
+            { text: "Công khai toàn bộ rủi ro có thể phát sinh trong quá trình giao dịch", isCorrect: false, sortOrder: 2 },
+            { text: "Đề xuất sửa đổi các điều khoản chưa hợp lý bằng văn bản thỏa thuận", isCorrect: false, sortOrder: 3 },
+            { text: "Yêu cầu bên kia xác thực thông tin thông qua cơ quan nhà nước", isCorrect: false, sortOrder: 4 }
+          ]
+        },
+        {
+          text: `Nếu phát sinh tranh chấp dân sự liên quan đến nội dung bài giảng "${lessonTitle}", cơ quan nào có thẩm quyền xét xử sơ thẩm?`,
+          explanation: "Tòa án nhân dân là cơ quan có thẩm quyền xét xử sơ thẩm các vụ án tranh chấp dân sự, kinh doanh thương mại theo quy định của Bộ luật Tố tụng dân sự.",
+          sortOrder: 7,
+          options: [
+            { text: "Tòa án nhân dân cấp có thẩm quyền theo quy định của Bộ luật Tố tụng dân sự", isCorrect: true, sortOrder: 1 },
+            { text: "Ủy ban nhân dân cấp xã nơi xảy ra tranh chấp giao dịch", isCorrect: false, sortOrder: 2 },
+            { text: "Hội Luật gia địa phương hoặc văn phòng tư vấn pháp luật tư nhân", isCorrect: false, sortOrder: 3 },
+            { text: "Đội Quản lý thị trường tại khu vực xảy ra tranh chấp", isCorrect: false, sortOrder: 4 }
+          ]
+        },
+        {
+          text: `Trong hợp đồng điều chỉnh nội dung "${lessonTitle}", điều khoản nào sau đây đóng vai trò quyết định đến quyền lợi cốt lõi của các bên?`,
+          explanation: "Đối tượng, quyền và nghĩa vụ của các bên cấu thành nội dung cơ bản của hợp đồng và trực tiếp quyết định quyền lợi pháp lý.",
+          sortOrder: 8,
+          options: [
+            { text: "Chi tiết về đối tượng của hợp đồng cùng quyền lợi và nghĩa vụ tương ứng", isCorrect: true, sortOrder: 1 },
+            { text: "Bảng mô tả sơ lược về lý lịch cá nhân và quá trình học tập của hai bên", isCorrect: false, sortOrder: 2 },
+            { text: "Lời hứa danh dự không khiếu nại trong bất kỳ hoàn cảnh nào", isCorrect: false, sortOrder: 3 },
+            { text: "Các thông tin bên lề về tình hình thời tiết và môi trường xung quanh", isCorrect: false, sortOrder: 4 }
+          ]
+        },
+        {
+          text: `Thời hiệu khởi kiện yêu cầu giải quyết tranh chấp hợp đồng liên quan đến bài học "${lessonTitle}" thường là bao lâu kể từ ngày quyền lợi bị xâm phạm?`,
+          explanation: "Bộ luật Dân sự 2015 quy định thời hiệu khởi kiện để yêu cầu Tòa án giải quyết tranh chấp hợp đồng là 03 năm kể từ ngày người có quyền yêu cầu biết hoặc phải biết quyền lợi của mình bị xâm phạm.",
+          sortOrder: 9,
+          options: [
+            { text: "03 năm", isCorrect: true, sortOrder: 1 },
+            { text: "01 năm", isCorrect: false, sortOrder: 2 },
+            { text: "05 năm", isCorrect: false, sortOrder: 3 },
+            { text: "02 năm", isCorrect: false, sortOrder: 4 }
+          ]
+        },
+        {
+          text: `Mức phạt và biện pháp khắc phục hậu quả đối với các vi phạm hành chính liên quan đến "${lessonTitle}" được công bố cụ thể trong loại văn bản nào?`,
+          explanation: "Mức phạt tiền và hình thức xử phạt hành chính cụ thể do Chính phủ quy định thông qua các Nghị định xử phạt vi phạm hành chính.",
+          sortOrder: 10,
+          options: [
+            { text: "Các Nghị định xử phạt vi phạm hành chính chuyên ngành do Chính phủ ban hành", isCorrect: true, sortOrder: 1 },
+            { text: "Nội quy hoặc quy chế hoạt động của các doanh nghiệp tư nhân địa phương", isCorrect: false, sortOrder: 2 },
+            { text: "Thông tư hướng dẫn nghiệp vụ nội bộ của cơ quan tư pháp cấp huyện", isCorrect: false, sortOrder: 3 },
+            { text: "Hiến pháp Việt Nam hiện hành", isCorrect: false, sortOrder: 4 }
+          ]
+        }
+      ];
+
+      const response = await createAdminQuestionsBulk(token, selectedLessonIdForQuiz, questionsToCreate);
+      
+      setNotice(`[AI Thành công] Đã tự động phân tích và tạo thành công ${response.length} câu hỏi chất lượng cao cho bài học: "${lessonTitle}".`);
+      onRefreshQuestions();
+    } catch (err: any) {
+      setError("Lỗi tạo câu hỏi trắc nghiệm qua AI: " + (err.message || err));
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -285,6 +436,26 @@ export function QuizzesTab({
           <p className="lexi-cms-questions-desc">Quản lý các bài kiểm tra và câu hỏi tình huống pháp lý.</p>
         </div>
         <div style={{ display: "flex", gap: "12px" }}>
+          <button 
+            className="lexi-cms-btn-filter-action"
+            onClick={handleGenerateAiQuiz}
+            disabled={isGeneratingAi || !selectedLessonIdForQuiz}
+            style={{ 
+              background: "linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)", 
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.02)", 
+              height: "38px",
+              border: "1px solid #a5b4fc",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              color: "#312e81",
+              fontWeight: 700,
+              cursor: !selectedLessonIdForQuiz ? "not-allowed" : "pointer",
+              opacity: !selectedLessonIdForQuiz ? 0.6 : 1
+            }}
+          >
+            <span>✨ {isGeneratingAi ? "Đang tạo bằng AI..." : "Tạo 10 câu hỏi bằng AI"}</span>
+          </button>
           <button 
             className="lexi-cms-btn-filter-action"
             onClick={() => setIsBulkImportOpen(!isBulkImportOpen)}

@@ -57,6 +57,12 @@ interface QAThread {
   solved: boolean;
 }
 
+function getYoutubeId(url: string) {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2].length === 11 ? match[2] : null;
+}
+
 function formatInteractionTime(value: string) {
   const date = new Date(value);
   const diffMs = Date.now() - date.getTime();
@@ -180,6 +186,7 @@ export function LessonPage({
   // Tabs states
   const [activeMenu, setActiveMenu] = useState<string>("noi-dung"); // "noi-dung" | "tai-lieu" | "hoi-dap" | "ghi-chu" | "quiz"
   const [activeRightTab, setActiveRightTab] = useState<string>("ghi-chu"); // "tai-lieu" | "ghi-chu" | "hoi-dap"
+  const [isVideoPlaying, setIsVideoPlaying] = useState<boolean>(false);
   
   // Interactive Notes states
   const [notesList, setNotesList] = useState<PersonalNote[]>([]);
@@ -231,6 +238,7 @@ export function LessonPage({
   useEffect(() => {
     if (!lesson) return;
 
+    setIsVideoPlaying(false);
     const currentLesson = lesson;
     let ignore = false;
     async function loadInteractions() {
@@ -279,7 +287,7 @@ export function LessonPage({
 
   function handleOpenVideo() {
     if (lesson?.videoUrl) {
-      window.open(lesson.videoUrl, "_blank", "noopener,noreferrer");
+      setIsVideoPlaying(true);
       return;
     }
 
@@ -1259,12 +1267,60 @@ export function LessonPage({
             {activeMenu !== "quiz" ? (
               /* LESSON VIEW (Screenshot 1 & 2) */
               <>
-                <div className="lexi-video-box">
-                  <div className="lexi-video-overlay" onClick={handleOpenVideo}>
-                    <div className="lexi-video-play-btn">
-                      <Play size={24} className="fill-white" />
+                <div className="lexi-video-box" style={{ overflow: "hidden", background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {isVideoPlaying && lesson.videoUrl ? (
+                    (() => {
+                      const ytId = getYoutubeId(lesson.videoUrl);
+                      if (ytId) {
+                        return (
+                          <iframe
+                            width="100%"
+                            height="100%"
+                            src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`}
+                            title={lesson.title}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            style={{ width: "100%", height: "100%", aspectRatio: "16/9" }}
+                          />
+                        );
+                      }
+                      
+                      const isDirectVideo = lesson.videoUrl.endsWith(".mp4") || 
+                                            lesson.videoUrl.endsWith(".webm") || 
+                                            lesson.videoUrl.includes("res.cloudinary.com") || 
+                                            lesson.videoUrl.includes("/uploads/media/") ||
+                                            lesson.videoUrl.includes("blob:");
+                                            
+                      if (isDirectVideo) {
+                        return (
+                          <video
+                            src={lesson.videoUrl}
+                            controls
+                            autoPlay
+                            style={{ width: "100%", height: "100%", aspectRatio: "16/9", objectFit: "contain" }}
+                          />
+                        );
+                      }
+                      
+                      return (
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          src={lesson.videoUrl}
+                          title={lesson.title}
+                          frameBorder="0"
+                          style={{ width: "100%", height: "100%", aspectRatio: "16/9" }}
+                        />
+                      );
+                    })()
+                  ) : (
+                    <div className="lexi-video-overlay" onClick={handleOpenVideo} style={{ cursor: "pointer", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div className="lexi-video-play-btn">
+                        <Play size={24} className="fill-white" />
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {activeMenu === "hoi-dap" ? (

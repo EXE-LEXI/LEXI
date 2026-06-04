@@ -99,6 +99,8 @@ export class AdminContentMapper {
           title: lesson.module.category.title,
         },
       },
+      videoUrl: lesson.videoUrl,
+      questionsCount: lesson._count?.questions ?? lesson.questions?.length ?? 0,
       createdAt: lesson.createdAt,
       updatedAt: lesson.updatedAt,
     };

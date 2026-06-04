@@ -56,7 +56,7 @@ export function AiDraftsTab({
   const [notice, setNotice] = useState<string | null>(null);
   const [selectedSourceId, setSelectedSourceId] = useState("");
   const [titleHint, setTitleHint] = useState("");
-  const [questionCount, setQuestionCount] = useState(5);
+  const [questionCount, setQuestionCount] = useState(10);
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
 
@@ -261,7 +261,7 @@ export function AiDraftsTab({
           {genError && <div className="status-toast error" style={{ marginTop: 12 }}><AlertCircle size={16} />{genError}</div>}
           <div className="lexi-form-field"><label>Nguồn pháp lý</label><select value={selectedSourceId} onChange={(event) => setSelectedSourceId(event.target.value)} required style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #cbd5e1" }}><option value="">-- Chọn nguồn --</option>{sources.map((source) => <option key={source.id} value={source.id}>{source.title}</option>)}</select></div>
           <div className="lexi-form-field"><label>Gợi ý tiêu đề</label><input value={titleHint} onChange={(event) => setTitleHint(event.target.value)} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #cbd5e1" }} /></div>
-          <div className="lexi-form-field"><label>Số câu hỏi</label><input type="number" min={1} max={10} value={questionCount} onChange={(event) => setQuestionCount(Number(event.target.value))} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #cbd5e1" }} /></div>
+          <div className="lexi-form-field"><label>Số câu hỏi</label><input type="number" min={10} max={20} value={questionCount} onChange={(event) => setQuestionCount(Number(event.target.value))} style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #cbd5e1" }} /></div>
           <button className="lexi-btn-save-settings" type="submit" disabled={isGenerating}>{isGenerating ? <><RefreshCw className="animate-spin" size={16} /> Đang tạo...</> : <><Sparkles size={16} /> Tạo draft</>}</button>
         </form>
       </div>
