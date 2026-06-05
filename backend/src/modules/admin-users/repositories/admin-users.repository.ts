@@ -44,6 +44,13 @@ export class AdminUsersRepository {
     ]);
   }
 
+  updateUser(id: string, data: Prisma.UserUpdateInput) {
+    return this.prisma.user.update({
+      where: { id },
+      data,
+    });
+  }
+
   getSummary(activeSince: Date) {
     return this.prisma.$transaction([
       this.prisma.user.count(),

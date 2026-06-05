@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import type { FormEvent } from "react";
-import type { LessonDetail, QuizSubmission } from "../types/learning";
+import type { LessonDetail, QuizSubmission, AdaptiveQuestion } from "../types/learning";
 import { formatDate } from "../utils/format";
 import { Button } from "../components/ui/Button";
+import { getAdaptiveQuiz } from "../api/learning";
 import {
   createLessonDiscussion,
   createLessonNote,
@@ -205,6 +206,8 @@ export function LessonPage({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState<number>(15 * 60); // 15 minutes
   const [showResult, setShowResult] = useState<boolean>(false);
+  const [adaptiveQuestions, setAdaptiveQuestions] = useState<AdaptiveQuestion[]>([]);
+  const [isQuizLoading, setIsQuizLoading] = useState(false);
 
   // Sync showResult with result prop
   useEffect(() => {
@@ -228,6 +231,27 @@ export function LessonPage({
     }, 1000);
     return () => clearInterval(timer);
   }, [activeMenu, showResult]);
+
+  useEffect(() => {
+    if (activeMenu === "quiz" && lesson && adaptiveQuestions.length === 0 && !showResult) {
+      let ignore = false;
+      async function loadAdaptiveQuiz() {
+        setIsQuizLoading(true);
+        try {
+          const aiQuiz = await getAdaptiveQuiz(token, lesson.id, 5);
+          if (!ignore) {
+            setAdaptiveQuestions(aiQuiz);
+          }
+        } catch (err) {
+          console.error("Failed to load adaptive quiz", err);
+        } finally {
+          if (!ignore) setIsQuizLoading(false);
+        }
+      }
+      void loadAdaptiveQuiz();
+      return () => { ignore = true; };
+    }
+  }, [activeMenu, lesson, adaptiveQuestions.length, showResult, token]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -405,8 +429,15 @@ export function LessonPage({
   );
 
   if (activeMenu === "quiz" && lesson) {
-    const totalQuestions = lesson.questions.length;
-    const currentQuestion = lesson.questions[currentQuizIndex];
+    const displayQuestions = adaptiveQuestions.length > 0 
+      ? adaptiveQuestions.map(q => ({
+          id: q.questionId,
+          text: q.questionText,
+          options: q.options
+        }))
+      : lesson.questions;
+    const totalQuestions = displayQuestions.length;
+    const currentQuestion = displayQuestions[currentQuizIndex];
 
     if (showResult && result) {
       const strokeColor = result.score >= 80 ? "#10b981" : result.score >= 50 ? "#f59e0b" : "#ef4444";
@@ -428,6 +459,11 @@ export function LessonPage({
           fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
           overflow: "hidden"
         }}>
+          {isQuizLoading && (
+            <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(255,255,255,0.8)", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+              <div className="animate-pulse" style={{ fontSize: "24px", color: "#4f46e5", fontWeight: "bold" }}>Đang tải bài kiểm tra Adaptive AI...</div>
+            </div>
+          )}
           {/* Header */}
           <header style={{
             display: "flex",
@@ -654,7 +690,7 @@ export function LessonPage({
 
               <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
                 {result.results.map((item, index) => {
-                  const question = lesson.questions.find((q) => q.id === item.questionId);
+                  const question = displayQuestions.find((q) => q.id === item.questionId);
                   if (!question) return null;
 
                   return (
@@ -798,6 +834,11 @@ export function LessonPage({
           fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
           overflow: "hidden"
         }}>
+          {isQuizLoading && (
+            <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(255,255,255,0.8)", zIndex: 10, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+              <div className="animate-pulse" style={{ fontSize: "24px", color: "#4f46e5", fontWeight: "bold" }}>Đang tải bài kiểm tra Adaptive AI...</div>
+            </div>
+          )}
           {/* Header Bar */}
           <header style={{
             display: "flex",
@@ -1089,7 +1130,7 @@ export function LessonPage({
               <div style={{ display: "flex", flexDirection: "column", gap: "24px", alignItems: "center", zIndex: 2 }}>
                 {Array.from({ length: totalQuestions }).map((_, idx) => {
                   const isCurrent = currentQuizIndex === idx;
-                  const isAnswered = Boolean(answers[lesson.questions[idx]?.id]);
+                  const isAnswered = Boolean(answers[displayQuestions[idx]?.id]);
                   
                   return (
                     <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>

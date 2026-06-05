@@ -22,6 +22,8 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { AutomatedPipelineModule } from "./modules/automated-pipeline/automated-pipeline.module";
 import { ChatbotModule } from "./modules/chatbot/chatbot.module";
 import { CommunityModule } from "./modules/community/community.module";
+import { ShortsModule } from "./modules/shorts/shorts.module";
+import { GamesModule } from "./modules/games/games.module";
 
 @Module({
   imports: [
@@ -46,6 +48,8 @@ import { CommunityModule } from "./modules/community/community.module";
     AutomatedPipelineModule,
     ChatbotModule,
     CommunityModule,
+    ShortsModule,
+    GamesModule,
   ],
   controllers: [],
   providers: [

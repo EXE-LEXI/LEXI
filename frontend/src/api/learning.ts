@@ -159,3 +159,16 @@ export function revokeDeviceToken(token: string, deviceToken: string) {
 export function getLearningAttemptDetail(token: string, attemptId: string) {
   return apiRequest<AttemptDetail>(`/progress/me/history/${attemptId}`, { token });
 }
+
+// AI Learning API endpoints
+export function getLearningProfile(token: string) {
+  return apiRequest<UserLearningProfile>("/ai-learning/learning-profile", { token });
+}
+
+export function getRecommendations(token: string, limit = 5) {
+  return apiRequest<ContentRecommendation[]>(`/ai-learning/recommendations?limit=${limit}`, { token });
+}
+
+export function getAdaptiveQuiz(token: string, lessonId: string, count = 3) {
+  return apiRequest<AdaptiveQuestion[]>(`/ai-learning/adaptive-quiz/${lessonId}?count=${count}`, { token });
+}

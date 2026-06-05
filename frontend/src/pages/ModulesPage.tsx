@@ -1,5 +1,6 @@
-import React from "react";
-import type { LearningCategory, LearningModule, LessonDetail } from "../types/learning";
+import React, { useEffect, useState } from "react";
+import type { LearningCategory, LearningModule, LessonDetail, ContentRecommendation } from "../types/learning";
+import { getRecommendations } from "../api/learning";
 import type { AuthResponse } from "../types/auth";
 import { ROUTES } from "../routes/paths";
 import { 
@@ -42,6 +43,19 @@ export const ModulesPage: React.FC<ModulesPageProps> = ({
   session,
   onNavigate,
 }) => {
+  const [recommendations, setRecommendations] = useState<ContentRecommendation[]>([]);
+
+  useEffect(() => {
+    if (session?.accessToken) {
+      getRecommendations(session.accessToken, 1)
+        .then((res) => {
+          if (res && res.length > 0) {
+            setRecommendations(res);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [session?.accessToken]);
 
   const fullName = session?.user?.profile?.fullName || session?.user?.email || "Học viên";
   const initials = fullName
@@ -223,6 +237,26 @@ export const ModulesPage: React.FC<ModulesPageProps> = ({
               </span>
             </div>
           </header>
+
+          {recommendations.length > 0 && (
+            <div style={{ margin: "0 40px 20px", background: "linear-gradient(135deg, #4f46e5, #8b5cf6)", borderRadius: "12px", padding: "16px 24px", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{ background: "rgba(255, 255, 255, 0.2)", padding: "10px", borderRadius: "50%" }}>
+                  <Star size={24} className="fill-white stroke-white" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700 }}>AI Mentor đề xuất: {recommendations[0].title}</h3>
+                  <p style={{ margin: "4px 0 0", fontSize: "14px", opacity: 0.9 }}>{recommendations[0].reason}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => onOpenLesson(recommendations[0].lessonId)}
+                style={{ background: "white", color: "#4f46e5", border: "none", padding: "10px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", transition: "transform 0.2s" }}
+              >
+                Học ngay
+              </button>
+            </div>
+          )}
 
           {/* Module segmented tab selector */}
           <div className="lexi-roadmap-category-bar">
