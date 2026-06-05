@@ -14,10 +14,10 @@ import {
   Tv,
   User,
 } from "lucide-react";
-import { getBadges, getLearningHistory, getProgressSummary } from "../api/learning";
+import { getBadges, getLearningHistory, getProgressSummary, getLearningProfile, getRecommendations } from "../api/learning";
 import { ROUTES } from "../routes/paths";
 import type { AuthResponse } from "../types/auth";
-import type { Badge } from "../types/learning";
+import type { Badge, UserLearningProfile, ContentRecommendation } from "../types/learning";
 import type { LearningHistoryItem, ProgressSummary } from "../types/progress";
 import { formatDate } from "../utils/format";
 
@@ -30,6 +30,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ session, onNavigate })
   const [summary, setSummary] = useState<ProgressSummary | null>(null);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [history, setHistory] = useState<LearningHistoryItem[]>([]);
+  const [learningProfile, setLearningProfile] = useState<UserLearningProfile | null>(null);
+  const [recommendations, setRecommendations] = useState<ContentRecommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,16 +44,20 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ session, onNavigate })
       setIsLoading(true);
       setError(null);
       try {
-        const [nextSummary, nextBadges, nextHistory] = await Promise.all([
+        const [nextSummary, nextBadges, nextHistory, aiProfile, aiRecs] = await Promise.all([
           getProgressSummary(token),
           getBadges(token),
           getLearningHistory(token, 1, 6),
+          getLearningProfile(token).catch(() => null),
+          getRecommendations(token).catch(() => []),
         ]);
 
         if (ignore) return;
         setSummary(nextSummary);
         setBadges(nextBadges.items);
         setHistory(nextHistory.items);
+        setLearningProfile(aiProfile);
+        setRecommendations(aiRecs);
       } catch (err) {
         if (!ignore) {
           setError(err instanceof Error ? err.message : "Không thể tải dữ liệu hồ sơ");
@@ -255,6 +261,36 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ session, onNavigate })
               </div>
             </div>
           </div>
+
+          {learningProfile && recommendations.length > 0 && (
+            <div className="lexi-ai-recommendations-section" style={{ marginTop: "24px", background: "#f0f9ff", borderRadius: "16px", padding: "24px", border: "1px solid #bae6fd" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+                <div style={{ background: "#3b82f6", color: "white", padding: "8px", borderRadius: "8px" }}>
+                  <Compass size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "18px", color: "#0f172a" }}>AI Mentor Gợi Ý Học Tập</h3>
+                  <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#64748b" }}>Dựa trên điểm mạnh ({learningProfile.strongAreas.join(", ")}) và điểm cần cải thiện của bạn</p>
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+                {recommendations.map((rec) => (
+                  <button 
+                    key={rec.lessonId} 
+                    onClick={() => onNavigate(`/lesson/${rec.lessonId}`)}
+                    style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "16px", textAlign: "left", cursor: "pointer", transition: "all 0.2s" }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+                      <span style={{ fontSize: "12px", fontWeight: 700, color: "#3b82f6", textTransform: "uppercase" }}>{rec.difficulty}</span>
+                      <span style={{ fontSize: "12px", color: "#64748b" }}>~{rec.estimatedMinutes} phút</span>
+                    </div>
+                    <h4 style={{ margin: "0 0 8px", fontSize: "15px", color: "#1e293b", fontWeight: 600 }}>{rec.title}</h4>
+                    <p style={{ margin: 0, fontSize: "13px", color: "#64748b", lineHeight: 1.5 }}>{rec.reason}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="lexi-cases-archive-box">
             <div className="lexi-card-header-row border-bottom">

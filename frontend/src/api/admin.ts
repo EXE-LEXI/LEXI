@@ -495,6 +495,22 @@ export function getAdminUserSummary(token: string) {
   return apiRequest<AdminUserSummary>("/admin/users/summary", { token });
 }
 
+export function updateAdminUserStatus(token: string, userId: string, status: string) {
+  return apiRequest<AdminUser>(`/admin/users/${userId}/status`, {
+    token,
+    method: "PATCH",
+    body: { status },
+  });
+}
+
+export function updateAdminUserRole(token: string, userId: string, role: string) {
+  return apiRequest<AdminUser>(`/admin/users/${userId}/role`, {
+    token,
+    method: "PATCH",
+    body: { role },
+  });
+}
+
 export function getAdminLesson(token: string, lessonId: string) {
   return apiRequest<AdminLesson>(`/admin/lessons/${lessonId}`, { token });
 }

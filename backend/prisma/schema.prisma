@@ -160,6 +160,21 @@ enum VoucherRedemptionStatus {
   CANCELLED
 }
 
+enum NotificationInboxType {
+  STUDY
+  REVIEW
+  SYSTEM
+  CHALLENGE
+}
+
+enum GameContentType {
+  DUEL_QUESTION
+  FRAUD_MESSAGE
+  LAW_MATCH_PAIR
+  DETECTIVE_CASE
+  PENALTY_SCENARIO
+}
+
 // ==========================================
 // USER MODELS
 // ==========================================
@@ -191,6 +206,10 @@ model User {
   rewardLedgerEntries    RewardLedgerEntry[]
   voucherRedemptions     VoucherRedemption[]
   chatSession            ChatSession?
+  shortReactions         ShortVideoReaction[]
+  shortComments          ShortVideoComment[]
+  gameAttempts           GameAttempt[]
+  notifications          NotificationInboxItem[]
 
   @@map("users")
 }
@@ -1103,4 +1122,132 @@ model CommunityComment {
   createdAt  DateTime      @default(now())
 
   @@map("community_comments")
+}
+
+// ==========================================
+// SHORTS MODELS
+// ==========================================
+
+model ShortVideo {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  description   String
+  authorName    String
+  category      String
+  videoUrl      String
+  thumbnailUrl  String?
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  quiz       ShortVideoQuiz?
+  reactions  ShortVideoReaction[]
+  comments   ShortVideoComment[]
+
+  @@index([category])
+  @@index([isActive])
+  @@map("short_videos")
+}
+
+model ShortVideoQuiz {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  videoId     String     @unique @db.ObjectId
+  video       ShortVideo @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  question    String
+  explanation String?
+  options     Json
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("short_video_quizzes")
+}
+
+model ShortVideoReaction {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  videoId   String     @db.ObjectId
+  video     ShortVideo @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  userId    String     @db.ObjectId
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  liked     Boolean    @default(false)
+  bookmarked Boolean   @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([videoId, userId])
+  @@index([userId])
+  @@map("short_video_reactions")
+}
+
+model ShortVideoComment {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  videoId   String     @db.ObjectId
+  video     ShortVideo @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  userId    String     @db.ObjectId
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([videoId])
+  @@index([userId])
+  @@map("short_video_comments")
+}
+
+// ==========================================
+// GAME MODELS
+// ==========================================
+
+model GameContent {
+  id        String          @id @default(auto()) @map("_id") @db.ObjectId
+  type      GameContentType
+  title     String
+  payload   Json
+  isActive  Boolean         @default(true)
+  sortOrder Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([type, isActive])
+  @@map("game_contents")
+}
+
+model GameAttempt {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode      String
+  score     Int
+  xpAwarded Int      @default(0)
+  coinsAwarded Int   @default(0)
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, mode])
+  @@map("game_attempts")
+}
+
+// ==========================================
+// NOTIFICATION INBOX MODELS
+// ==========================================
+
+model NotificationInboxItem {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String @db.ObjectId
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      NotificationInboxType
+  title     String
+  body      String
+  ctaPath   String?
+  ctaText   String?
+  data      Json?
+  readAt    DateTime?
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, readAt])
+  @@index([userId, deletedAt])
+  @@map("notification_inbox_items")
 }

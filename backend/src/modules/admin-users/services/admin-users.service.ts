@@ -11,6 +11,7 @@ import {
 } from "../dto/response/admin-user-response.dto";
 import { AdminUsersMapper } from "../mappers/admin-users.mapper";
 import { AdminUsersRepository } from "../repositories/admin-users.repository";
+import { UserStatus, UserRole } from "@prisma/client";
 
 @Injectable()
 export class AdminUsersService {
@@ -33,6 +34,14 @@ export class AdminUsersService {
       page,
       limit,
     });
+  }
+
+  async updateUserStatus(id: string, status: UserStatus) {
+    return this.adminUsersRepository.updateUser(id, { status });
+  }
+
+  async updateUserRole(id: string, role: UserRole) {
+    return this.adminUsersRepository.updateUser(id, { role });
   }
 
   async getSummary(): Promise<AdminUserSummaryResponseDto> {

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from "@nestjs/common";
+import { Controller, Get, Query, UseGuards, Patch, Param, Body } from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -15,6 +15,7 @@ import {
   AdminUserSummaryResponseDto,
 } from "../dto/response/admin-user-response.dto";
 import { AdminUsersService } from "../services/admin-users.service";
+import { UserStatus } from "@prisma/client";
 
 @ApiTags("admin-users")
 @ApiBearerAuth()
@@ -31,6 +32,24 @@ export class AdminUsersController {
     @Query() query: GetAdminUsersQueryDto
   ): Promise<AdminUserListResponseDto> {
     return this.adminUsersService.getUsers(query);
+  }
+
+  @Patch(":id/status")
+  @ApiOperation({ summary: "Update user status" })
+  async updateStatus(
+    @Param("id") id: string,
+    @Body("status") status: UserStatus
+  ) {
+    return this.adminUsersService.updateUserStatus(id, status);
+  }
+
+  @Patch(":id/role")
+  @ApiOperation({ summary: "Update user role" })
+  async updateRole(
+    @Param("id") id: string,
+    @Body("role") role: UserRole
+  ) {
+    return this.adminUsersService.updateUserRole(id, role);
   }
 
   @Get("summary")

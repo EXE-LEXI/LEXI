@@ -23,6 +23,7 @@ import {
 import type { AuthResponse } from "../types/auth";
 import { ROUTES } from "../routes/paths";
 import { getResourceMediaAssets, type ResourceMediaAsset } from "../api/resources";
+import { shortsApi } from "../api/shorts";
 
 type ShortsPageProps = {
   session: AuthResponse | null;
@@ -350,17 +351,33 @@ export const ShortsPage: React.FC<ShortsPageProps> = ({ session, onNavigate }) =
   }
 
   function handleToggleLike(videoId: string) {
+    if (!session?.accessToken) return;
     setLikedVideos((prev) => ({
       ...prev,
       [videoId]: !prev[videoId]
     }));
+    shortsApi.likeVideo(videoId).catch(() => {
+      // Revert on error
+      setLikedVideos((prev) => ({
+        ...prev,
+        [videoId]: !prev[videoId]
+      }));
+    });
   }
 
   function handleToggleBookmark(videoId: string) {
+    if (!session?.accessToken) return;
     setBookmarkedVideos((prev) => ({
       ...prev,
       [videoId]: !prev[videoId]
     }));
+    shortsApi.bookmarkVideo(videoId).catch(() => {
+      // Revert on error
+      setBookmarkedVideos((prev) => ({
+        ...prev,
+        [videoId]: !prev[videoId]
+      }));
+    });
   }
 
   function handleAnswerSelect(idx: number) {

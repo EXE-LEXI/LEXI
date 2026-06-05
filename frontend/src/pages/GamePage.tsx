@@ -28,6 +28,7 @@ import {
 import type { AuthResponse } from "../types/auth";
 import { ROUTES } from "../routes/paths";
 import { claimGameReward } from "../api/rewards";
+import { gamesApi } from "../api/games";
 
 // Import new game modes
 import { FraudScannerGame } from "./games/FraudScannerGame";
@@ -322,6 +323,9 @@ export const GamePage: React.FC<GamePageProps> = ({ session, onNavigate }) => {
         score: Math.min(100, Math.max(1, coins * 10)),
         idempotencyKey: `${gameCode}:${Date.now()}:${Math.random().toString(36).slice(2)}`,
       });
+      // Also record the attempt history in backend
+      await gamesApi.submitAttempt(gameCode, Math.min(100, Math.max(1, coins * 10)), { coinsAwarded: reward.coinsAwarded }).catch(console.error);
+
       setUserCoins(reward.coinBalance);
       setRewardNotice(
         reward.coinsAwarded > 0
