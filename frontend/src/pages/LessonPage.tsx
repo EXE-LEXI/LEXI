@@ -234,11 +234,12 @@ export function LessonPage({
 
   useEffect(() => {
     if (activeMenu === "quiz" && lesson && adaptiveQuestions.length === 0 && !showResult) {
+      const lessonId = lesson.id;
       let ignore = false;
       async function loadAdaptiveQuiz() {
         setIsQuizLoading(true);
         try {
-          const aiQuiz = await getAdaptiveQuiz(token, lesson.id, 5);
+          const aiQuiz = await getAdaptiveQuiz(token, lessonId, 5);
           if (!ignore) {
             setAdaptiveQuestions(aiQuiz);
           }
@@ -1780,7 +1781,6 @@ export function LessonPage({
   );
 }
 export default LessonPage;
-
 
 
 
