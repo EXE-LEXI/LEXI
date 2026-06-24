@@ -6,6 +6,16 @@ import {
   Inbox,
   MessageSquareWarning,
   RefreshCw,
+  FileText,
+  User,
+  Mail,
+  Calendar,
+  Tag,
+  Activity,
+  Globe,
+  Laptop,
+  Copy,
+  Check,
 } from "lucide-react";
 import {
   getAdminFeedbackReports,
@@ -75,6 +85,207 @@ function getStatusClass(status: AdminFeedbackReportStatus) {
   return status === "REVIEWING" ? "blue" : "purple";
 }
 
+function exportToDoc(report: AdminFeedbackReport) {
+  const categoryLabel = categoryLabels[report.category] || "Khác";
+  const statusLabel = statusLabels[report.status] || "Mới";
+  const userLabel = report.user ? (report.user.fullName || report.user.email) : "Khách";
+  const emailLabel = report.user?.email || "N/A";
+  const formattedDate = formatDate(report.createdAt);
+  const pagePath = report.pagePath || "/";
+  const userAgent = (report.metadata as any)?.userAgent || "N/A";
+
+  const htmlContent = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <title>Báo cáo phản hồi người dùng</title>
+      <!--[if gte mso 9]>
+      <xml>
+        <w:WordDocument>
+          <w:View>Print</w:View>
+          <w:Zoom>100</w:Zoom>
+        </w:WordDocument>
+      </xml>
+      <![endif]-->
+      <style>
+        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #334155; padding: 30px; }
+        h1 { color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px; font-size: 22px; text-align: center; margin-bottom: 5px; }
+        .sub-header { text-align: center; font-style: italic; color: #64748b; margin-bottom: 30px; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 25px; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; font-size: 13.5px; }
+        th { background-color: #f1f5f9; color: #1e293b; font-weight: bold; width: 180px; border-right: 2px solid #cbd5e1; }
+        .message-title { font-size: 15px; font-weight: bold; color: #0f172a; margin-top: 30px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .content-box { background-color: #fffbeb; border-left: 5px solid #ea580c; padding: 18px; border-radius: 4px; margin-top: 10px; white-space: pre-wrap; font-size: 14.5px; color: #1e293b; line-height: 1.7; }
+        .footer-note { font-size: 11px; color: #94a3b8; margin-top: 60px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+      </style>
+    </head>
+    <body>
+      <h1>BÁO CÁO PHẢN HỒI Ý KIẾN NGƯỜI DÙNG - LEXI</h1>
+      <div class="sub-header">Mã tham chiếu: #${report.id.slice(-8)} | Xuất ngày: ${new Date().toLocaleDateString('vi-VN')}</div>
+      
+      <table>
+        <tr>
+          <th>Tiêu đề phản hồi</th>
+          <td><strong>${report.subject}</strong></td>
+        </tr>
+        <tr>
+          <th>Người gửi</th>
+          <td>${userLabel} (${emailLabel})</td>
+        </tr>
+        <tr>
+          <th>Phân loại</th>
+          <td>${categoryLabel}</td>
+        </tr>
+        <tr>
+          <th>Trạng thái hiện tại</th>
+          <td>${statusLabel}</td>
+        </tr>
+        <tr>
+          <th>Trang phát sinh</th>
+          <td>${pagePath}</td>
+        </tr>
+        <tr>
+          <th>Ngày gửi</th>
+          <td>${formattedDate}</td>
+        </tr>
+        <tr>
+          <th>Thiết bị (User Agent)</th>
+          <td style="font-family: 'Courier New', monospace; font-size: 12px; color: #475569;">${userAgent}</td>
+        </tr>
+      </table>
+      
+      <div class="message-title">Nội dung phản hồi chi tiết:</div>
+      <div class="content-box">${report.message.replace(/\n/g, '<br/>')}</div>
+      
+      <div class="footer-note">Báo cáo được tạo tự động bởi Hệ thống Quản trị LEXI</div>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\ufeff' + htmlContent], {
+    type: 'application/msword;charset=utf-8'
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  
+  const safeTitle = report.subject
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .slice(0, 30);
+  link.download = `feedback_${safeTitle || 'report'}.doc`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function exportMultipleToDoc(selectedReports: AdminFeedbackReport[]) {
+  if (selectedReports.length === 0) return;
+
+  const htmlSections = selectedReports.map((report, index) => {
+    const categoryLabel = categoryLabels[report.category] || "Khác";
+    const statusLabel = statusLabels[report.status] || "Mới";
+    const userLabel = report.user ? (report.user.fullName || report.user.email) : "Khách";
+    const emailLabel = report.user?.email || "N/A";
+    const formattedDate = formatDate(report.createdAt);
+    const pagePath = report.pagePath || "/";
+    const userAgent = (report.metadata as any)?.userAgent || "N/A";
+
+    const isLast = index === selectedReports.length - 1;
+    const pageBreak = isLast ? "" : "<br clear='all' style='page-break-before: always; mso-special-character: line-break;' />";
+
+    return `
+      <h1>BÁO CÁO PHẢN HỒI Ý KIẾN NGƯỜI DÙNG - LEXI</h1>
+      <div class="sub-header">Mã tham chiếu: #${report.id.slice(-8)}</div>
+      
+      <table>
+        <tr>
+          <th>Tiêu đề phản hồi</th>
+          <td><strong>${report.subject}</strong></td>
+        </tr>
+        <tr>
+          <th>Người gửi</th>
+          <td>${userLabel} (${emailLabel})</td>
+        </tr>
+        <tr>
+          <th>Phân loại</th>
+          <td>${categoryLabel}</td>
+        </tr>
+        <tr>
+          <th>Trạng thái hiện tại</th>
+          <td>${statusLabel}</td>
+        </tr>
+        <tr>
+          <th>Trang phát sinh</th>
+          <td>${pagePath}</td>
+        </tr>
+        <tr>
+          <th>Ngày gửi</th>
+          <td>${formattedDate}</td>
+        </tr>
+        <tr>
+          <th>Thiết bị (User Agent)</th>
+          <td style="font-family: 'Courier New', monospace; font-size: 12px; color: #475569;">${userAgent}</td>
+        </tr>
+      </table>
+      
+      <div class="message-title">Nội dung phản hồi chi tiết:</div>
+      <div class="content-box">${report.message.replace(/\n/g, '<br/>')}</div>
+      
+      <div class="footer-note">Báo cáo được tạo tự động bởi Hệ thống Quản trị LEXI</div>
+      ${pageBreak}
+    `;
+  }).join("\n");
+
+  const htmlContent = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <title>Báo cáo phản hồi hàng loạt</title>
+      <!--[if gte mso 9]>
+      <xml>
+        <w:WordDocument>
+          <w:View>Print</w:View>
+          <w:Zoom>100</w:Zoom>
+        </w:WordDocument>
+      </xml>
+      <![endif]-->
+      <style>
+        body { font-family: 'Arial', sans-serif; line-height: 1.6; color: #334155; padding: 30px; }
+        h1 { color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px; font-size: 22px; text-align: center; margin-bottom: 5px; }
+        .sub-header { text-align: center; font-style: italic; color: #64748b; margin-bottom: 30px; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 25px; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; font-size: 13.5px; }
+        th { background-color: #f1f5f9; color: #1e293b; font-weight: bold; width: 180px; border-right: 2px solid #cbd5e1; }
+        .message-title { font-size: 15px; font-weight: bold; color: #0f172a; margin-top: 30px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .content-box { background-color: #fffbeb; border-left: 5px solid #ea580c; padding: 18px; border-radius: 4px; margin-top: 10px; white-space: pre-wrap; font-size: 14.5px; color: #1e293b; line-height: 1.7; }
+        .footer-note { font-size: 11px; color: #94a3b8; margin-top: 60px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+      </style>
+    </head>
+    <body>
+      ${htmlSections}
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob(['\ufeff' + htmlContent], {
+    type: 'application/msword;charset=utf-8'
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  
+  const today = new Date().toLocaleDateString('vi-VN').replace(/\//g, '_');
+  link.download = `feedback_batch_${today}.doc`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export function FeedbackReportsTab({ token, searchQuery }: FeedbackReportsTabProps) {
   const [reports, setReports] = useState<AdminFeedbackReport[]>([]);
   const [total, setTotal] = useState(0);
@@ -85,6 +296,43 @@ export function FeedbackReportsTab({ token, searchQuery }: FeedbackReportsTabPro
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [selectedReport, setSelectedReport] = useState<AdminFeedbackReport | null>(null);
+  const [copiedMessage, setCopiedMessage] = useState(false);
+  const [copiedUserAgent, setCopiedUserAgent] = useState(false);
+
+  function handleCopyToClipboard(text: string, type: "message" | "ua") {
+    void navigator.clipboard.writeText(text).then(() => {
+      if (type === "message") {
+        setCopiedMessage(true);
+        setTimeout(() => setCopiedMessage(false), 2000);
+      } else {
+        setCopiedUserAgent(true);
+        setTimeout(() => setCopiedUserAgent(false), 2000);
+      }
+    });
+  }
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [reports, page, statusFilter, categoryFilter]);
+
+  function handleSelectAll(checked: boolean) {
+    if (checked) {
+      setSelectedIds(reports.map((r) => r.id));
+    } else {
+      setSelectedIds([]);
+    }
+  }
+
+  function handleToggleSelect(reportId: string, checked: boolean) {
+    if (checked) {
+      setSelectedIds((prev) => [...prev, reportId]);
+    } else {
+      setSelectedIds((prev) => prev.filter((id) => id !== reportId));
+    }
+  }
 
   useEffect(() => {
     setPage(1);
@@ -185,16 +433,33 @@ export function FeedbackReportsTab({ token, searchQuery }: FeedbackReportsTabPro
             Theo dõi lỗi nội dung, yêu cầu rà soát pháp lý và góp ý từ người dùng trước khi đưa sản phẩm ra beta rộng hơn.
           </p>
         </div>
-        <button
-          className="lexi-cms-btn-filter-action"
-          type="button"
-          onClick={handleRefresh}
-          disabled={isLoading}
-          style={{ background: "#ffffff", height: "38px" }}
-        >
-          <RefreshCw size={14} />
-          <span>Làm mới</span>
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          {selectedIds.length > 0 && (
+            <button
+              className="lexi-admin-feedback-btn-export"
+              type="button"
+              onClick={() => {
+                const selectedReports = reports.filter((r) => selectedIds.includes(r.id));
+                exportMultipleToDoc(selectedReports);
+                setSelectedIds([]); // Auto-reset selection
+              }}
+              style={{ height: "38px", padding: "0 16px" }}
+            >
+              <FileText size={14} />
+              <span>Xuất Word hàng loạt ({selectedIds.length})</span>
+            </button>
+          )}
+          <button
+            className="lexi-cms-btn-filter-action"
+            type="button"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            style={{ background: "#ffffff", height: "38px" }}
+          >
+            <RefreshCw size={14} />
+            <span>Làm mới</span>
+          </button>
+        </div>
       </div>
 
       {notice && <div className="lexi-inline-notice">{notice}</div>}
@@ -272,6 +537,15 @@ export function FeedbackReportsTab({ token, searchQuery }: FeedbackReportsTabPro
           <table className="lexi-cms-table">
             <thead>
               <tr>
+                <th style={{ width: "40px", textAlign: "center" }}>
+                  <input
+                    type="checkbox"
+                    checked={reports.length > 0 && selectedIds.length === reports.length}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    aria-label="Chọn tất cả phản hồi trên trang này"
+                    style={{ cursor: "pointer", width: "16px", height: "16px", verticalAlign: "middle" }}
+                  />
+                </th>
                 <th>Report</th>
                 <th>Loại</th>
                 <th>Trạng thái</th>
@@ -282,59 +556,75 @@ export function FeedbackReportsTab({ token, searchQuery }: FeedbackReportsTabPro
               </tr>
             </thead>
             <tbody>
-              {reports.map((report) => (
-                <tr key={report.id}>
-                  <td style={{ minWidth: "260px", maxWidth: "360px" }}>
-                    <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-                      <MessageSquareWarning size={17} style={{ color: "#4f46e5", marginTop: "2px", flexShrink: 0 }} />
-                      <div>
-                        <strong style={{ color: "#1e293b", display: "block", marginBottom: "4px" }}>{report.subject}</strong>
-                        <span style={{ color: "#64748b", fontSize: "12.5px", lineHeight: 1.5 }}>
-                          {report.message.length > 140 ? `${report.message.slice(0, 140)}...` : report.message}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="lexi-cms-question-row-pill blue" style={{ textTransform: "none" }}>
-                      {categoryLabels[report.category]}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`lexi-cms-question-row-pill ${getStatusClass(report.status)}`} style={{ textTransform: "none" }}>
-                      {statusLabels[report.status]}
-                    </span>
-                  </td>
-                  <td>
-                    <strong style={{ color: "#334155", fontSize: "13px" }}>{getUserLabel(report)}</strong>
-                    {report.user?.email ? (
-                      <span style={{ color: "#64748b", display: "block", fontSize: "12px", marginTop: "3px" }}>
-                        {report.user.email}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td style={{ color: "#64748b", fontSize: "12.5px" }}>{report.pagePath || "-"}</td>
-                  <td>{formatDate(report.createdAt)}</td>
-                  <td>
-                    <select
-                      className="lexi-cms-form-select"
-                      value={report.status}
-                      onChange={(event) => void handleStatusChange(report.id, event.target.value as AdminFeedbackReportStatus)}
-                      disabled={updatingId === report.id}
-                      aria-label={`Cập nhật trạng thái report ${report.subject}`}
-                      style={{ minWidth: "140px" }}
+              {reports.map((report) => {
+                const isSelected = selectedIds.includes(report.id);
+                return (
+                  <tr key={report.id} style={{ backgroundColor: isSelected ? "#f8fafc" : undefined }}>
+                    <td style={{ width: "40px", textAlign: "center", verticalAlign: "middle" }}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => handleToggleSelect(report.id, e.target.checked)}
+                        aria-label={`Chọn phản hồi ${report.subject}`}
+                        style={{ cursor: "pointer", width: "16px", height: "16px", verticalAlign: "middle" }}
+                      />
+                    </td>
+                    <td 
+                      style={{ minWidth: "260px", maxWidth: "360px", cursor: "pointer" }}
+                      onClick={() => setSelectedReport(report)}
+                      title="Click để xem chi tiết phản hồi"
                     >
-                      {statusOptions.map((status) => (
-                        <option value={status} key={status}>{statusLabels[status]}</option>
-                      ))}
-                    </select>
-                  </td>
-                </tr>
-              ))}
+                      <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                        <MessageSquareWarning size={17} style={{ color: "#4f46e5", marginTop: "2px", flexShrink: 0 }} />
+                        <div>
+                          <strong style={{ color: "#1e293b", display: "block", marginBottom: "4px" }}>{report.subject}</strong>
+                          <span style={{ color: "#64748b", fontSize: "12.5px", lineHeight: 1.5 }}>
+                            {report.message.length > 140 ? `${report.message.slice(0, 140)}...` : report.message}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="lexi-cms-question-row-pill blue" style={{ textTransform: "none" }}>
+                        {categoryLabels[report.category]}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`lexi-cms-question-row-pill ${getStatusClass(report.status)}`} style={{ textTransform: "none" }}>
+                        {statusLabels[report.status]}
+                      </span>
+                    </td>
+                    <td>
+                      <strong style={{ color: "#334155", fontSize: "13px" }}>{getUserLabel(report)}</strong>
+                      {report.user?.email ? (
+                        <span style={{ color: "#64748b", display: "block", fontSize: "12px", marginTop: "3px" }}>
+                          {report.user.email}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td style={{ color: "#64748b", fontSize: "12.5px" }}>{report.pagePath || "-"}</td>
+                    <td>{formatDate(report.createdAt)}</td>
+                    <td>
+                      <select
+                        className="lexi-cms-form-select"
+                        value={report.status}
+                        onChange={(event) => void handleStatusChange(report.id, event.target.value as AdminFeedbackReportStatus)}
+                        disabled={updatingId === report.id}
+                        aria-label={`Cập nhật trạng thái report ${report.subject}`}
+                        style={{ minWidth: "140px" }}
+                      >
+                        {statusOptions.map((status) => (
+                          <option value={status} key={status}>{statusLabels[status]}</option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                );
+              })}
 
               {!isLoading && reports.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: "center", color: "#94a3b8", padding: "40px" }}>
+                  <td colSpan={8} style={{ textAlign: "center", color: "#94a3b8", padding: "40px" }}>
                     Chưa có feedback report phù hợp với bộ lọc hiện tại.
                   </td>
                 </tr>
@@ -342,7 +632,7 @@ export function FeedbackReportsTab({ token, searchQuery }: FeedbackReportsTabPro
 
               {isLoading && reports.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: "center", color: "#94a3b8", padding: "40px" }}>
+                  <td colSpan={8} style={{ textAlign: "center", color: "#94a3b8", padding: "40px" }}>
                     Đang tải feedback report...
                   </td>
                 </tr>
@@ -378,6 +668,202 @@ export function FeedbackReportsTab({ token, searchQuery }: FeedbackReportsTabPro
           </div>
         </div>
       </div>
+
+      {selectedReport && (
+        <div 
+          className="lexi-admin-feedback-overlay" 
+          onClick={() => setSelectedReport(null)}
+        >
+          <div 
+            className="lexi-admin-feedback-card" 
+            onClick={(event) => event.stopPropagation()} 
+          >
+            <div className="lexi-admin-feedback-header">
+              <div className="lexi-admin-feedback-header-title">
+                <div className="lexi-admin-feedback-icon-wrapper">
+                  <MessageSquareWarning size={22} />
+                </div>
+                <div>
+                  <h2 className="lexi-admin-feedback-title-text">
+                    Chi tiết phản hồi
+                  </h2>
+                  <span className="lexi-admin-feedback-ref">Mã tham chiếu: #{selectedReport.id.slice(-8)}</span>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                className="lexi-admin-feedback-close"
+                onClick={() => setSelectedReport(null)} 
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="lexi-admin-feedback-grid">
+              <div className="lexi-admin-feedback-meta-tile">
+                <div className="lexi-admin-feedback-meta-item">
+                  <span className="lexi-admin-feedback-meta-label">
+                    <User size={13} />
+                    Người gửi
+                  </span>
+                  <span className="lexi-admin-feedback-meta-value">{getUserLabel(selectedReport)}</span>
+                  {selectedReport.user?.email && (
+                    <span className="lexi-admin-feedback-meta-subvalue">
+                      <Mail size={11} style={{ display: "inline", marginRight: "4px", verticalAlign: "middle" }} />
+                      {selectedReport.user.email}
+                    </span>
+                  )}
+                </div>
+                <div className="lexi-admin-feedback-meta-item">
+                  <span className="lexi-admin-feedback-meta-label">
+                    <Calendar size={13} />
+                    Ngày gửi
+                  </span>
+                  <span className="lexi-admin-feedback-meta-value" style={{ fontWeight: 500 }}>
+                    {formatDate(selectedReport.createdAt)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="lexi-admin-feedback-meta-tile">
+                <div className="lexi-admin-feedback-meta-item">
+                  <span className="lexi-admin-feedback-meta-label">
+                    <Tag size={13} />
+                    Phân loại & Trạng thái
+                  </span>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
+                    <span className="lexi-cms-question-row-pill blue" style={{ textTransform: "none", margin: 0, fontWeight: 700 }}>
+                      {categoryLabels[selectedReport.category]}
+                    </span>
+                    <span className={`lexi-cms-question-row-pill ${getStatusClass(selectedReport.status)}`} style={{ textTransform: "none", margin: 0, fontWeight: 700 }}>
+                      {statusLabels[selectedReport.status]}
+                    </span>
+                  </div>
+                </div>
+                <div className="lexi-admin-feedback-meta-item" style={{ marginTop: "4px" }}>
+                  <span className="lexi-admin-feedback-meta-label">
+                    <Globe size={13} />
+                    Trang phát sinh
+                  </span>
+                  <code className="lexi-admin-feedback-path-code">
+                    {selectedReport.pagePath || "/"}
+                  </code>
+                </div>
+              </div>
+            </div>
+
+            <div className="lexi-admin-feedback-subject-section">
+              <strong className="lexi-admin-feedback-meta-label" style={{ fontSize: "11px", color: "#64748b" }}>Tiêu đề</strong>
+              <span className="lexi-admin-feedback-subject-text">{selectedReport.subject}</span>
+            </div>
+
+            <div className="lexi-admin-feedback-content-section">
+              <div className="lexi-admin-feedback-content-header">
+                <strong className="lexi-admin-feedback-meta-label" style={{ fontSize: "11px", color: "#64748b" }}>Nội dung chi tiết</strong>
+                <button
+                  type="button"
+                  className="lexi-admin-feedback-copy-btn"
+                  onClick={() => handleCopyToClipboard(selectedReport.message, "message")}
+                >
+                  {copiedMessage ? (
+                    <>
+                      <Check size={13} />
+                      <span>Đã sao chép</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={13} />
+                      <span>Sao chép nội dung</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <div className="lexi-admin-feedback-message-box">
+                {selectedReport.message}
+              </div>
+            </div>
+
+            {!!selectedReport.metadata && (
+              <div className="lexi-admin-feedback-content-section">
+                <div className="lexi-admin-feedback-content-header">
+                  <strong className="lexi-admin-feedback-meta-label" style={{ fontSize: "11px", color: "#64748b" }}>Thông tin thiết bị</strong>
+                  <button
+                    type="button"
+                    className="lexi-admin-feedback-copy-btn"
+                    onClick={() => handleCopyToClipboard(
+                      String((selectedReport.metadata as any)?.userAgent || JSON.stringify(selectedReport.metadata)), 
+                      "ua"
+                    )}
+                  >
+                    {copiedUserAgent ? (
+                      <>
+                        <Check size={13} />
+                        <span>Đã sao chép</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={13} />
+                        <span>Sao chép User-Agent</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <span className="lexi-admin-feedback-device-box">
+                  {String((selectedReport.metadata as any)?.userAgent || JSON.stringify(selectedReport.metadata))}
+                </span>
+              </div>
+            )}
+
+            <div className="lexi-admin-feedback-footer">
+              <div className="lexi-admin-feedback-status-group">
+                <label 
+                  htmlFor="modal-status-select" 
+                  className="lexi-admin-feedback-meta-label" 
+                  style={{ margin: 0, display: "flex", alignItems: "center", gap: "6px" }}
+                >
+                  <Activity size={13} />
+                  Trạng thái:
+                </label>
+                <select
+                  id="modal-status-select"
+                  className="lexi-cms-form-select"
+                  value={selectedReport.status}
+                  onChange={(event) => {
+                    const newStatus = event.target.value as AdminFeedbackReportStatus;
+                    void handleStatusChange(selectedReport.id, newStatus);
+                    setSelectedReport(prev => prev ? { ...prev, status: newStatus } : null);
+                  }}
+                  disabled={updatingId === selectedReport.id}
+                  style={{ padding: "8px 14px", fontSize: "13px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                >
+                  {statusOptions.map((status) => (
+                    <option value={status} key={status}>{statusLabels[status]}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="lexi-admin-feedback-btn-group">
+                <button
+                  type="button"
+                  className="lexi-admin-feedback-btn-export"
+                  onClick={() => exportToDoc(selectedReport)}
+                >
+                  <FileText size={16} />
+                  <span>Xuất file DOC</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="lexi-admin-feedback-btn-close"
+                  onClick={() => setSelectedReport(null)}
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

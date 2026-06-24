@@ -625,6 +625,9 @@ test("admin can create lesson and quiz from accepted lesson draft", async () => 
       lessonDraftFixture({
         id: "draft-accepted-1",
         status: LessonDraftStatus.ACCEPTED,
+        questions: Array.from({ length: 10 }, (_, i) =>
+          draftQuestionFixture({ sortOrder: i + 1 })
+        ),
       }),
     createLessonFromDraft: async (args) => {
       createArgs = args;
@@ -663,7 +666,7 @@ test("admin can create lesson and quiz from accepted lesson draft", async () => 
   assert.equal(lesson.id, "lesson-from-draft");
   assert.equal(lesson.reviewStatus, LessonReviewStatus.IN_REVIEW);
   assert.equal(lesson.isActive, false);
-  assert.equal(lesson.questions.length, 1);
+  assert.equal(lesson.questions.length, 10);
 });
 
 test("admin cannot create a duplicate lesson from the same accepted draft", async () => {

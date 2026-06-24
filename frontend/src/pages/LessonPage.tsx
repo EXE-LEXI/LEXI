@@ -102,66 +102,75 @@ function toThreadView(discussion: LessonDiscussion): QAThread {
   };
 }
 
-function getAiMentorExplanation(questionText: string) {
+function extractLegalReference(explanation: string): string | null {
+  if (!explanation) return null;
+  // Regex to extract patterns like "Điều 25", "Khoản 2 Điều 173", "Điều 174", etc.
+  const regex = /(?:Khoản\s*\d+\s*(?:Điểm\s*[a-zđ]\s*)?Điều\s*\d+|Điều\s*\d+(?:\s*,?\s*Khoản\s*\d+(?:\s*,?\s*Điểm\s*[a-zđ])?)?)/i;
+  const match = explanation.match(regex);
+  return match ? match[0].trim() : null;
+}
+
+function getAiMentorExplanation(questionText: string, isCorrect?: boolean) {
   const text = questionText.toLowerCase();
+  const prefix = isCorrect === false ? "Lưu ý quan trọng: " : "Chính xác! ";
   if (text.includes("thử việc") && text.includes("tối đa")) {
-    return "Chính xác! Theo Điều 25 Bộ luật Lao động 2019, thời gian thử việc đối với công việc cần trình độ từ cao đẳng trở lên là không quá 60 ngày. Đây là quy định bắt buộc nhằm tránh việc lạm dụng thử việc kéo dài đối với người lao động có chuyên môn.";
+    return `${prefix}Theo Điều 25 Bộ luật Lao động 2019, thời gian thử việc đối với công việc cần trình độ từ cao đẳng trở lên là không quá 60 ngày. Đây là quy định bắt buộc nhằm tránh việc lạm dụng thử việc kéo dài đối với người lao động có chuyên môn.`;
   }
   if (text.includes("lương thử việc")) {
-    return "Chính xác! Điều 26 Bộ luật Lao động 2019 quy định tiền lương của người lao động trong thời gian thử việc ít nhất phải bằng 85% mức lương của công việc đó. Mọi thỏa thuận trả lương thử việc dưới 85% đều vi phạm pháp luật.";
+    return `${prefix}Điều 26 Bộ luật Lao động 2019 quy định tiền lương của người lao động trong thời gian thử việc ít nhất phải bằng 85% mức lương của công việc đó. Mọi thỏa thuận trả lương thử việc dưới 85% đều vi phạm pháp luật.`;
   }
   if (text.includes("không trả lương đúng hạn")) {
-    return "Chính xác! Điều 35 Bộ luật Lao động 2019 cho phép người lao động có quyền đơn phương chấm dứt hợp đồng lao động ngay lập tức mà không cần báo trước nếu không được trả lương đầy đủ hoặc trả lương đúng thời hạn.";
+    return `${prefix}Điều 35 Bộ luật Lao động 2019 cho phép người lao động có quyền đơn phương chấm dứt hợp đồng lao động ngay lập tức mà không cần báo trước nếu không được trả lương đầy đủ hoặc trả lương đúng thời hạn.`;
   }
   if (text.includes("báo trước") && text.includes("nghỉ việc")) {
-    return "Chính xác! Thời hạn báo trước khi nghỉ việc đơn phương phụ thuộc chủ yếu vào loại hợp đồng lao động (xác định thời hạn hay không xác định thời hạn) và một số ngành nghề, công việc đặc thù theo quy định pháp luật.";
+    return `${prefix}Thời hạn báo trước khi nghỉ việc đơn phương phụ thuộc chủ yếu vào loại hợp đồng lao động (xác định thời hạn hay không xác định thời hạn) và một số ngành nghề, công việc đặc thù theo quy định pháp luật.`;
   }
   if (text.includes("ngày nghỉ hằng năm") || text.includes("nghỉ phép năm")) {
-    return "Chính xác! Theo Điều 113 Bộ luật Lao động 2019, người lao động làm việc đủ 12 tháng cho một người sử dụng lao động thì được nghỉ hằng năm hưởng nguyên lương là 12 ngày làm việc trong điều kiện bình thường.";
+    return `${prefix}Theo Điều 113 Bộ luật Lao động 2019, người lao động làm việc đủ 12 tháng cho một người sử dụng lao động thì được nghỉ hằng năm hưởng nguyên lương là 12 ngày làm việc trong điều kiện bình thường.`;
   }
   if (text.includes("đường đôi có dải phân cách")) {
-    return "Chính xác! Theo Thông tư 31/2019/TT-BGTVT, tốc độ tối đa cho phép đối với xe cơ giới tham gia giao thông trong khu đông dân cư trên đường đôi (có dải phân cách giữa) là 60 km/h.";
+    return `${prefix}Theo Thông tư 31/2019/TT-BGTVT, tốc độ tối đa cho phép đối với xe cơ giới tham gia giao thông trong khu đông dân cư trên đường đôi (có dải phân cách giữa) là 60 km/h.`;
   }
   if (text.includes("yêu cầu kiểm tra giấy tờ")) {
-    return "Chính xác! Khi có hiệu lệnh kiểm tra của lực lượng chức năng, người lái xe cần giữ bình tĩnh, chấp hành hiệu lệnh, xuất trình đúng và đầy đủ các giấy tờ hợp lệ và hợp tác làm việc một cách văn minh, đúng mực.";
+    return `${prefix}Khi có hiệu lệnh kiểm tra của lực lượng chức năng, người lái xe cần giữ bình tĩnh, chấp hành hiệu lệnh, xuất trình đúng và đầy đủ các giấy tờ hợp lệ và hợp tác làm việc một cách văn minh, đúng mực.`;
   }
   if (text.includes("link phishing") || (text.includes("dấu hiệu") && text.includes("phishing"))) {
-    return "Chính xác! Các đường link phishing (lừa đảo) thường sử dụng chiêu trò tạo tâm lý khẩn cấp (như đe dọa khóa thẻ, khóa tài khoản) để đánh lừa nạn nhân nhanh chóng cung cấp thông tin đăng nhập, mã pin hoặc OTP.";
+    return `${prefix}Các đường link phishing (lừa đảo) thường sử dụng chiêu trò tạo tâm lý khẩn cấp (như đe dọa khóa thẻ, khóa tài khoản) để đánh lừa nạn nhân nhanh chóng cung cấp thông tin đăng nhập, mã pin hoặc OTP.`;
   }
   if (text.includes("nghi ngờ link ngân hàng")) {
-    return "Chính xác! Khi nghi ngờ một đường link, tuyệt đối không được click hay nhập thông tin. Hãy truy cập trực tiếp vào ứng dụng chính thức của ngân hàng hoặc gọi lên hotline chính thống để xác minh thông tin.";
+    return `${prefix}Khi nghi ngờ một đường link, tuyệt đối không được click hay nhập thông tin. Hãy truy cập trực tiếp vào ứng dụng chính thức của ngân hàng hoặc gọi lên hotline chính thống để xác minh thông tin.`;
   }
   if (text.includes("otp") && text.includes("chia sẻ")) {
-    return "Chính xác! OTP (One-Time Password) là mật khẩu sử dụng một lần và là chốt chặn bảo mật cuối cùng cho tài sản của bạn. Tuyệt đối không chia sẻ mã này cho bất kỳ ai, kể cả người tự xưng là nhân viên ngân hàng hay công an.";
+    return `${prefix}OTP (One-Time Password) là mật khẩu sử dụng một lần và là chốt chặn bảo mật cuối cùng cho tài sản của bạn. Tuyệt đối không chia sẻ mã này cho bất kỳ ai, kể cả người tự xưng là nhân viên ngân hàng hay công an.`;
   }
   if (text.includes("lộ mật khẩu")) {
-    return "Chính xác! Đổi mật khẩu ngay lập tức sang một chuỗi ký tự phức tạp và thực hiện đăng xuất tài khoản khỏi tất cả các thiết bị lạ là hành động khẩn cấp và hiệu quả nhất để ngăn chặn kẻ gian chiếm đoạt tài khoản.";
+    return `${prefix}Đổi mật khẩu ngay lập tức sang một chuỗi ký tự phức tạp và thực hiện đăng xuất tài khoản khỏi tất cả các thiết bị lạ là hành động khẩn cấp và hiệu quả nhất để ngăn chặn kẻ gian chiếm đoạt tài khoản.`;
   }
   if (text.includes("lời mời đầu tư") || text.includes("app đầu tư")) {
-    return "Chính xác! Những lời hứa cam kết lợi nhuận cao mà chắc chắn 100% không rủi ro là dấu hiệu điển hình của mô hình lừa đảo Ponzi hoặc lừa đảo qua app giả mạo. Đầu tư hợp pháp luôn đi kèm với rủi ro tương ứng.";
+    return `${prefix}Những lời hứa cam kết lợi nhuận cao mà chắc chắn 100% không rủi ro là dấu hiệu điển hình của mô hình lừa đảo Ponzi hoặc lừa đảo qua app giả mạo. Đầu tư hợp pháp luôn đi kèm với rủi ro tương ứng.`;
   }
   if (text.includes("nộp tiền vào app") || text.includes("trước khi nạp")) {
-    return "Chính xác! Việc tra cứu pháp nhân, giấy phép hoạt động của công ty tài chính từ Ủy ban Chứng khoán hoặc các cơ quan nhà nước có thẩm quyền là bước bắt buộc để tự bảo vệ tài sản của mình trước khi đầu tư.";
+    return `${prefix}Việc tra cứu pháp nhân, giấy phép hoạt động của công ty tài chính từ Ủy ban Chứng khoán hoặc các cơ quan nhà nước có thẩm quyền là bước bắt buộc để tự bảo vệ tài sản của mình trước khi đầu tư.`;
   }
   if (text.includes("đặt cọc gấp")) {
-    return "Chính xác! Yêu cầu đặt cọc khẩn cấp là chiêu bài ép tâm lý của kẻ lừa đảo. Bạn cần tỉnh táo, kiểm tra thông tin người bán và luôn giữ lại biên lai chuyển khoản cùng các tin nhắn thỏa thuận làm bằng chứng pháp lý.";
+    return `${prefix}Yêu cầu đặt cọc khẩn cấp là chiêu bài ép tâm lý của kẻ lừa đảo. Bạn cần tỉnh táo, kiểm tra thông tin người bán và luôn giữ lại biên lai chuyển khoản cùng các tin nhắn thỏa thuận làm bằng chứng pháp lý.`;
   }
   if (text.includes("bằng chứng") && text.includes("lừa mua hàng")) {
-    return "Chính xác! Các ảnh chụp màn hình tin nhắn thỏa thuận, thông tin số tài khoản nhận tiền, biên lai chuyển khoản ngân hàng và bài đăng gốc của đối tượng lừa đảo là những bằng chứng thép để gửi cơ quan điều tra.";
+    return `${prefix}Các ảnh chụp màn hình tin nhắn thỏa thuận, thông tin số tài khoản nhận tiền, biên lai chuyển khoản ngân hàng và bài đăng gốc của đối tượng lừa đảo là những bằng chứng thép để gửi cơ quan điều tra.`;
   }
   if (text.includes("bằng chứng") && text.includes("mua hàng online")) {
-    return "Chính xác! Lưu trữ hóa đơn điện tử, video mở hộp (unboxing) nguyên đai nguyên kiện và tin nhắn chốt đơn là thói quen thông minh giúp bảo vệ quyền lợi người tiêu dùng tối đa khi hàng hóa xảy ra lỗi hoặc sai mô tả.";
+    return `${prefix}Lưu trữ hóa đơn điện tử, video mở hộp (unboxing) nguyên đai nguyên kiện và tin nhắn chốt đơn là thói quen thông minh giúp bảo vệ quyền lợi người tiêu dùng tối đa khi hàng hóa xảy ra lỗi hoặc sai mô tả.`;
   }
   if (text.includes("không đúng mô tả")) {
-    return "Chính xác! Đầu tiên, hãy liên hệ ngay bộ phận hỗ trợ khách hàng của shop hoặc sàn TMĐT, cung cấp bằng chứng rõ ràng (video mở hàng, ảnh lỗi) để được giải quyết đổi trả theo đúng chính sách bảo vệ người tiêu dùng.";
+    return `${prefix}Đầu tiên, hãy liên hệ ngay bộ phận hỗ trợ khách hàng của shop hoặc sàn TMĐT, cung cấp bằng chứng rõ ràng (video mở hàng, ảnh lỗi) để được giải quyết đổi trả theo đúng chính sách bảo vệ người tiêu dùng.`;
   }
   if (text.includes("yêu cầu bảo hành")) {
-    return "Chính xác! Hóa đơn mua hàng hợp lệ cùng phiếu bảo hành gốc là điều kiện cần thiết để kích hoạt quyền lợi bảo hành chính hãng. Việc chuẩn bị đầy đủ các giấy tờ này giúp hãng tiếp nhận và xử lý bảo hành cực kỳ nhanh chóng.";
+    return `${prefix}Hóa đơn mua hàng hợp lệ cùng phiếu bảo hành gốc là điều kiện cần thiết để kích hoạt quyền lợi bảo hành chính hãng. Việc chuẩn bị đầy đủ các giấy tờ này giúp hãng tiếp nhận và xử lý bảo hành cực kỳ nhanh chóng.`;
   }
   if (text.includes("luật sư a đại diện") || text.includes("tình huống tiến thoái")) {
-    return "Chính xác! Bạn đã hiểu rõ ngoại lệ của quy tắc bảo mật. Mặc dù thông tin giữa luật sư và thân chủ là tuyệt mật, nhưng khi có nguy cơ đe dọa đến tính mạng, sức khỏe, hoặc thiệt hại tài sản nghiêm trọng do hành vi phạm tội có chủ ý trong tương lai, luật sư có nghĩa vụ phải tiết lộ thông tin đó để ngăn chặn.";
+    return `${prefix}Bạn đã hiểu rõ ngoại lệ của quy tắc bảo mật. Mặc dù thông tin giữa luật sư và thân chủ là tuyệt mật, nhưng khi có nguy cơ đe dọa đến tính mạng, sức khỏe, hoặc thiệt hại tài sản nghiêm trọng do hành vi phạm tội có chủ ý trong tương lai, luật sư có nghĩa vụ phải tiết lộ thông tin đó để ngăn chặn.`;
   }
-  return "Chính xác! Lựa chọn của bạn hoàn toàn chính xác và tuân thủ đúng các nguyên tắc đạo đức nghề nghiệp cũng như quy định của pháp luật hiện hành. Việc áp dụng đúng quy tắc giúp bảo vệ quyền lợi hợp pháp một cách bền vững.";
+  return `${prefix}Lựa chọn của bạn hoàn toàn chính xác và tuân thủ đúng các nguyên tắc đạo đức nghề nghiệp cũng như quy định của pháp luật hiện hành. Việc áp dụng đúng quy tắc giúp bảo vệ quyền lợi hợp pháp một cách bền vững.`;
 }
 
 function getQuestionCustomTitle(questionIndex: number) {
@@ -173,6 +182,29 @@ function getQuestionCustomTitle(questionIndex: number) {
   if (index === 5) return "Đại diện pháp lý song phương";
   return `Tình huống thực tế pháp lý số ${index}`;
 }
+
+function getLessonIllustration(slug: string, categoryTitle: string): string {
+  const s = slug.toLowerCase();
+  const c = categoryTitle.toLowerCase();
+  
+  if (s.includes("thu-viec") || s.includes("lao-dong") || s.includes("hop-dong")) {
+    return "/images/illustrations/labor_law.png";
+  }
+  if (c.includes("giao thông") || c.includes("giao thong") || s.includes("nong-do-con") || s.includes("den-do") || s.includes("gplx")) {
+    return "/images/illustrations/traffic_law.png";
+  }
+  if (s.includes("bao-mat") || s.includes("ransomware") || s.includes("malware") || s.includes("wifi")) {
+    return "/images/illustrations/digital_safety.png";
+  }
+  if (s.includes("lua-dao") || s.includes("viec-nhe") || s.includes("romance") || s.includes("gia-danh")) {
+    return "/images/illustrations/scam_alert.png";
+  }
+  if (c.includes("tiêu dùng") || c.includes("tieu dung") || s.includes("hang-gia") || s.includes("bao-hanh") || s.includes("nhan-mac")) {
+    return "/images/illustrations/consumer_rights.png";
+  }
+  return "/images/illustrations/labor_law.png";
+}
+
 
 export function LessonPage({
   token,
@@ -434,7 +466,8 @@ export function LessonPage({
       ? adaptiveQuestions.map(q => ({
           id: q.questionId,
           text: q.questionText,
-          options: q.options
+          options: q.options,
+          explanation: q.explanation
         }))
       : lesson.questions;
     const totalQuestions = displayQuestions.length;
@@ -804,8 +837,77 @@ export function LessonPage({
                           </span>
                         </div>
                         <p style={{ fontSize: "13.5px", color: "#1e293b", lineHeight: 1.6, margin: 0 }}>
-                          {item.explanation || getAiMentorExplanation(question.text)}
+                          {item.explanation || getAiMentorExplanation(question.text, item.isCorrect)}
                         </p>
+                        {(lesson.sourceTitle || lesson.legalDocumentNo || lesson.effectiveDate) && (
+                          <div style={{
+                            marginTop: "16px",
+                            padding: "14px",
+                            backgroundColor: "#f8fafc",
+                            border: "1px solid #e2e8f0",
+                            borderRadius: "8px",
+                            fontSize: "12.5px",
+                            color: "#475569"
+                          }}>
+                            <div style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              marginBottom: "8px",
+                              borderBottom: "1px solid #f1f5f9",
+                              paddingBottom: "6px"
+                            }}>
+                              <span style={{ fontWeight: 800, color: "#1e3a8a", display: "flex", alignItems: "center", gap: "4px" }}>
+                                ⚖️ CĂN CỨ PHÁP LÝ CHI TIẾT
+                              </span>
+                              {extractLegalReference(item.explanation || getAiMentorExplanation(question.text, item.isCorrect)) && (
+                                <span style={{
+                                  background: "#e0f2fe",
+                                  color: "#0369a1",
+                                  padding: "2px 8px",
+                                  borderRadius: "4px",
+                                  fontWeight: 700,
+                                  fontSize: "11px",
+                                  textTransform: "uppercase"
+                                }}>
+                                  🎯 {extractLegalReference(item.explanation || getAiMentorExplanation(question.text, item.isCorrect))}
+                                </span>
+                              )}
+                            </div>
+
+                            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "4px 8px" }}>
+                              <span style={{ color: "#94a3b8", fontWeight: 500 }}>Văn bản nguồn:</span>
+                              <span style={{ fontWeight: 600, color: "#1e293b" }}>{lesson.sourceTitle || "N/A"}</span>
+                              
+                              {lesson.legalDocumentNo && (
+                                <>
+                                  <span style={{ color: "#94a3b8", fontWeight: 500 }}>Số hiệu:</span>
+                                  <span style={{ fontFamily: "monospace" }}>{lesson.legalDocumentNo}</span>
+                                </>
+                              )}
+
+                              {lesson.effectiveDate && (
+                                <>
+                                  <span style={{ color: "#94a3b8", fontWeight: 500 }}>Ngày hiệu lực:</span>
+                                  <span>{formatDate(lesson.effectiveDate)}</span>
+                                </>
+                              )}
+                            </div>
+
+                            {lesson.sourceUrl && (
+                              <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px dashed #e2e8f0" }}>
+                                <a 
+                                  href={lesson.sourceUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  style={{ color: "#2563eb", textDecoration: "underline", fontWeight: 650, display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                >
+                                  Tra cứu văn bản gốc đầy đủ ↗
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -1029,28 +1131,6 @@ export function LessonPage({
                         );
                       })}
                     </div>
-
-                    {/* AI Mentor Card */}
-                    {answers[currentQuestion.id] && (
-                      <div style={{
-                        background: "#eff6ff",
-                        border: "1px solid #bfdbfe",
-                        borderRadius: "12px",
-                        padding: "16px 20px",
-                        marginBottom: "28px",
-                        animation: "fadeIn 0.3s ease-out"
-                      }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                          <span style={{ fontSize: "16px" }}>✨</span>
-                          <span style={{ fontSize: "10px", fontWeight: 800, color: "#2563eb", letterSpacing: "1px", textTransform: "uppercase" }}>
-                            AI MENTOR PHÂN TÍCH
-                          </span>
-                        </div>
-                        <p style={{ fontSize: "13.5px", color: "#1e293b", lineHeight: 1.6, margin: 0 }}>
-                          {getAiMentorExplanation(currentQuestion.text)}
-                        </p>
-                      </div>
-                    )}
 
                     {/* Footer Continue Button */}
                     <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
@@ -1381,6 +1461,13 @@ export function LessonPage({
                     <h1 className="lexi-study-title">{lesson.title}</h1>
                     <article className="lexi-overview-card">
                       <h4>Tổng quan bài học</h4>
+                      <div style={{ width: "100%", height: "240px", borderRadius: "12px", overflow: "hidden", marginBottom: "20px", border: "1px solid rgba(255, 255, 255, 0.08)", background: "rgba(0, 0, 0, 0.2)" }}>
+                        <img 
+                          src={getLessonIllustration(lesson.slug, lesson.category.title)} 
+                          alt={lesson.title} 
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                        />
+                      </div>
                       <p>{lesson.content}</p>
                       
                       <div className="lexi-overview-badges">

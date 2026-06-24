@@ -1311,7 +1311,9 @@ export class AdminContentService {
           {
             role: "system",
             content:
-              "You generate Vietnamese legal education lesson drafts. Return only valid JSON with title, content, videoScript, videoPrompt, questions. Each question must have questionText, explanation, sortOrder and options with optionText, isCorrect, sortOrder. Exactly one option per question must be correct.",
+              "You generate Vietnamese legal education lesson drafts. Return only valid JSON with title, content, videoScript, videoPrompt, questions. " +
+              "Each question must have questionText, explanation, sortOrder and options with optionText, isCorrect, sortOrder. Exactly one option per question must be correct. " +
+              "CRITICAL REQUIREMENT FOR EXPLANATION: The 'explanation' field of each question MUST start with an exact citation/reference from the source law (e.g., 'Căn cứ theo Điều 5 Khoản 2 Điểm a Nghị định 100/2019/NĐ-CP...', 'Theo quy định tại Điều 12 Luật Giao thông đường bộ 2008...'). Explain clearly why the selected option is correct and why other options are incorrect based exactly on the cited legal text.",
           },
           {
             role: "user",

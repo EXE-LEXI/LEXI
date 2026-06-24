@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CloudUpload, Link2, Trash2, Video } from "lucide-react";
+import { CloudUpload, Link2, Trash2, Video, ChevronDown, ChevronUp, Search, FileVideo, VideoOff } from "lucide-react";
 import type { AdminLesson, AdminMediaAsset } from "../../api/admin";
 import {
   attachMediaAssetToLesson,
@@ -42,6 +42,12 @@ export function MediaTab({ token, initialMedia, lessons }: MediaTabProps) {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Redesign state declarations
+  const [isBasicConfigOpen, setIsBasicConfigOpen] = useState(true);
+  const [isQuizConfigOpen, setIsQuizConfigOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterTab, setFilterTab] = useState<"ALL" | "SHORTS" | "LESSON">("ALL");
+
   useEffect(() => {
     setLocalMedia(initialMedia);
   }, [initialMedia]);
@@ -54,6 +60,22 @@ export function MediaTab({ token, initialMedia, lessons }: MediaTabProps) {
   const shortsMedia = localMedia.filter((item) => item.placement === "SHORTS");
   const lessonMedia = localMedia.filter((item) => item.placement !== "SHORTS");
 
+  const filteredMedia = useMemo(() => {
+    return localMedia.filter((item) => {
+      const titleMatch = (item.title || "").toLowerCase().includes(searchQuery.toLowerCase());
+      const idMatch = item.id.toLowerCase().includes(searchQuery.toLowerCase());
+      const searchMatch = titleMatch || idMatch;
+
+      if (filterTab === "SHORTS") {
+        return searchMatch && item.placement === "SHORTS";
+      }
+      if (filterTab === "LESSON") {
+        return searchMatch && item.placement !== "SHORTS";
+      }
+      return searchMatch;
+    });
+  }, [localMedia, searchQuery, filterTab]);
+
   function handleDrag(event: React.DragEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -61,8 +83,10 @@ export function MediaTab({ token, initialMedia, lessons }: MediaTabProps) {
   }
 
   function setSelectedFile(file: File) {
-    if (!file.type.startsWith("video/")) {
-      setError("Hiện tại chỉ hỗ trợ upload video.");
+    const extension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+    const allowedExtensions = [".mp4", ".webm", ".mov", ".m4v", ".mkv", ".avi"];
+    if (!file.type.startsWith("video/") && !allowedExtensions.includes(extension)) {
+      setError("Hiện tại chỉ hỗ trợ upload video (mp4, webm, mov, m4v, mkv, avi).");
       return;
     }
 
@@ -240,51 +264,6 @@ export function MediaTab({ token, initialMedia, lessons }: MediaTabProps) {
     return "Mẹo luật";
   }
 
-  function renderMediaRow(item: AdminMediaAsset) {
-    const assetType = item.assetType ?? item.type ?? "VIDEO";
-    const isSelected = selectedAssetId === item.id;
-
-    return (
-      <button
-        key={item.id}
-        type="button"
-        className="lexi-cms-lesson-row"
-        style={{
-          width: "100%",
-          textAlign: "left",
-          cursor: "pointer",
-          background: isSelected ? "#f0f3ff" : "",
-          border: isSelected ? "1.5px solid #4f46e5" : "",
-        }}
-        onClick={() => setSelectedAssetId(item.id)}
-      >
-        <span
-          className="lexi-cms-lesson-num"
-          style={{
-            background: assetType === "VIDEO" ? "#e0f2fe" : "#fee2e2",
-            color: assetType === "VIDEO" ? "#0284c7" : "#ef4444",
-          }}
-        >
-          <Video size={16} />
-        </span>
-        <div className="lexi-cms-lesson-details">
-          <span className="lexi-cms-lesson-name">{item.title || item.id}</span>
-          <span className="lexi-cms-lesson-stats">
-            {getPlacementLabel(item)} • {assetType} • Trạng thái:{" "}
-            {item.status ?? "READY"}
-            {item.placement === "SHORTS" ? (
-              <span style={detailLineStyle("#059669")}>
-                Chuyên mục: {getShortCategoryLabel(item)}
-              </span>
-            ) : null}
-            <span style={detailLineStyle(item.lesson ? "#4f46e5" : "#64748b")}>
-              Bài học: {item.lesson?.title ?? "Chưa gắn bài học"}
-            </span>
-          </span>
-        </div>
-      </button>
-    );
-  }
 
   return (
     <div className="lexi-cms-panel-card">
@@ -296,249 +275,362 @@ export function MediaTab({ token, initialMedia, lessons }: MediaTabProps) {
         {notice ? <div className="lexi-inline-notice">{notice}</div> : null}
         {error ? <p className="form-error">{error}</p> : null}
 
-        <div className="lexi-cms-quiz-split">
-          <div>
-            <h3 style={sectionTitleStyle}>Chọn nơi upload video</h3>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                gap: "10px",
-                marginBottom: "16px",
-              }}
+        {/* Upload Container at the top */}
+        <div className="lexi-media-upload-container">
+          <h3 style={sectionTitleStyle}>
+            <CloudUpload size={18} style={{ marginRight: 6 }} /> Tải lên video mới
+          </h3>
+          
+          <div className="lexi-media-destination-selector">
+            <button
+              type="button"
+              className={`lexi-media-destination-btn ${uploadDestination === "SHORTS" ? "active" : ""}`}
+              onClick={() => setUploadDestination("SHORTS")}
             >
-              <DestinationButton
-                active={uploadDestination === "SHORTS"}
-                title="Video ngắn"
-                description="Hiển thị trên trang Shorts"
-                onClick={() => setUploadDestination("SHORTS")}
-              />
-              <DestinationButton
-                active={uploadDestination === "LESSON_RESOURCE"}
-                title="Video bài học"
-                description="Lưu vào kho để gắn với bài học"
-                onClick={() => setUploadDestination("LESSON_RESOURCE")}
-              />
-            </div>
-
-            {uploadDestination === "SHORTS" ? (
-              <div
-                className="lexi-cms-panel-card"
-                style={{
-                  marginBottom: "16px",
-                  background: "#f8fafc",
-                  padding: "16px",
-                  border: "1px solid #cbd5e1",
-                }}
-              >
-                <h3 style={sectionTitleStyle}>Thông tin Video ngắn</h3>
-                <div className="lexi-cms-form-group">
-                  <label>Chuyên mục pháp lý</label>
-                  <select
-                    className="lexi-cms-form-select"
-                    value={shortsCategory}
-                    onChange={(event) =>
-                      setShortsCategory(event.target.value as ShortsCategory)
-                    }
-                  >
-                    <option value="fraud">Lừa đảo công nghệ</option>
-                    <option value="civil">Dân sự & đời sống</option>
-                    <option value="labor">Lao động</option>
-                    <option value="traffic">Giao thông</option>
-                    <option value="family">Hôn nhân gia đình</option>
-                    <option value="criminal">Hình sự cơ bản</option>
-                    <option value="trivia">Mẹo luật</option>
-                  </select>
-                </div>
-
-                <div className="lexi-cms-form-group">
-                  <label>Bài học liên quan</label>
-                  <select
-                    className="lexi-cms-form-select"
-                    value={shortsLessonId}
-                    onChange={(event) => setShortsLessonId(event.target.value)}
-                  >
-                    <option value="">Không gắn bài học</option>
-                    {lessons.map((lesson) => (
-                      <option key={lesson.id} value={lesson.id}>
-                        {lesson.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="lexi-cms-form-group">
-                  <label>Tác giả</label>
-                  <input
-                    className="lexi-cms-form-input"
-                    value={shortsAuthor}
-                    onChange={(event) => setShortsAuthor(event.target.value)}
-                    placeholder="Lexi"
-                  />
-                </div>
-
-                <div className="lexi-cms-form-group">
-                  <label>Mô tả ngắn</label>
-                  <textarea
-                    className="lexi-cms-form-input"
-                    value={shortsDescription}
-                    onChange={(event) => setShortsDescription(event.target.value)}
-                    placeholder="Tóm tắt nội dung video để hiển thị trong Shorts"
-                    rows={3}
-                  />
-                </div>
-
-                <h3 style={{ ...sectionTitleStyle, marginTop: "14px" }}>
-                  Quiz sau video
-                </h3>
-                <div className="lexi-cms-form-group">
-                  <label>Câu hỏi</label>
-                  <input
-                    className="lexi-cms-form-input"
-                    value={quizQuestion}
-                    onChange={(event) => setQuizQuestion(event.target.value)}
-                    placeholder="Ví dụ: Dấu hiệu chính của hành vi này là gì?"
-                  />
-                </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr",
-                    gap: "8px",
-                  }}
-                >
-                  {[quizOption1, quizOption2, quizOption3].map((value, index) => (
-                    <div className="lexi-cms-form-group" key={index}>
-                      <label>Đáp án {index + 1}</label>
-                      <input
-                        className="lexi-cms-form-input"
-                        value={value}
-                        onChange={(event) => {
-                          const setter = [
-                            setQuizOption1,
-                            setQuizOption2,
-                            setQuizOption3,
-                          ][index];
-                          setter(event.target.value);
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="lexi-cms-form-group">
-                  <label>Đáp án đúng</label>
-                  <select
-                    className="lexi-cms-form-select"
-                    value={quizCorrectIndex}
-                    onChange={(event) => setQuizCorrectIndex(Number(event.target.value))}
-                  >
-                    <option value={0}>Đáp án 1</option>
-                    <option value={1}>Đáp án 2</option>
-                    <option value={2}>Đáp án 3</option>
-                  </select>
-                </div>
-                <div className="lexi-cms-form-group">
-                  <label>Giải thích</label>
-                  <textarea
-                    className="lexi-cms-form-input"
-                    value={quizExplanation}
-                    onChange={(event) => setQuizExplanation(event.target.value)}
-                    placeholder="Giải thích ngắn sau khi người học trả lời"
-                    rows={3}
-                  />
-                </div>
-              </div>
-            ) : null}
-
-            <div
-              className={`lexi-cms-upload-zone ${dragActive ? "active" : ""}`}
-              onDragEnter={handleDrag}
-              onDragOver={handleDrag}
-              onDragLeave={handleDrag}
-              onDrop={handleDrop}
-              onClick={() => document.getElementById("hidden-file-input")?.click()}
+              <strong>Video ngắn (Shorts)</strong>
+              <span>Hiển thị trên trang Shorts với bộ câu hỏi tương tác</span>
+            </button>
+            <button
+              type="button"
+              className={`lexi-media-destination-btn ${uploadDestination === "LESSON_RESOURCE" ? "active" : ""}`}
+              onClick={() => setUploadDestination("LESSON_RESOURCE")}
             >
-              <input
-                id="hidden-file-input"
-                type="file"
-                style={{ display: "none" }}
-                accept="video/*"
-                onChange={handleFileChange}
-              />
-              <CloudUpload size={48} className="lexi-cms-upload-icon" />
-              <strong>Kéo thả tệp tin hoặc click để chọn</strong>
-              <span>Hỗ trợ video mp4, webm, mov, m4v, mkv hoặc avi.</span>
-            </div>
-
-            {uploadFile ? (
-              <div
-                className="lexi-cms-panel-card"
-                style={{
-                  marginTop: "16px",
-                  background: "#f8fafc",
-                  padding: "16px",
-                  border: "1px solid #cbd5e1",
-                }}
-              >
-                <div className="lexi-cms-form-group">
-                  <label>Tên video</label>
-                  <input
-                    type="text"
-                    className="lexi-cms-form-input"
-                    value={mediaTitle}
-                    onChange={(event) => setMediaTitle(event.target.value)}
-                  />
-                </div>
-
-                <p style={{ fontSize: "12px", color: "#64748b", margin: "4px 0" }}>
-                  Tệp tin: <strong>{uploadFile.name}</strong> (
-                  {(uploadFile.size / 1024 / 1024).toFixed(2)} MB)
-                </p>
-
-                {isUploading ? (
-                  <div>
-                    <div className="lexi-cms-progress-bar-container">
-                      <span
-                        className="lexi-cms-progress-bar-fill"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                    <span style={{ fontSize: "11px", color: "#4f46e5" }}>
-                      Đang upload: {uploadProgress}%
-                    </span>
-                  </div>
-                ) : null}
-
-                <button
-                  type="button"
-                  className="lexi-cms-btn-save"
-                  style={{ marginTop: "12px", width: "100%" }}
-                  disabled={isUploading}
-                  onClick={handleStartUpload}
-                >
-                  {uploadDestination === "SHORTS"
-                    ? "Upload lên Video ngắn"
-                    : "Upload vào kho Video bài học"}
-                </button>
-              </div>
-            ) : null}
-
-            <MediaListSection
-              title={`Video ngắn đã publish (${shortsMedia.length})`}
-              emptyText="Chưa có video ngắn nào."
-              items={shortsMedia}
-              renderItem={renderMediaRow}
-            />
-            <MediaListSection
-              title={`Video bài học / tài nguyên lesson (${lessonMedia.length})`}
-              emptyText="Chưa có video bài học nào."
-              items={lessonMedia}
-              renderItem={renderMediaRow}
-            />
+              <strong>Video bài học</strong>
+              <span>Lưu trữ trong kho tài nguyên để liên kết với các bài học chính</span>
+            </button>
           </div>
 
+          <div
+            className={`lexi-media-upload-zone ${dragActive ? "active" : ""}`}
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => document.getElementById("hidden-file-input")?.click()}
+          >
+            <input
+              id="hidden-file-input"
+              type="file"
+              style={{ display: "none" }}
+              accept="video/*"
+              onChange={handleFileChange}
+            />
+            <CloudUpload size={48} className="lexi-media-upload-icon" />
+            <strong>Kéo thả tệp tin hoặc click để chọn</strong>
+            <span>Hỗ trợ các định dạng video mp4, webm, mov, m4v, mkv, avi</span>
+          </div>
+
+          {/* Form details when file is selected */}
+          {uploadFile ? (
+            <div
+              className="lexi-cms-panel-card"
+              style={{
+                marginTop: "20px",
+                background: "#f8fafc",
+                padding: "20px",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px"
+              }}
+            >
+              <div className="lexi-cms-form-group" style={{ marginBottom: "16px" }}>
+                <label style={{ fontWeight: 600, color: "#475569" }}>Tên hiển thị của video</label>
+                <input
+                  type="text"
+                  className="lexi-cms-form-input"
+                  value={mediaTitle}
+                  onChange={(event) => setMediaTitle(event.target.value)}
+                  placeholder="Nhập tiêu đề video..."
+                />
+              </div>
+
+              <div style={{ fontSize: "12.5px", color: "#64748b", marginBottom: "16px" }}>
+                Tệp tin đã chọn: <strong style={{ color: "#334155" }}>{uploadFile.name}</strong> (
+                {(uploadFile.size / 1024 / 1024).toFixed(2)} MB)
+              </div>
+
+              {/* Shorts metadata form grouped in accordions */}
+              {uploadDestination === "SHORTS" && (
+                <div style={{ marginBottom: "20px" }}>
+                  {/* Accordion 1: Basic Config */}
+                  <div className="lexi-media-accordion">
+                    <button
+                      type="button"
+                      className={`lexi-media-accordion-header ${isBasicConfigOpen ? "active" : ""}`}
+                      onClick={() => setIsBasicConfigOpen(!isBasicConfigOpen)}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        📝 Cấu hình thông tin cơ bản
+                      </span>
+                      {isBasicConfigOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+                    {isBasicConfigOpen && (
+                      <div className="lexi-media-accordion-content">
+                        <div className="lexi-cms-form-group">
+                          <label>Chuyên mục pháp lý</label>
+                          <select
+                            className="lexi-cms-form-select"
+                            value={shortsCategory}
+                            onChange={(event) =>
+                              setShortsCategory(event.target.value as ShortsCategory)
+                            }
+                          >
+                            <option value="fraud">Lừa đảo công nghệ</option>
+                            <option value="civil">Dân sự & đời sống</option>
+                            <option value="labor">Lao động</option>
+                            <option value="traffic">Giao thông</option>
+                            <option value="family">Hôn nhân gia đình</option>
+                            <option value="criminal">Hình sự cơ bản</option>
+                            <option value="trivia">Mẹo luật</option>
+                          </select>
+                        </div>
+
+                        <div className="lexi-cms-form-group">
+                          <label>Bài học liên quan (Không bắt buộc)</label>
+                          <select
+                            className="lexi-cms-form-select"
+                            value={shortsLessonId}
+                            onChange={(event) => setShortsLessonId(event.target.value)}
+                          >
+                            <option value="">Không gắn bài học</option>
+                            {lessons.map((lesson) => (
+                              <option key={lesson.id} value={lesson.id}>
+                                {lesson.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="lexi-cms-form-group">
+                          <label>Tác giả</label>
+                          <input
+                            className="lexi-cms-form-input"
+                            value={shortsAuthor}
+                            onChange={(event) => setShortsAuthor(event.target.value)}
+                            placeholder="Lexi"
+                          />
+                        </div>
+
+                        <div className="lexi-cms-form-group">
+                          <label>Mô tả ngắn</label>
+                          <textarea
+                            className="lexi-cms-form-input"
+                            value={shortsDescription}
+                            onChange={(event) => setShortsDescription(event.target.value)}
+                            placeholder="Tóm tắt nội dung video..."
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Accordion 2: Quiz Config */}
+                  <div className="lexi-media-accordion">
+                    <button
+                      type="button"
+                      className={`lexi-media-accordion-header ${isQuizConfigOpen ? "active" : ""}`}
+                      onClick={() => setIsQuizConfigOpen(!isQuizConfigOpen)}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        ❓ Cấu hình bộ câu hỏi trắc nghiệm (Quiz)
+                      </span>
+                      {isQuizConfigOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+                    {isQuizConfigOpen && (
+                      <div className="lexi-media-accordion-content">
+                        <div className="lexi-cms-form-group">
+                          <label>Câu hỏi</label>
+                          <input
+                            className="lexi-cms-form-input"
+                            value={quizQuestion}
+                            onChange={(event) => setQuizQuestion(event.target.value)}
+                            placeholder="Ví dụ: Dấu hiệu chính của hành vi này là gì?"
+                          />
+                        </div>
+
+                        {[quizOption1, quizOption2, quizOption3].map((value, index) => (
+                          <div className="lexi-cms-form-group" key={index}>
+                            <label>Đáp án {index + 1}</label>
+                            <input
+                              className="lexi-cms-form-input"
+                              value={value}
+                              onChange={(event) => {
+                                const setter = [
+                                  setQuizOption1,
+                                  setQuizOption2,
+                                  setQuizOption3,
+                                ][index];
+                                setter(event.target.value);
+                              }}
+                              placeholder={`Nhập lựa chọn thứ ${index + 1}...`}
+                            />
+                          </div>
+                        ))}
+
+                        <div className="lexi-cms-form-group">
+                          <label>Đáp án đúng</label>
+                          <select
+                            className="lexi-cms-form-select"
+                            value={quizCorrectIndex}
+                            onChange={(event) => setQuizCorrectIndex(Number(event.target.value))}
+                          >
+                            <option value={0}>Đáp án 1</option>
+                            <option value={1}>Đáp án 2</option>
+                            <option value={2}>Đáp án 3</option>
+                          </select>
+                        </div>
+
+                        <div className="lexi-cms-form-group">
+                          <label>Giải thích chi tiết</label>
+                          <textarea
+                            className="lexi-cms-form-input"
+                            value={quizExplanation}
+                            onChange={(event) => setQuizExplanation(event.target.value)}
+                            placeholder="Giải thích ngắn gọn tại sao đáp án này đúng..."
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Progress bar if uploading */}
+              {isUploading ? (
+                <div style={{ marginBottom: "16px" }}>
+                  <div className="lexi-cms-progress-bar-container">
+                    <span
+                      className="lexi-cms-progress-bar-fill"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <span style={{ fontSize: "11px", color: "#4f46e5", fontWeight: 600 }}>
+                    Đang tải lên hệ thống: {uploadProgress}%
+                  </span>
+                </div>
+              ) : null}
+
+              {/* Submit upload button */}
+              <button
+                type="button"
+                className="lexi-cms-btn-save"
+                style={{ width: "100%" }}
+                disabled={isUploading}
+                onClick={handleStartUpload}
+              >
+                {isUploading ? "Đang tải video..." : uploadDestination === "SHORTS" ? "Tải lên Video ngắn" : "Tải lên Video bài học"}
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Media Workspace Split Grid (2 Columns) */}
+        <div className="lexi-media-split-grid">
+          
+          {/* Left Column: Video Library & Filter Tabs */}
+          <div>
+            <div className="lexi-media-library-header">
+              <div className="lexi-media-library-search" style={{ position: "relative" }}>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm video..."
+                  className="lexi-cms-form-input"
+                  style={{ paddingLeft: "36px", marginBottom: 0 }}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+              </div>
+
+              <div className="lexi-media-library-tabs">
+                <button
+                  type="button"
+                  className={`lexi-media-library-tab-btn ${filterTab === "ALL" ? "active" : ""}`}
+                  onClick={() => setFilterTab("ALL")}
+                >
+                  Tất cả ({localMedia.length})
+                </button>
+                <button
+                  type="button"
+                  className={`lexi-media-library-tab-btn ${filterTab === "SHORTS" ? "active" : ""}`}
+                  onClick={() => setFilterTab("SHORTS")}
+                >
+                  Shorts ({shortsMedia.length})
+                </button>
+                <button
+                  type="button"
+                  className={`lexi-media-library-tab-btn ${filterTab === "LESSON" ? "active" : ""}`}
+                  onClick={() => setFilterTab("LESSON")}
+                >
+                  Bài học ({lessonMedia.length})
+                </button>
+              </div>
+            </div>
+
+            <div className="lexi-media-library-list">
+              {filteredMedia.length > 0 ? (
+                filteredMedia.map((item) => {
+                  const isSelected = selectedAssetId === item.id;
+                  const isShorts = item.placement === "SHORTS";
+                  
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`lexi-media-library-item ${isSelected ? "active" : ""}`}
+                      onClick={() => setSelectedAssetId(item.id)}
+                    >
+                      <div
+                        className="lexi-media-item-icon"
+                        style={{
+                          backgroundColor: isShorts ? "#ecfdf5" : "#eff6ff",
+                          color: isShorts ? "#059669" : "#2563eb",
+                        }}
+                      >
+                        {isShorts ? <FileVideo size={20} /> : <Video size={20} />}
+                      </div>
+                      
+                      <div className="lexi-media-item-info">
+                        <span className="lexi-media-item-title">{item.title || item.id}</span>
+                        <div className="lexi-media-item-meta">
+                          <span className={`lexi-media-badge ${isShorts ? "shorts" : "lesson"}`}>
+                            {isShorts ? "Shorts" : "Bài học"}
+                          </span>
+                          {isShorts && (
+                            <span className="lexi-media-badge attached" style={{ backgroundColor: "#f3f4f6", color: "#374151" }}>
+                              {getShortCategoryLabel(item)}
+                            </span>
+                          )}
+                          {item.lesson ? (
+                            <span className="lexi-media-badge attached">
+                              Gắn liền: {item.lesson.title}
+                            </span>
+                          ) : (
+                            <span className="lexi-media-badge unattached">
+                              Chưa gắn bài học
+                            </span>
+                          )}
+                          <span style={{ marginLeft: "auto", fontSize: "10px", color: "#94a3b8" }}>
+                            ID: {item.id.substring(0, 8)}...
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div style={{ textAlign: "center", padding: "40px", color: "#64748b", backgroundColor: "#f8fafc", borderRadius: "12px", border: "1px dashed #e2e8f0" }}>
+                  <VideoOff size={36} style={{ marginBottom: "8px", color: "#cbd5e1" }} />
+                  <p style={{ fontSize: "13px", margin: 0 }}>Không tìm thấy video nào phù hợp.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Selected Video & Attaching Form */}
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            
             <SelectedVideoPanel
               asset={selectedAsset}
               isDeleting={Boolean(selectedAsset && deletingAssetId === selectedAsset.id)}
@@ -549,27 +641,27 @@ export function MediaTab({ token, initialMedia, lessons }: MediaTabProps) {
 
             <form
               className="lexi-cms-panel-card"
-              style={{ background: "#f8fafc", border: "1px solid #cbd5e1" }}
+              style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}
               onSubmit={handleAttachMedia}
             >
-              <h3 style={sectionTitleStyle}>
-                <Link2 size={16} /> Đính kèm video vào bài học
+              <h3 style={{ ...sectionTitleStyle, borderBottom: "1px solid #f1f5f9", paddingBottom: "12px", marginBottom: "16px" }}>
+                <Link2 size={16} style={{ marginRight: 6 }} /> Đính kèm video vào bài học
               </h3>
 
-              <div className="lexi-cms-form-group">
+              <div className="lexi-cms-form-group" style={{ marginBottom: "14px" }}>
                 <label>Video đã chọn</label>
                 <input
                   readOnly
                   required
                   type="text"
                   className="lexi-cms-form-input"
-                  style={{ background: "#e2e8f0", color: "#475569" }}
+                  style={{ background: "#f8fafc", color: "#475569", borderColor: "#cbd5e1" }}
                   placeholder="Chọn video ở danh sách bên trái..."
                   value={selectedAsset?.title || selectedAsset?.id || ""}
                 />
               </div>
 
-              <div className="lexi-cms-form-group">
+              <div className="lexi-cms-form-group" style={{ marginBottom: "14px" }}>
                 <label>Bài học cần đính kèm</label>
                 <select
                   required
@@ -589,82 +681,17 @@ export function MediaTab({ token, initialMedia, lessons }: MediaTabProps) {
               <button
                 type="submit"
                 className="lexi-cms-btn-save"
-                style={{ marginTop: "10px", width: "100%" }}
+                style={{ width: "100%", padding: "10px 16px" }}
                 disabled={isAttaching || !selectedAssetId || !attachLessonId}
               >
                 {isAttaching ? "Đang đính kèm..." : "Xác nhận liên kết video"}
               </button>
             </form>
           </div>
+
         </div>
       </div>
     </div>
-  );
-}
-
-function DestinationButton({
-  active,
-  title,
-  description,
-  onClick,
-}: {
-  active: boolean;
-  title: string;
-  description: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className="lexi-cms-btn-save"
-      style={{
-        background: active ? "#4f46e5" : "#f8fafc",
-        color: active ? "#ffffff" : "#334155",
-        border: active ? "1px solid #4f46e5" : "1px solid #cbd5e1",
-        textAlign: "left",
-        minHeight: "72px",
-      }}
-      onClick={onClick}
-    >
-      <strong>{title}</strong>
-      <span style={{ display: "block", fontSize: "11px", marginTop: "4px" }}>
-        {description}
-      </span>
-    </button>
-  );
-}
-
-function MediaListSection({
-  title,
-  emptyText,
-  items,
-  renderItem,
-}: {
-  title: string;
-  emptyText: string;
-  items: AdminMediaAsset[];
-  renderItem: (item: AdminMediaAsset) => React.ReactNode;
-}) {
-  return (
-    <>
-      <h4
-        style={{
-          marginTop: "24px",
-          marginBottom: "12px",
-          fontSize: "14px",
-          color: "#475569",
-        }}
-      >
-        {title}
-      </h4>
-      <div style={{ maxHeight: "300px", overflowY: "auto", paddingRight: "6px" }}>
-        {items.length > 0 ? (
-          items.map(renderItem)
-        ) : (
-          <p style={{ fontSize: "12px", color: "#64748b" }}>{emptyText}</p>
-        )}
-      </div>
-    </>
   );
 }
 
@@ -686,70 +713,134 @@ function SelectedVideoPanel({
       <div
         className="lexi-cms-panel-card"
         style={{
-          background: "#f8fafc",
-          border: "1px solid #cbd5e1",
-          padding: "24px",
+          background: "#ffffff",
+          border: "1px solid #e2e8f0",
+          borderRadius: "16px",
+          padding: "32px 24px",
           textAlign: "center",
           color: "#64748b",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
         }}
       >
-        <p style={{ fontSize: "13px", margin: 0 }}>
-          Chọn một video ở danh sách bên trái để xem trước và xóa khi cần.
+        <Video size={40} style={{ margin: "0 auto 12px", color: "#cbd5e1", display: "block" }} />
+        <p style={{ fontSize: "13.5px", margin: 0, fontWeight: 500 }}>
+          Chọn một video từ danh sách thư viện bên trái để xem trước và quản lý chi tiết.
         </p>
       </div>
     );
   }
 
+  const isShorts = asset.placement === "SHORTS";
+
   return (
     <div
       className="lexi-cms-panel-card"
-      style={{ background: "#f8fafc", border: "1px solid #cbd5e1", padding: "16px" }}
+      style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}
     >
-      <h3 style={sectionTitleStyle}>
-        <Video size={16} /> Xem trước & chi tiết video
+      <h3 style={{ ...sectionTitleStyle, borderBottom: "1px solid #f1f5f9", paddingBottom: "12px", marginBottom: "16px" }}>
+        <Video size={16} style={{ marginRight: 6 }} /> Xem trước & chi tiết video
       </h3>
 
       {asset.url ? (
         <div
           style={{
-            marginBottom: "12px",
-            background: "#000",
-            borderRadius: "8px",
+            marginBottom: "16px",
+            background: "#0f172a",
+            borderRadius: "12px",
             overflow: "hidden",
             display: "flex",
             justifyContent: "center",
+            boxShadow: "inset 0 2px 8px rgba(0,0,0,0.8), 0 4px 12px rgba(0,0,0,0.1)",
+            border: "1px solid #1e293b",
           }}
         >
           <video
             key={asset.url}
             src={asset.url}
             controls
-            style={{ width: "100%", maxHeight: "240px", display: "block" }}
+            style={{ width: "100%", maxHeight: "280px", display: "block" }}
           />
         </div>
       ) : (
-        <p style={{ fontSize: "12px", color: "#ef4444", marginBottom: "12px" }}>
-          Video này chưa có URL phát.
-        </p>
+        <div
+          style={{
+            padding: "24px",
+            textAlign: "center",
+            backgroundColor: "#fef2f2",
+            border: "1px solid #fee2e2",
+            borderRadius: "12px",
+            color: "#b91c1c",
+            fontSize: "13px",
+            marginBottom: "16px"
+          }}
+        >
+          <VideoOff size={24} style={{ margin: "0 auto 6px", display: "block" }} />
+          Video này chưa có URL phát sóng trực tuyến.
+        </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", color: "#475569" }}>
-        <div><strong>Tên video:</strong> {asset.title || "Chưa đặt tên"}</div>
-        <div><strong>ID:</strong> <code style={{ fontSize: "11px" }}>{asset.id}</code></div>
-        <div><strong>Loại:</strong> {getPlacementLabel(asset)} ({asset.assetType || asset.type || "VIDEO"})</div>
-        {asset.placement === "SHORTS" ? (
-          <div><strong>Chuyên mục Shorts:</strong> {getShortCategoryLabel(asset)}</div>
-        ) : null}
-        <div><strong>Trạng thái:</strong> {asset.status || "READY"}</div>
-        <div>
-          <strong>Bài học liên quan:</strong>{" "}
-          {asset.lesson?.title ?? "Chưa gắn bài học"}
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px", color: "#334155" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f8fafc", paddingBottom: "8px" }}>
+          <strong style={{ color: "#64748b" }}>Tên video:</strong>
+          <span style={{ fontWeight: 600, color: "#0f172a", textAlign: "right" }}>{asset.title || "Chưa đặt tên"}</span>
         </div>
-        {asset.url ? (
-          <div style={{ wordBreak: "break-all" }}>
-            <strong>URL:</strong> {asset.url}
+        
+        <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f8fafc", paddingBottom: "8px" }}>
+          <strong style={{ color: "#64748b" }}>Mã video ID:</strong>
+          <code style={{ fontSize: "11px", backgroundColor: "#f1f5f9", padding: "2px 6px", borderRadius: "4px", color: "#475569" }}>{asset.id}</code>
+        </div>
+        
+        <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f8fafc", paddingBottom: "8px" }}>
+          <strong style={{ color: "#64748b" }}>Loại vị trí:</strong>
+          <span className={`lexi-media-badge ${isShorts ? "shorts" : "lesson"}`}>
+            {getPlacementLabel(asset)}
+          </span>
+        </div>
+
+        {isShorts && (
+          <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f8fafc", paddingBottom: "8px" }}>
+            <strong style={{ color: "#64748b" }}>Chuyên mục:</strong>
+            <span style={{ fontWeight: 650, color: "#059669" }}>{getShortCategoryLabel(asset)}</span>
           </div>
-        ) : null}
+        )}
+
+        <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f8fafc", paddingBottom: "8px" }}>
+          <strong style={{ color: "#64748b" }}>Trạng thái:</strong>
+          <span style={{ fontWeight: 600, color: asset.status === "READY" || !asset.status ? "#059669" : "#d97706" }}>
+            {asset.status || "READY"}
+          </span>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f8fafc", paddingBottom: "8px" }}>
+          <strong style={{ color: "#64748b" }}>Bài học liên kết:</strong>
+          <span style={{ fontWeight: 600, color: asset.lesson ? "#4f46e5" : "#64748b" }}>
+            {asset.lesson?.title ?? "Chưa liên kết bài học nào"}
+          </span>
+        </div>
+
+        {asset.url && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", paddingTop: "4px" }}>
+            <strong style={{ color: "#64748b" }}>Đường dẫn tệp (URL Cloud):</strong>
+            <a
+              href={asset.url}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                fontSize: "11px",
+                color: "#2563eb",
+                wordBreak: "break-all",
+                backgroundColor: "#eff6ff",
+                padding: "8px",
+                borderRadius: "6px",
+                border: "1px solid #bfdbfe",
+                display: "block",
+                marginTop: "2px"
+              }}
+            >
+              {asset.url}
+            </a>
+          </div>
+        )}
       </div>
 
       <button
@@ -759,7 +850,7 @@ function SelectedVideoPanel({
           background: "#fee2e2",
           color: "#991b1b",
           border: "1px solid #fca5a5",
-          marginTop: "16px",
+          marginTop: "20px",
           width: "100%",
           display: "flex",
           alignItems: "center",
@@ -768,12 +859,14 @@ function SelectedVideoPanel({
           padding: "10px",
           borderRadius: "8px",
           fontWeight: "bold",
+          cursor: "pointer",
+          transition: "all 0.2s"
         }}
         disabled={isDeleting}
         onClick={() => onDelete(asset)}
       >
-        <Trash2 size={16} />
-        {isDeleting ? "Đang xóa..." : "Xóa video này"}
+        <Trash2 size={15} />
+        {isDeleting ? "Đang xóa video..." : "Xóa video vĩnh viễn"}
       </button>
     </div>
   );
@@ -782,18 +875,8 @@ function SelectedVideoPanel({
 const sectionTitleStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "6px",
-  fontSize: "14px",
+  fontSize: "15px",
   fontWeight: "bold",
-  marginBottom: "16px",
-  color: "#334155",
+  color: "#1e293b",
 };
 
-function detailLineStyle(color: string): React.CSSProperties {
-  return {
-    display: "block",
-    color,
-    fontWeight: 600,
-    marginTop: "2px",
-  };
-}

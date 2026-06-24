@@ -166,7 +166,7 @@ export function LoginPage({
       <div className="lexi-auth-split-box">
         <div className="lexi-register-left-panel">
           <div className="lexi-register-left-logo">
-            <span>LEXI</span>
+            <img src="/logo.jpg" alt="LEXI Logo" style={{ height: "86px", width: "86px", borderRadius: "10px", objectFit: "cover" }} />
           </div>
 
           <div className="lexi-register-left-intro">

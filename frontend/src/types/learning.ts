@@ -48,6 +48,7 @@ export type LessonQuestion = {
   id: string;
   text: string;
   sortOrder: number;
+  explanation: string | null;
   options: LessonOption[];
 };
 

@@ -21,6 +21,9 @@ export class LessonQuestionResponseDto {
   @ApiProperty()
   sortOrder: number;
 
+  @ApiPropertyOptional({ nullable: true })
+  explanation?: string | null;
+
   @ApiProperty({ type: [LessonOptionResponseDto] })
   options: LessonOptionResponseDto[];
 }

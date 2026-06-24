@@ -27,6 +27,7 @@ export class LessonsMapper {
         id: question.id,
         text: question.questionText,
         sortOrder: question.sortOrder,
+        explanation: question.explanation,
         options: question.options.map((option) => ({
           id: option.id,
           text: option.optionText,
