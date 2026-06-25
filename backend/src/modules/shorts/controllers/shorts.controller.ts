@@ -3,7 +3,7 @@ import { ShortsService } from '../services/shorts.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Request } from 'express';
 
-@Controller('api/shorts')
+@Controller('shorts')
 export class ShortsController {
   constructor(private readonly shortsService: ShortsService) {}
 

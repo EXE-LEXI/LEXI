@@ -39,7 +39,7 @@ interface UserRequest {
 
 @ApiTags("ai-learning")
 @ApiBearerAuth()
-@Controller("api/ai-learning")
+@Controller("ai-learning")
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AiLearningController {
   constructor(

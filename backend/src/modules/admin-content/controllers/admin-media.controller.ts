@@ -104,10 +104,6 @@ export class AdminMediaController {
       throw new BadRequestException("Video file is required");
     }
 
-    if (!String(file.mimetype ?? "").startsWith("video/")) {
-      throw new BadRequestException("Only video files are supported");
-    }
-
     const originalName = String(file.originalname ?? "video.mp4");
     const extension = extname(originalName).toLowerCase() || ".mp4";
     const allowedExtensions = new Set([
@@ -134,21 +130,18 @@ export class AdminMediaController {
 
     // Validate Shorts metadata and quiz details
     if (mediaPlacement === MediaAssetPlacement.SHORTS) {
-      if (!shortsDescription?.trim()) {
-        throw new BadRequestException("Mô tả video ngắn là bắt buộc");
-      }
-      if (!quizQuestion?.trim()) {
-        throw new BadRequestException("Câu hỏi quiz là bắt buộc đối với video ngắn");
-      }
-      if (!quizOption1?.trim() || !quizOption2?.trim() || !quizOption3?.trim()) {
-        throw new BadRequestException("Tất cả 3 đáp án trắc nghiệm là bắt buộc đối với video ngắn");
-      }
-      const correctIdx = Number.parseInt(quizCorrectIndex ?? "", 10);
-      if (Number.isNaN(correctIdx) || correctIdx < 0 || correctIdx > 2) {
-        throw new BadRequestException("Chỉ số đáp án đúng phải từ 1 đến 3");
-      }
-      if (!quizExplanation?.trim()) {
-        throw new BadRequestException("Giải thích đáp án là bắt buộc đối với video ngắn");
+      // If quiz question is provided, validate other quiz details. Otherwise, fallback to defaults.
+      if (quizQuestion?.trim()) {
+        if (!quizOption1?.trim() || !quizOption2?.trim() || !quizOption3?.trim()) {
+          throw new BadRequestException("Tất cả 3 đáp án trắc nghiệm là bắt buộc khi cung cấp câu hỏi quiz");
+        }
+        const correctIdx = Number.parseInt(quizCorrectIndex ?? "", 10);
+        if (Number.isNaN(correctIdx) || correctIdx < 0 || correctIdx > 2) {
+          throw new BadRequestException("Chỉ số đáp án đúng phải từ 1 đến 3");
+        }
+        if (!quizExplanation?.trim()) {
+          throw new BadRequestException("Giải thích đáp án là bắt buộc khi cung cấp câu hỏi quiz");
+        }
       }
     }
 

@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Request } from 'express';
 import { GameContentType } from '@prisma/client';
 
-@Controller('api/games')
+@Controller('games')
 export class GamesController {
   constructor(private readonly gamesService: GamesService) {}
 

@@ -154,7 +154,7 @@ export function FeedbackWidget({ session }: FeedbackWidgetProps) {
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="VD: Góp ý về trải nghiệm đặt lịch"
+                    placeholder="VD: Góp ý về Chatbot"
                     required
                     disabled={submitting}
                     maxLength={100}
