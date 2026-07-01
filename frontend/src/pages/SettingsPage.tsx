@@ -1,16 +1,16 @@
 import type { FormEvent } from "react";
 import type { NotificationPreferences } from "../types/learning";
 import {
+  AlertCircle,
   Bell,
-  Smartphone,
+  CheckCircle,
   Clock,
   Globe,
   Moon,
-  CheckCircle,
   RefreshCw,
-  AlertCircle,
   Save,
-  Unlink
+  Smartphone,
+  Unlink,
 } from "lucide-react";
 
 type SettingsPageProps = {
@@ -56,38 +56,42 @@ export function SettingsPage({
   return (
     <main className="lexi-settings-container">
       <div className="lexi-settings-header">
-        <span className="eyebrow">Cấu Hình Tài Khoản</span>
-        <h1>Thiết Lập Nhắc Nhở & Thiết Bị</h1>
-        <p>Tùy chỉnh thời gian nhận thông báo học tập và cấu hình mã định danh để đồng bộ hóa bài học thời gian thực.</p>
+        <span className="eyebrow">Cau hinh tai khoan</span>
+        <h1>Thiet lap nhac nho va thiet bi</h1>
+        <p>
+          Tuy chinh thoi gian nhan thong bao hoc tap, gio yen tinh va ma thiet bi dung
+          de dong bo thong bao day tu may chu LEXI.
+        </p>
       </div>
 
       {isLoading ? (
         <div className="lexi-settings-status loading">
           <RefreshCw className="animate-spin" size={16} />
-          <span>Đang đồng bộ hóa cấu hình với máy chủ...</span>
+          <span>Dang dong bo cau hinh voi may chu...</span>
         </div>
       ) : null}
-      
+
       {error ? (
         <div className="lexi-settings-status error">
           <AlertCircle size={16} />
-          <span>Lỗi: {error}</span>
+          <span>Loi: {error}</span>
         </div>
       ) : null}
 
       <div className="lexi-settings-grid">
-        {/* Left Column: Notification config */}
         <form className="panel lexi-settings-panel" onSubmit={handleSubmit}>
           <h2>
             <Bell size={20} />
-            <span>Cấu hình nhận thông báo</span>
+            <span>Thong bao hoc tap</span>
           </h2>
 
           <div className="lexi-switch-list">
             <label className="lexi-switch-wrapper">
               <div className="lexi-switch-info">
-                <span className="lexi-switch-title">Nhắc nhở học tập hàng ngày</span>
-                <span className="lexi-switch-desc">Nhận thông báo nhắc nhở rèn luyện các bài học mới để không bỏ lỡ kiến thức.</span>
+                <span className="lexi-switch-title">Nhac hoc hang ngay</span>
+                <span className="lexi-switch-desc">
+                  Gui thong bao de ban duy tri nhip hoc va khong bo lo bai moi.
+                </span>
               </div>
               <div className="lexi-switch-control">
                 <input
@@ -96,14 +100,16 @@ export function SettingsPage({
                   defaultChecked={preferences?.dailyReminderEnabled}
                   className="lexi-switch-input"
                 />
-                <span className="lexi-switch-slider"></span>
+                <span className="lexi-switch-slider" />
               </div>
             </label>
 
             <label className="lexi-switch-wrapper">
               <div className="lexi-switch-info">
-                <span className="lexi-switch-title">Nhắc nhở duy trì chuỗi học (Streak)</span>
-                <span className="lexi-switch-desc">Thông báo nhắc nhở khi bạn sắp mất chuỗi học tập liên tục để giữ vững phong độ.</span>
+                <span className="lexi-switch-title">Nhac duy tri streak</span>
+                <span className="lexi-switch-desc">
+                  Canh bao khi ban sap mat chuoi hoc lien tuc de kip quay lai on tap.
+                </span>
               </div>
               <div className="lexi-switch-control">
                 <input
@@ -112,14 +118,16 @@ export function SettingsPage({
                   defaultChecked={preferences?.streakReminderEnabled}
                   className="lexi-switch-input"
                 />
-                <span className="lexi-switch-slider"></span>
+                <span className="lexi-switch-slider" />
               </div>
             </label>
 
             <label className="lexi-switch-wrapper">
               <div className="lexi-switch-info">
-                <span className="lexi-switch-title">Nhắc nhở ôn luyện bài cũ</span>
-                <span className="lexi-switch-desc">Gợi ý ôn tập định kỳ các câu hỏi sai hoặc các bài học đã lâu chưa đọc lại.</span>
+                <span className="lexi-switch-title">Nhac on luyen bai cu</span>
+                <span className="lexi-switch-desc">
+                  Goi y on lai cac cau tra loi sai va bai hoc da lau chua xem.
+                </span>
               </div>
               <div className="lexi-switch-control">
                 <input
@@ -128,7 +136,7 @@ export function SettingsPage({
                   defaultChecked={preferences?.reviewReminderEnabled}
                   className="lexi-switch-input"
                 />
-                <span className="lexi-switch-slider"></span>
+                <span className="lexi-switch-slider" />
               </div>
             </label>
           </div>
@@ -136,7 +144,7 @@ export function SettingsPage({
           <div className="lexi-form-field">
             <label htmlFor="reminderHour">
               <Clock size={16} />
-              <span>Giờ nhắc nhở học</span>
+              <span>Gio nhac hoc</span>
             </label>
             <div className="lexi-input-wrapper">
               <input
@@ -148,14 +156,14 @@ export function SettingsPage({
                 defaultValue={preferences?.reminderHour ?? 20}
                 className="lexi-settings-input"
               />
-              <span className="lexi-input-suffix">giờ</span>
+              <span className="lexi-input-suffix">gio</span>
             </div>
           </div>
 
           <div className="lexi-form-field">
             <label htmlFor="timezone">
               <Globe size={16} />
-              <span>Múi giờ hoạt động</span>
+              <span>Mui gio</span>
             </label>
             <input
               id="timezone"
@@ -169,7 +177,7 @@ export function SettingsPage({
             <div className="lexi-form-field">
               <label htmlFor="quietHoursStart">
                 <Moon size={16} />
-                <span>Bắt đầu giờ yên tĩnh</span>
+                <span>Bat dau gio yen tinh</span>
               </label>
               <div className="lexi-input-wrapper">
                 <input
@@ -178,18 +186,18 @@ export function SettingsPage({
                   type="number"
                   min="0"
                   max="23"
-                  placeholder="Không cấu hình"
+                  placeholder="Khong cau hinh"
                   defaultValue={preferences?.quietHoursStart ?? ""}
                   className="lexi-settings-input"
                 />
-                <span className="lexi-input-suffix">giờ</span>
+                <span className="lexi-input-suffix">gio</span>
               </div>
             </div>
 
             <div className="lexi-form-field">
               <label htmlFor="quietHoursEnd">
                 <Moon size={16} />
-                <span>Kết thúc giờ yên tĩnh</span>
+                <span>Ket thuc gio yen tinh</span>
               </label>
               <div className="lexi-input-wrapper">
                 <input
@@ -198,44 +206,44 @@ export function SettingsPage({
                   type="number"
                   min="0"
                   max="23"
-                  placeholder="Không cấu hình"
+                  placeholder="Khong cau hinh"
                   defaultValue={preferences?.quietHoursEnd ?? ""}
                   className="lexi-settings-input"
                 />
-                <span className="lexi-input-suffix">giờ</span>
+                <span className="lexi-input-suffix">gio</span>
               </div>
             </div>
           </div>
 
-          <button className="lexi-btn-save-settings" type="submit">
+          <button className="lexi-btn-save-settings" type="submit" disabled={isLoading}>
             <Save size={16} />
-            <span>Lưu cấu hình thông báo</span>
+            <span>Luu cau hinh thong bao</span>
           </button>
         </form>
 
-        {/* Right Column: Device configuration (Device Token) */}
         <div className="panel lexi-settings-panel">
           <h2>
             <Smartphone size={20} />
-            <span>Mã định danh thiết bị</span>
+            <span>Ma dinh danh thiet bi</span>
           </h2>
-          
-          <p style={{ color: "#64748b", fontSize: "13px", lineHeight: "1.55", margin: 0, fontWeight: 550 }}>
-            Kết nối thiết bị của bạn bằng Firebase Cloud Messaging registration token để kiểm thử hệ thống gửi nhận thông báo đẩy trực tiếp từ máy chủ LEXI.
+
+          <p className="lexi-settings-help">
+            Dan Firebase Cloud Messaging registration token de kiem thu thong bao day
+            truc tiep tren trinh duyet dang dung.
           </p>
 
           <div className="lexi-form-field">
             <label htmlFor="deviceToken">
               <Smartphone size={16} />
-              <span>Mã định danh Web token</span>
+              <span>Web token</span>
             </label>
             <textarea
               id="deviceToken"
-              placeholder="Nhập hoặc dán Firebase Cloud Messaging token tại đây..."
+              placeholder="Nhap hoac dan Firebase Cloud Messaging token tai day..."
               value={deviceToken}
               onChange={(event) => onDeviceTokenChange(event.target.value)}
               className="lexi-settings-textarea"
-              rows={4}
+              rows={5}
             />
           </div>
 
@@ -243,21 +251,21 @@ export function SettingsPage({
             <button
               className="lexi-btn-action-primary"
               type="button"
-              disabled={!deviceToken}
+              disabled={!deviceToken.trim() || isLoading}
               onClick={onRegisterDeviceToken}
             >
               <CheckCircle size={16} />
-              <span>Đăng ký</span>
+              <span>Dang ky</span>
             </button>
-            
+
             <button
               className="lexi-btn-action-secondary"
               type="button"
-              disabled={!deviceToken}
+              disabled={!deviceToken.trim() || isLoading}
               onClick={onRevokeDeviceToken}
             >
               <Unlink size={16} />
-              <span>Hủy liên kết</span>
+              <span>Huy lien ket</span>
             </button>
           </div>
         </div>
@@ -265,5 +273,5 @@ export function SettingsPage({
     </main>
   );
 }
-export default SettingsPage;
 
+export default SettingsPage;
