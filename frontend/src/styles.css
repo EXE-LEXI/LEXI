@@ -10431,6 +10431,14 @@ h1 {
   box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1) !important;
 }
 
+.lexi-settings-help {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+  font-weight: 600;
+}
+
 .lexi-settings-row-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -10544,6 +10552,308 @@ h1 {
   border-color: #e2e8f0 !important;
   color: #cbd5e1 !important;
   cursor: not-allowed;
+}
+
+/* =======================================================
+   LEXI ACCOUNT SETTINGS
+   ======================================================= */
+.lexi-account-root {
+  width: 100%;
+  color: #0f172a;
+}
+
+.lexi-account-container {
+  max-width: 1120px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.lexi-account-header {
+  margin-bottom: 28px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.lexi-account-header .eyebrow {
+  color: #4f46e5 !important;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.lexi-account-header h1 {
+  color: #0f172a !important;
+  font-size: 34px;
+  font-weight: 900;
+  margin: 0;
+}
+
+.lexi-account-header p {
+  max-width: 680px;
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 550;
+  line-height: 1.55;
+}
+
+.lexi-account-grid {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.lexi-account-tabs-nav {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.03);
+}
+
+.nav-tab-btn {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 800;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.nav-tab-btn:hover {
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.nav-tab-btn.active {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+
+.lexi-account-workspace {
+  min-width: 0;
+}
+
+.lexi-account-panel {
+  display: grid;
+  gap: 20px;
+  padding: 28px;
+  border-radius: 16px;
+}
+
+.lexi-account-panel-heading h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.lexi-account-panel-heading p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.status-toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.status-toast.success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.status-toast.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.avatar-preview-block {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.avatar-large {
+  width: 76px;
+  height: 76px;
+  flex: 0 0 76px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #4f46e5, #10b981);
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 900;
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.18);
+}
+
+.avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-info {
+  display: grid;
+  gap: 4px;
+}
+
+.avatar-info strong {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.avatar-info span {
+  color: #64748b;
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.lexi-input-field-group {
+  display: grid;
+  gap: 8px;
+}
+
+.lexi-input-field-group label {
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.lexi-input-field-group .input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lexi-input-field-group .input-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.lexi-input-field-group input {
+  width: 100%;
+  min-height: 48px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 650;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.lexi-input-field-group .input-icon + input {
+  padding-left: 42px;
+}
+
+.lexi-input-field-group input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+.lexi-input-field-group input:disabled {
+  background: #f8fafc;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.helper-text {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lexi-btn-save {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 850;
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.2);
+  transition: all 0.2s ease;
+}
+
+.lexi-btn-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.28);
+}
+
+.lexi-btn-save:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@media (max-width: 860px) {
+  .lexi-account-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lexi-account-tabs-nav {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .lexi-account-container,
+  .lexi-settings-container {
+    padding-inline: 16px;
+  }
+
+  .lexi-account-tabs-nav,
+  .lexi-btn-row,
+  .avatar-preview-block {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 /* =======================================================

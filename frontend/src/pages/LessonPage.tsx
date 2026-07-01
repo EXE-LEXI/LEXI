@@ -766,7 +766,8 @@ export function LessonPage({
                       <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
                         {question.options.map((option) => {
                           const isSelectedByUser = item.selectedOptionId === option.id;
-                          const isCorrectOption = option.id === item.correctOptionId || (item.isCorrect && isSelectedByUser);
+                          const isCorrectOption = Boolean(item.correctOptionId && option.id === item.correctOptionId);
+                          const isCorrectSelectedOption = item.isCorrect && isSelectedByUser;
                           
                           let cardBorder = "1px solid #cbd5e1";
                           let cardBg = "#ffffff";
@@ -774,7 +775,7 @@ export function LessonPage({
                           let textColor = "#334155";
                           let statusMarker = null;
 
-                          if (isCorrectOption) {
+                          if (isCorrectOption || isCorrectSelectedOption) {
                             cardBorder = "2px solid #22c55e";
                             cardBg = "#f0fdf4";
                             dotColor = "#22c55e";
@@ -797,7 +798,7 @@ export function LessonPage({
                               display: "flex",
                               alignItems: "center",
                               fontSize: "14px",
-                              fontWeight: isSelectedByUser || isCorrectOption ? 600 : 500,
+                              fontWeight: isSelectedByUser || isCorrectOption || isCorrectSelectedOption ? 600 : 500,
                               color: textColor
                             }}>
                               <div style={{
@@ -805,7 +806,7 @@ export function LessonPage({
                                 height: "16px",
                                 borderRadius: "50%",
                                 border: `2px solid ${dotColor}`,
-                                background: isCorrectOption || (isSelectedByUser && !item.isCorrect) ? dotColor : "#ffffff",
+                                background: isCorrectOption || isCorrectSelectedOption || (isSelectedByUser && !item.isCorrect) ? dotColor : "#ffffff",
                                 marginRight: "12px",
                                 display: "flex",
                                 alignItems: "center",
@@ -814,7 +815,7 @@ export function LessonPage({
                                 fontSize: "10px",
                                 fontWeight: "bold"
                               }}>
-                                {isCorrectOption ? "✓" : isSelectedByUser ? "✕" : ""}
+                                {isCorrectOption || isCorrectSelectedOption ? "✓" : isSelectedByUser ? "✕" : ""}
                               </div>
                               <span>{option.text}</span>
                               {statusMarker}
@@ -1868,6 +1869,3 @@ export function LessonPage({
   );
 }
 export default LessonPage;
-
-
-
