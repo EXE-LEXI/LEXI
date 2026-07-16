@@ -19,8 +19,8 @@ export class QuizGradingService {
       throw new BadRequestException("Duplicate answers are not allowed");
     }
 
-    if (answers.length !== questions.length) {
-      throw new BadRequestException("All questions must be answered");
+    if (answers.length === 0) {
+      throw new BadRequestException("At least one question must be answered");
     }
 
     const questionIds = new Set(questions.map((question) => question.id));
@@ -34,10 +34,12 @@ export class QuizGradingService {
       );
     }
 
-    const normalizedAnswers = questions.map((question) => {
-      const userAnswer = answerMap.get(question.id);
-      if (!userAnswer) {
-        throw new BadRequestException("All questions must be answered");
+    const normalizedAnswers = answers.map((userAnswer) => {
+      const question = questions.find((q) => q.id === userAnswer.questionId);
+      if (!question) {
+        throw new BadRequestException(
+          `Unknown question id: ${userAnswer.questionId}`
+        );
       }
 
       const selectedOption = question.options.find(
@@ -65,7 +67,7 @@ export class QuizGradingService {
     const correctCount = normalizedAnswers.filter(
       (answer) => answer.isCorrect
     ).length;
-    const totalQuestions = questions.length;
+    const totalQuestions = answers.length;
     const score = Math.round((correctCount / totalQuestions) * 100);
 
     return {

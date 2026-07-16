@@ -66,14 +66,25 @@ test("rejects duplicate answers", () => {
   );
 });
 
-test("rejects incomplete submissions", () => {
+test("allows and grades incomplete submissions", () => {
   const service = new QuizGradingService();
 
-  assert.throws(
-    () =>
-      service.gradeQuiz(questions, [{ questionId: "q1", optionId: "q1-b" }]),
-    BadRequestException
-  );
+  const result = service.gradeQuiz(questions, [
+    { questionId: "q1", optionId: "q1-b" },
+  ]);
+
+  assert.equal(result.correctCount, 1);
+  assert.equal(result.totalQuestions, 1);
+  assert.equal(result.score, 100);
+  assert.deepEqual(result.normalizedAnswers, [
+    {
+      questionId: "q1",
+      selectedOptionId: "q1-b",
+      isCorrect: true,
+      correctOptionId: "q1-b",
+      explanation: "Explanation 1",
+    },
+  ]);
 });
 
 test("rejects an option that does not belong to the question", () => {
